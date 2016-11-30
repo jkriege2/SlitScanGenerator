@@ -46,7 +46,12 @@ void MainWindow::openVideo(const QString& filename) {
         std::string error;
         QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
         QProgressDialog progress(tr("Opening Video"), "", 0, 2, this);
+        progress.setLabelText(tr("opening file '%1'...").arg(fn));
+        progress.setMinimumDuration(0);
+        QApplication::processEvents();
         progress.setWindowModality(Qt::WindowModal);
+        progress.show();
+        QApplication::processEvents();
         auto progCB=std::bind([](QProgressDialog* progress, int frame) {
                     if (frame%5==0) {
                         progress->setValue(1);
