@@ -1,3 +1,6 @@
 [submodule "CImg"]
 	path = CImg
 	url = https://github.com/dtschump/CImg.git
+[submodule "TinyTIFF"]
+	path = TinyTIFF
+	url = https://github.com/jkriege2/TinyTIFF.git

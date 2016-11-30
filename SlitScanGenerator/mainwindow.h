@@ -4,16 +4,11 @@
 #include <QMainWindow>
 #include <cstdint>
 #include <QLabel>
+#include "imageviewer.h"
+#include "processingparametertable.h"
+#include "cimg_tools.h"
+#include "ffmpeg_tools.h"
 
-#define cimg_display 0
-#include "CImg.h"
-
-extern "C" {
-    #include <libavcodec/avcodec.h>
-    #include <libavformat/avformat.h>
-    #include <libswscale/swscale.h>
-    #include <libavutil/mem.h>
-}
 
 namespace Ui {
     class MainWindow;
@@ -29,22 +24,34 @@ class MainWindow : public QMainWindow
 
     protected slots:
         void openVideo(const QString &filename=QString());
+        void recalcCuts(int x, int y);
+
+        void on_btnAddXZ_clicked();
+        void on_btnAddZY_clicked();
+        void on_btnDelete_clicked();
+        void on_btnProcessAll_clicked();
     private:
         Ui::MainWindow *ui;
 
-        QLabel* labXY;
+        ImageViewer* labXY;
         QLabel* labXZ;
         QLabel* labYZ;
     protected:
         /** \brief internal video, scaled version */
         cimg_library::CImg<uint8_t> m_video_scaled;
 
-        bool openPreview(cimg_library::CImg<uint8_t>& video, const char* filename, int everyNthFrame, int xyscale, QString *error=nullptr);
 
         /** \brief path to the ffmpeg utility */
         QString m_ffmpegPath;
 
-        static QImage CImgToQImage(const cimg_library::CImg<uint8_t>& img, int z=0);
+        ProcessingParameterTable* m_procModel;
+
+        int lastX;
+        int lastY;
+
+        int video_everyNthFrame;
+        double video_xyFactor;
+
 
 };
 
