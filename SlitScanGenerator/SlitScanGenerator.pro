@@ -35,3 +35,5 @@ INCLUDEPATH += ../CImg \
 DEFINES +=
 
 LIBS += -lm -L../ffmpeg/lib -lavutil -lavcodec -lavdevice -lswscale -lavformat -lswresample -lpostproc -lavfilter
+
+MAKE_CXXFLAGS_RELEASE += -O3 -fopenmp -msse2 -msse -fpmath=both

@@ -7,6 +7,9 @@
 #include <QPainter>
 #include <QScrollBar>
 #include <QProgressDialog>
+#include <QFileInfo>
+#include <QSettings>
+#include <vector>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -52,6 +55,7 @@ void MainWindow::openVideo(const QString& filename) {
         progress.setWindowModality(Qt::WindowModal);
         progress.show();
         QApplication::processEvents();
+        QApplication::processEvents();
         auto progCB=std::bind([](QProgressDialog* progress, int frame) {
                     if (frame%5==0) {
                         progress->setValue(1);
@@ -63,11 +67,13 @@ void MainWindow::openVideo(const QString& filename) {
             progress.close();
             QApplication::restoreOverrideCursor();
             QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
+            m_filename="";
         } else {
             progress.close();
             QApplication::restoreOverrideCursor();
             recalcCuts(m_video_scaled.width()/2, m_video_scaled.height()/2);
             QMessageBox::information(this, tr("Video opened"), tr("Video: %1\nframe size: %2x%3\n frames: %4\n color channels: %5").arg(fn).arg(m_video_scaled.width()).arg(m_video_scaled.height()).arg(m_video_scaled.depth()).arg(m_video_scaled.spectrum()));
+            m_filename=fn;
         }
     }
 }
@@ -118,7 +124,100 @@ void MainWindow::on_btnDelete_clicked()
 
 void MainWindow::on_btnProcessAll_clicked()
 {
-    QProgressDialog progress(tr("Opening Video"), "", 0, 2, this);
+    if (m_filename.size()<=0) return;
+    if (m_procModel->rowCount()<=0) return;
+    QProgressDialog progress(tr("Processing Video"), tr("Cancel"), 0, m_video_scaled.depth()*video_everyNthFrame, this);
+    progress.setLabelText(tr("Opening file '%1' ...").arg(m_filename));
+    progress.setMinimumDuration(0);
+    QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
     progress.setWindowModality(Qt::WindowModal);
+    QApplication::processEvents();
+    QApplication::processEvents();
+    std::string error;
+    FFMPEGVideo* vid=openFFMPEGVideo(m_filename.toStdString(), &error);
+    int z=0;
+    cimg_library::CImg<uint8_t> frame;
+    if (vid && readFFMPEGFrame(frame, vid)) {
+        std::vector<cimg_library::CImg<uint8_t> > results;
+        QVector<ProcessingParameterTable::ProcessingItem> pis=m_procModel->data();
+        int j=0;
+        qDebug()<<"frame: "<<frame.width()<<"x"<<frame.height()<<"x"<<frame.depth()<<" - "<<frame.spectrum();
+        qDebug()<<"m_video_scaled: "<<m_video_scaled.width()<<"x"<<m_video_scaled.height()<<"x"<<m_video_scaled.depth()<<" - "<<m_video_scaled.spectrum();
+        qDebug()<<"video_everyNthFrame="<<video_everyNthFrame;
+        for (ProcessingParameterTable::ProcessingItem pi: pis) {
+            if (pi.mode==ProcessingParameterTable::Mode::ZY) {
+                results.push_back(cimg_library::CImg<uint8_t>());
+                results[j].assign(m_video_scaled.depth()*video_everyNthFrame, frame.height(), 1, 3);
+                qDebug()<<j<<": ZY "<<results[j].width()<<"x"<<results[j].height();
+            } else if (pi.mode==ProcessingParameterTable::Mode::XZ) {
+                results.push_back(cimg_library::CImg<uint8_t>());
+                results[j].assign(frame.width(), m_video_scaled.depth()*video_everyNthFrame, 1, 3);
+                qDebug()<<j<<": XZ "<<results[j].width()<<"x"<<results[j].height();
+            }
+            j++;
+        }
+        progress.setLabelText(tr("Processing video '%1' ...").arg(m_filename));
+        QApplication::processEvents();
+        do {
+
+            for (int j=0; j<pis.size(); j++) {
+                ProcessingParameterTable::ProcessingItem pi=pis[j];
+                if (pi.mode==ProcessingParameterTable::Mode::ZY && z<results[j].width()) {
+                    cimg_forY( frame, y )
+                    {
+                        results[j](z, y, 0,0)=frame(pi.location, y, 0, 0);
+                        results[j](z, y, 0,1)=frame(pi.location, y, 0, 1);
+                        results[j](z, y, 0,2)=frame(pi.location, y, 0, 2);
+                    }
+                } else if (pi.mode==ProcessingParameterTable::Mode::XZ && z<results[j].height()) {
+                    cimg_forX( frame, x )
+                    {
+                        results[j](x, z, 0,0)=frame(x, pi.location,  0, 0);
+                        results[j](x, z, 0,1)=frame(x, pi.location,  0, 1);
+                        results[j](x, z, 0,2)=frame(x, pi.location,  0, 2);
+                    }
+                }
+            }
+
+            if (z%5==0) {
+                progress.setValue(z);
+                QApplication::processEvents();
+            }
+            z++;
+        } while (readFFMPEGFrame(frame, vid));
+        closeFFMPEGVideo(vid);
+
+        QFileInfo fi(m_filename);
+        QString allini=fi.absoluteDir().absoluteFilePath(QString("%1.ini").arg(fi.baseName()));
+        QSettings setall(allini, QSettings::IniFormat);
+        setall.setValue("count", results.size());
+        for (size_t j=0; j<results.size(); j++) {
+
+            QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.png").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
+            QString fnini=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.ini").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
+            progress.setLabelText(tr("Saving result %2: '%1' ...").arg(fn).arg(j+1));
+            QApplication::processEvents();
+            QApplication::processEvents();
+            QImage img=CImgToQImage(results[j]);
+            img.save(fn);
+            QSettings set(fnini, QSettings::IniFormat);
+            ProcessingParameterTable::ProcessingItem pi=pis[j];
+            if (pi.mode==ProcessingParameterTable::Mode::ZY) {
+                set.setValue("mode", "ZY");
+                setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "ZY");
+            }
+            if (pi.mode==ProcessingParameterTable::Mode::XZ) {
+                set.setValue("mode", "XZ");
+                setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "XZ");
+            }
+            set.setValue("location", pi.location);
+            setall.setValue(QString("item%1/location").arg(j,3,10,QChar('0')), pi.location);
+            setall.setValue(QString("item%1/file").arg(j,3,10,QChar('0')), QFileInfo(fn).fileName());
+        }
+    } else {
+        progress.close();
+        QApplication::restoreOverrideCursor();
+        QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
+    }
 }
 

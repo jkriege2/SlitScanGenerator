@@ -44,6 +44,7 @@ class ProcessingParameterTable : public QAbstractTableModel
         // Remove data:
         bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
 
+        const QVector<ProcessingItem>& data() const { return m_data; }
     private:
         QVector<ProcessingItem> m_data;
 };

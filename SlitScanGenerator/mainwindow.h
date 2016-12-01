@@ -39,6 +39,7 @@ class MainWindow : public QMainWindow
     protected:
         /** \brief internal video, scaled version */
         cimg_library::CImg<uint8_t> m_video_scaled;
+        QString m_filename;
 
 
         /** \brief path to the ffmpeg utility */

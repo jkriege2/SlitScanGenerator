@@ -128,7 +128,7 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
                     }
                     frame.resize(pCodecCtx->width/xyscale, pCodecCtx->height/xyscale,1,3);
                     video.append(frame, 'z');
-                    if (frameCallback) frameCallback(i+1);
+                    if (frameCallback) frameCallback(video.depth());
                 }
             }
         }
@@ -177,7 +177,7 @@ struct FFMPEGVideo {
     AVDictionary *optionsDict;
 };
 
-FFMPEGVideo *openFFMPEGVideo(const std::__cxx11::string &filename, std::__cxx11::string *error)
+FFMPEGVideo *openFFMPEGVideo(const std::string &filename, std::string *error)
 {
     FFMPEGVideo* res=(FFMPEGVideo*)malloc(sizeof(FFMPEGVideo));
 
@@ -281,8 +281,8 @@ FFMPEGVideo *openFFMPEGVideo(const std::__cxx11::string &filename, std::__cxx11:
 bool readFFMPEGFrame(cimg_library::CImg<uint8_t>& frame, FFMPEGVideo *video)
 {
     if (!video) return false;
-    bool res=av_read_frame(video->pFormatCtx, &video->packet)>=0;
-    if (res) {
+    bool done=false;
+    while (!done && (av_read_frame(video->pFormatCtx, &video->packet)>=0)) {
         // Is this a packet from the video stream?
         if(video->packet.stream_index==video->videoStream) {
             // Decode video frame
@@ -290,6 +290,7 @@ bool readFFMPEGFrame(cimg_library::CImg<uint8_t>& frame, FFMPEGVideo *video)
 
             // Did we get a video frame?
             if(video->frameFinished) {
+                done=(video->pCodecCtx->width*video->pCodecCtx->height)>0;
                 // add frame to CImg
                 // Convert the image from its native format to RGB
                 sws_scale(video->sws_ctx, (uint8_t const * const *)video->pFrame->data, video->pFrame->linesize, 0, video->pCodecCtx->height, video->pFrameRGB->data, video->pFrameRGB->linesize);
@@ -305,13 +306,15 @@ bool readFFMPEGFrame(cimg_library::CImg<uint8_t>& frame, FFMPEGVideo *video)
                 }
             }
         }
-
-        // Free the packet that was allocated by av_read_frame
-        av_free_packet(&video->packet);
-
-        video->i++;
+        if (done) break;
     }
-    return res;
+
+    // Free the packet that was allocated by av_read_frame
+    av_free_packet(&video->packet);
+
+    video->i++;
+
+    return done;
 }
 
 void closeFFMPEGVideo(FFMPEGVideo *video)
