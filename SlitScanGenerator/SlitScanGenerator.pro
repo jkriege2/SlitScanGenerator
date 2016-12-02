@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui multimedia
+QT       += core gui
 CONFIG += c++11 stl exceptions
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -18,16 +18,19 @@ SOURCES += main.cpp\
     cimg_tools.cpp \
     ffmpeg_tools.cpp \
     imageviewer.cpp \
-    processingparametertable.cpp
+    processingparametertable.cpp \
+    aboutbox.cpp
 
 HEADERS  += mainwindow.h \
             ../CImg/CImg.h \
     cimg_tools.h \
     ffmpeg_tools.h \
     imageviewer.h \
-    processingparametertable.h
+    processingparametertable.h \
+    aboutbox.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    aboutbox.ui
 
 INCLUDEPATH += ../CImg \
                ../ffmpeg/include
@@ -37,3 +40,6 @@ DEFINES +=
 LIBS += -lm -L../ffmpeg/lib -lavutil -lavcodec -lavdevice -lswscale -lavformat -lswresample -lpostproc -lavfilter
 
 MAKE_CXXFLAGS_RELEASE += -O3 -fopenmp -msse2 -msse -fpmath=both
+
+RESOURCES += \
+    slitscangenerator.qrc

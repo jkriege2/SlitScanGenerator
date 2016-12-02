@@ -21,9 +21,12 @@ class ProcessingParameterTable : public QAbstractTableModel
 
         explicit ProcessingParameterTable(QObject *parent = 0);
 
+        void clear();
+
         // Header:
         QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
+        ProcessingItem getItem(const QModelIndex &idx) const;
 
         // Basic functionality:
         int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -45,6 +48,9 @@ class ProcessingParameterTable : public QAbstractTableModel
         bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
 
         const QVector<ProcessingItem>& data() const { return m_data; }
+    public slots:
+        void load(QString filename=QString(), QString *videoFile=nullptr);
+        void save(QString filename, QString videoFile) const;
     private:
         QVector<ProcessingItem> m_data;
 };

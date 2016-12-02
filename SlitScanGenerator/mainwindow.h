@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <cstdint>
 #include <QLabel>
+#include <QSettings>
 #include "imageviewer.h"
 #include "processingparametertable.h"
 #include "cimg_tools.h"
@@ -23,13 +24,18 @@ class MainWindow : public QMainWindow
         ~MainWindow();
 
     protected slots:
+        void saveINI();
+        void loadINI();
         void openVideo(const QString &filename=QString());
         void recalcCuts(int x, int y);
 
         void on_btnAddXZ_clicked();
         void on_btnAddZY_clicked();
         void on_btnDelete_clicked();
-        void on_btnProcessAll_clicked();
+        void processAll();
+        void tableRowClicked(const QModelIndex &index);
+        void setButtonsEnabled();
+        void showAbout();
     private:
         Ui::MainWindow *ui;
 
@@ -52,7 +58,7 @@ class MainWindow : public QMainWindow
 
         int video_everyNthFrame;
         double video_xyFactor;
-
+        QSettings m_settings;
 
 };
 

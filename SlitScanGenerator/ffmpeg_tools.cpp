@@ -11,7 +11,7 @@ extern "C" {
 
 
 
-bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::string& filename, int everyNthFrame, double xyscale, std::string* error, std::function<void(int)> frameCallback)
+bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::string& filename, int everyNthFrame, double xyscale, std::string* error, std::function<bool(int, int)> frameCallback)
 {
 
     // see  http://dranger.com/ffmpeg/tutorial01.html
@@ -63,6 +63,10 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
     // Get a pointer to the codec context for the video stream
     pCodecCtx=pFormatCtx->streams[videoStream]->codec;
 
+    // get number of frames
+    int nb_frames = pFormatCtx->streams[videoStream]->nb_frames;
+
+
 
     // Find the decoder for the video stream
     pCodec=avcodec_find_decoder(pCodecCtx->codec_id);
@@ -104,7 +108,12 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
     sws_ctx = sws_getContext(pCodecCtx->width,pCodecCtx->height,pCodecCtx->pix_fmt,pCodecCtx->width,pCodecCtx->height,AV_PIX_FMT_RGB24,SWS_BILINEAR,NULL,NULL,NULL);
 
     i=0;
-    while(av_read_frame(pFormatCtx, &packet)>=0) {
+    bool canceled=false;
+    if (frameCallback) {
+        canceled=frameCallback(0, nb_frames);
+    }
+
+    while(!canceled && av_read_frame(pFormatCtx, &packet)>=0) {
         // Is this a packet from the video stream?
         if(packet.stream_index==videoStream) {
             // Decode video frame
@@ -128,7 +137,12 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
                     }
                     frame.resize(pCodecCtx->width/xyscale, pCodecCtx->height/xyscale,1,3);
                     video.append(frame, 'z');
-                    if (frameCallback) frameCallback(video.depth());
+                    if (frameCallback) {
+                        if (frameCallback((nb_frames>0)?i:video.depth(), nb_frames)) {
+                            canceled=true;
+                        }
+                    }
+
                 }
             }
         }

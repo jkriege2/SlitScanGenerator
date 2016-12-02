@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "aboutbox.h"
 #include <functional>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -15,7 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     lastX(-1),
-    lastY(-1)
+    lastY(-1),
+    m_settings(QSettings::UserScope, "jkrieger.de", "SlitScanGenerator")
 {
     initFFMPEG();
     ui->setupUi(this);
@@ -23,32 +25,96 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->scrollXZ->setWidget(labXZ=new QLabel(this));
     ui->scrollYZ->setWidget(labYZ=new QLabel(this));
     ui->table->setModel(m_procModel=new ProcessingParameterTable(ui->table));
+    ui->toolBar->addAction(ui->actQuit);
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(ui->actOpenVideo);
+    ui->toolBar->addAction(ui->actProcessAll);
+    ui->btnProcessAll->setDefaultAction(ui->actProcessAll);
 
 
     connect(ui->actQuit, SIGNAL(triggered()), this, SLOT(close()));
+    connect(ui->actAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
+    connect(ui->actProcessAll, SIGNAL(triggered()), this, SLOT(processAll()));
     connect(ui->actOpenVideo, SIGNAL(triggered()), this, SLOT(openVideo()));
+    connect(ui->actOpenINI, SIGNAL(triggered()), this, SLOT(loadINI()));
+    connect(ui->actSaveINI, SIGNAL(triggered()), this, SLOT(saveINI()));
     connect(ui->scrollXY->horizontalScrollBar(), SIGNAL(sliderMoved(int)), ui->scrollXZ->horizontalScrollBar(), SLOT(setValue(int)));
     connect(ui->scrollXZ->horizontalScrollBar(), SIGNAL(sliderMoved(int)), ui->scrollXY->horizontalScrollBar(), SLOT(setValue(int)));
     connect(ui->scrollXY->verticalScrollBar(), SIGNAL(sliderMoved(int)), ui->scrollYZ->verticalScrollBar(), SLOT(setValue(int)));
     connect(ui->scrollYZ->verticalScrollBar(), SIGNAL(sliderMoved(int)), ui->scrollXY->verticalScrollBar(), SLOT(setValue(int)));
+    connect(ui->table, SIGNAL(clicked(QModelIndex)), this, SLOT(tableRowClicked(QModelIndex)));
     connect(labXY, SIGNAL(mouseClicked(int,int)), this, SLOT(recalcCuts(int,int)));
+    connect(m_procModel, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(setButtonsEnabled()));
+    connect(m_procModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(setButtonsEnabled()));
+    connect(m_procModel, SIGNAL(modelReset()), this, SLOT(setButtonsEnabled()));
+    setButtonsEnabled();
+    ui->spinEveryNThFrame->setValue(m_settings.value("lastNthFrame", 10).toInt());
+    ui->spinXYFactor->setValue(m_settings.value("lastXYFactor", 4).toDouble());
 }
 
 MainWindow::~MainWindow()
 {
+    m_settings.setValue("lastNthFrame",ui->spinEveryNThFrame->value());
+    m_settings.setValue("lastXYFactor",ui->spinXYFactor->value());
+
     delete ui;
+}
+
+void MainWindow::saveINI()
+{
+    QString fn=QFileDialog::getSaveFileName(this, tr("Save Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
+    if (fn.size()>0) {
+        m_procModel->save(fn, m_filename);
+        m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
+    }
+}
+
+void MainWindow::loadINI()
+{
+    QString fn=QFileDialog::getOpenFileName(this, tr("Save Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
+    if (fn.size()>0) {
+        m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
+        QString vfn;
+        m_procModel->load(fn, &vfn);
+        if (vfn!=m_filename && vfn.size()>0 && QFile::exists(vfn)) {
+            if (QMessageBox::question(this, tr("Load Video File?"), tr("The INI-file you loaded mentioned a video. Should this video be loaded?"), QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)==QMessageBox::Yes) {
+                openVideo(vfn);
+            }
+        }
+    }
+}
+
+void MainWindow::setButtonsEnabled() {
+    ui->btnDelete->setEnabled(m_procModel->rowCount()>0);
+    ui->actProcessAll->setEnabled(m_procModel->rowCount()>0);
+    ui->btnAddXZ->setEnabled(m_video_scaled.depth()>0);
+    ui->btnAddZY->setEnabled(m_video_scaled.depth()>0);
+}
+
+void MainWindow::showAbout()
+{
+  AboutBox* dlg=new AboutBox(this);
+  dlg->exec();
+  delete dlg;
 }
 
 void MainWindow::openVideo(const QString& filename) {
     QString fn=filename;
     if (fn.size()<=0) {
-        fn=QFileDialog::getOpenFileName(this, tr("Open Video File ..."));
+        fn=QFileDialog::getOpenFileName(this, tr("Open Video File ..."), m_settings.value("lastVideoDir", "").toString());
     }
+    QFileInfo fi(fn);
+    QString ini=fi.absoluteDir().absoluteFilePath(fi.baseName()+".ini");
     if (fn.size()>0) {
+        m_settings.setValue("lastVideoDir", QFileInfo(fn).absolutePath());
         //m_video.load_ffmpeg_external(filename.toLatin1().data(), 'z');
         std::string error;
+        m_procModel->clear();
+        if (QFile::exists(ini)) {
+            m_procModel->load(ini);
+        }
         QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
-        QProgressDialog progress(tr("Opening Video"), "", 0, 2, this);
+        QProgressDialog progress(tr("Opening Video"), tr("Cancel"), 0, 2, this);
         progress.setLabelText(tr("opening file '%1'...").arg(fn));
         progress.setMinimumDuration(0);
         QApplication::processEvents();
@@ -56,13 +122,23 @@ void MainWindow::openVideo(const QString& filename) {
         progress.show();
         QApplication::processEvents();
         QApplication::processEvents();
-        auto progCB=std::bind([](QProgressDialog* progress, int frame) {
+        auto progCB=std::bind([](QProgressDialog* progress, int frame, int maxi) -> bool {
                     if (frame%5==0) {
-                        progress->setValue(1);
-                        progress->setLabelText(tr("Processing frame %1...").arg(frame));
+                        if (maxi>1) {
+                            progress->setValue(frame);
+                            progress->setMaximum(maxi+1);
+                            progress->setLabelText(tr("Reading frame %1/%2...").arg(frame).arg(maxi));
+                        } else {
+                            progress->setValue(1);
+                            progress->setMaximum(2);
+                            progress->setLabelText(tr("Reading frame %1...").arg(frame));
+                        }
+
                         QApplication::processEvents();
+
                     }
-            }, &progress, std::placeholders::_1);
+                    return progress->wasCanceled();
+            }, &progress, std::placeholders::_1, std::placeholders::_2);
         if (!readFFMPEGAsImageStack(m_video_scaled, fn.toStdString(), video_everyNthFrame=ui->spinEveryNThFrame->value(), video_xyFactor=ui->spinXYFactor->value(), &error, progCB)) {
             progress.close();
             QApplication::restoreOverrideCursor();
@@ -76,10 +152,12 @@ void MainWindow::openVideo(const QString& filename) {
             m_filename=fn;
         }
     }
+    setButtonsEnabled();
 }
 
 void MainWindow::recalcCuts(int x, int y)
 {
+    //qDebug()<<"recalcCuts("<<x<<", "<<y<<")  "<<m_video_scaled.width()<<","<<m_video_scaled.height();
     if (x>=0 && x<m_video_scaled.width() && y>=0 && y<m_video_scaled.height()) {
         lastX=x;
         lastY=y;
@@ -117,12 +195,16 @@ void MainWindow::on_btnAddZY_clicked()
 
 void MainWindow::on_btnDelete_clicked()
 {
-    if (ui->table->currentIndex().row()>=0 && ui->table->currentIndex().row()<m_procModel->rowCount()) {
-        m_procModel->removeRow(ui->table->currentIndex().row());
-    }
+    //if (ui->table->currentIndex().row()>=0 && ui->table->currentIndex().row()<m_procModel->rowCount()) {
+        auto rows=ui->table->selectionModel()->selectedRows();
+        //qDebug()<<"delete "<<rows.size();
+        for (auto idx: rows) {
+            m_procModel->removeRow(idx.row());
+        }
+    //}
 }
 
-void MainWindow::on_btnProcessAll_clicked()
+void MainWindow::processAll()
 {
     if (m_filename.size()<=0) return;
     if (m_procModel->rowCount()<=0) return;
@@ -184,40 +266,55 @@ void MainWindow::on_btnProcessAll_clicked()
                 QApplication::processEvents();
             }
             z++;
-        } while (readFFMPEGFrame(frame, vid));
+        } while (!progress.wasCanceled() && readFFMPEGFrame(frame, vid));
         closeFFMPEGVideo(vid);
 
-        QFileInfo fi(m_filename);
-        QString allini=fi.absoluteDir().absoluteFilePath(QString("%1.ini").arg(fi.baseName()));
-        QSettings setall(allini, QSettings::IniFormat);
-        setall.setValue("count", results.size());
-        for (size_t j=0; j<results.size(); j++) {
+        if (!progress.wasCanceled()) {
+            QFileInfo fi(m_filename);
+            QString allini=fi.absoluteDir().absoluteFilePath(QString("%1.ini").arg(fi.baseName()));
+            QSettings setall(allini, QSettings::IniFormat);
+            setall.setValue("count", results.size());
+            setall.setValue("input_file", m_filename);
+            for (size_t j=0; j<results.size(); j++) {
 
-            QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.png").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
-            QString fnini=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.ini").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
-            progress.setLabelText(tr("Saving result %2: '%1' ...").arg(fn).arg(j+1));
-            QApplication::processEvents();
-            QApplication::processEvents();
-            QImage img=CImgToQImage(results[j]);
-            img.save(fn);
-            QSettings set(fnini, QSettings::IniFormat);
-            ProcessingParameterTable::ProcessingItem pi=pis[j];
-            if (pi.mode==ProcessingParameterTable::Mode::ZY) {
-                set.setValue("mode", "ZY");
-                setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "ZY");
+                QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.png").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
+                QString fnini=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.ini").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
+                progress.setLabelText(tr("Saving result %2: '%1' ...").arg(fn).arg(j+1));
+                QApplication::processEvents();
+                QApplication::processEvents();
+                QImage img=CImgToQImage(results[j]);
+                img.save(fn);
+                QSettings set(fnini, QSettings::IniFormat);
+                ProcessingParameterTable::ProcessingItem pi=pis[j];
+                if (pi.mode==ProcessingParameterTable::Mode::ZY) {
+                    set.setValue("mode", "ZY");
+                    setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "ZY");
+                }
+                if (pi.mode==ProcessingParameterTable::Mode::XZ) {
+                    set.setValue("mode", "XZ");
+                    setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "XZ");
+                }
+                set.setValue("location", pi.location);
+                setall.setValue(QString("item%1/location").arg(j,3,10,QChar('0')), pi.location);
+                setall.setValue(QString("item%1/file").arg(j,3,10,QChar('0')), QFileInfo(allini).absoluteDir().relativeFilePath(QFileInfo(fn).absoluteFilePath()));
             }
-            if (pi.mode==ProcessingParameterTable::Mode::XZ) {
-                set.setValue("mode", "XZ");
-                setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "XZ");
-            }
-            set.setValue("location", pi.location);
-            setall.setValue(QString("item%1/location").arg(j,3,10,QChar('0')), pi.location);
-            setall.setValue(QString("item%1/file").arg(j,3,10,QChar('0')), QFileInfo(fn).fileName());
         }
     } else {
         progress.close();
         QApplication::restoreOverrideCursor();
         QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
     }
+}
+
+void MainWindow::tableRowClicked(const QModelIndex &index)
+{
+    //qDebug()<<"clicked "<<index<<"  "<<m_procModel->getItem(index).location;
+    //if (index.isValid()) {
+        if (m_procModel->getItem(index).mode==ProcessingParameterTable::Mode::ZY) {
+            recalcCuts(m_procModel->getItem(index).location/video_xyFactor, lastY);
+        } else if (m_procModel->getItem(index).mode==ProcessingParameterTable::Mode::XZ) {
+            recalcCuts(lastX, m_procModel->getItem(index).location/video_xyFactor);
+        }
+    //}
 }
 

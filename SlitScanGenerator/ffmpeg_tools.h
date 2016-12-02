@@ -10,7 +10,7 @@
  *
  * \return returns \c true on success and \c false else, error messages are returned in \a error.
  */
-bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::string& filename, int everyNthFrame=1, double xyscale=1, std::string* error=nullptr, std::function<void(int)> frameCallback=std::function<void(int)>());
+bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::string& filename, int everyNthFrame=1, double xyscale=1, std::string* error=nullptr, std::function<bool(int,int)> frameCallback=std::function<bool(int,int)>());
 
 struct FFMPEGVideo;
 

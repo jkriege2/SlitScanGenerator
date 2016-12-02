@@ -1,8 +1,64 @@
 #include "processingparametertable.h"
+#include <QFileDialog>
+#include <QSettings>
+#include <QFileInfo>
+#include <QDir>
 
 ProcessingParameterTable::ProcessingParameterTable(QObject *parent)
     : QAbstractTableModel(parent)
 {
+}
+
+void ProcessingParameterTable::clear()
+{
+    beginResetModel();
+    m_data.clear();
+    endResetModel();
+}
+
+void ProcessingParameterTable::load(QString filename, QString* videoFile)
+{
+    beginResetModel();
+    m_data.clear();
+    // QFileDialog::getOpenFileName(this, tr("Open Configuration File ..."), "", tr("INI-File (*.ini)"));
+    QSettings setall(filename, QSettings::IniFormat);
+    int cnt=setall.value("count", 0).toInt();
+    if (videoFile) {
+        *videoFile=setall.value("input_file", "").toString();
+        if (videoFile->size()>0) {
+            *videoFile=QFileInfo(filename).absoluteDir().absoluteFilePath(*videoFile);
+        }
+    }
+    for (int j=0; j<cnt; j++) {
+        ProcessingParameterTable::ProcessingItem pi;
+        pi.location=setall.value(QString("item%1/location").arg(j,3,10,QChar('0')), 0).toInt();
+        if (setall.value(QString("item%1/mode").arg(j,3,10,QChar('0')), "").toString()=="ZY") {
+            pi.mode=Mode::ZY;
+            m_data.push_back(pi);
+        } else if (setall.value(QString("item%1/mode").arg(j,3,10,QChar('0')), "").toString()=="XZ") {
+            pi.mode=Mode::XZ;
+            m_data.push_back(pi);
+        }
+    }
+    endResetModel();
+}
+
+void ProcessingParameterTable::save(QString filename, QString videoFile) const
+{
+    // QFileDialog::getOpenFileName(this, tr("Open Configuration File ..."), "", tr("INI-File (*.ini)"));
+    QSettings setall(filename, QSettings::IniFormat);
+    setall.setValue("count", m_data.size());
+    if (videoFile.size()>0) setall.value("input_file", QFileInfo(filename).absoluteDir().relativeFilePath(videoFile));
+
+    for (int j=0; j<m_data.size(); j++) {
+        ProcessingParameterTable::ProcessingItem pi=m_data[j];
+        setall.setValue(QString("item%1/location").arg(j,3,10,QChar('0')), pi.location);
+        if (pi.mode==Mode::ZY) {
+            setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "ZY");
+        } else if (pi.mode==Mode::XZ) {
+            setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "XZ");
+        }
+    }
 }
 
 QVariant ProcessingParameterTable::headerData(int section, Qt::Orientation orientation, int role) const
@@ -17,6 +73,11 @@ QVariant ProcessingParameterTable::headerData(int section, Qt::Orientation orien
         return section+1;
     }
     return QVariant();
+}
+
+ProcessingParameterTable::ProcessingItem ProcessingParameterTable::getItem(const QModelIndex &idx) const
+{
+    return m_data[idx.row()];
 }
 
 
