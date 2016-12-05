@@ -112,6 +112,7 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
     if (frameCallback) {
         canceled=frameCallback(0, nb_frames);
     }
+    int ifc=0;
 
     while(!canceled && av_read_frame(pFormatCtx, &packet)>=0) {
         // Is this a packet from the video stream?
@@ -121,6 +122,7 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
 
             // Did we get a video frame?
             if(frameFinished) {
+                ifc++;
                 // add frame to CImg
                 if(i%everyNthFrame==0) {
                     // Convert the image from its native format to RGB
@@ -138,7 +140,7 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
                     frame.resize(pCodecCtx->width/xyscale, pCodecCtx->height/xyscale,1,3);
                     video.append(frame, 'z');
                     if (frameCallback) {
-                        if (frameCallback((nb_frames>0)?i:video.depth(), nb_frames)) {
+                        if (frameCallback((nb_frames>0)?ifc:video.depth(), nb_frames)) {
                             canceled=true;
                         }
                     }
