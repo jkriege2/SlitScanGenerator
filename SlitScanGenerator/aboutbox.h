@@ -15,6 +15,8 @@ class AboutBox : public QDialog
         explicit AboutBox(QWidget *parent = 0);
         ~AboutBox();
 
+    protected slots:
+        void openURL(const QUrl& url);
     private:
         Ui::AboutBox *ui;
 };
