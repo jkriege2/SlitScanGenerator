@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Import Video ...</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,1,3,0">
    <item row="1" column="1">

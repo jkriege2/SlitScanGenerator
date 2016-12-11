@@ -50,6 +50,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_procModel, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(setWidgetsEnabledForCurrentMode()));
     connect(m_procModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(setWidgetsEnabledForCurrentMode()));
     connect(m_procModel, SIGNAL(modelReset()), this, SLOT(setWidgetsEnabledForCurrentMode()));
+    connect(ui->chkNormalize, SIGNAL(toggled(bool)),this, SLOT(recalcCuts()));
     setWidgetsEnabledForCurrentMode();
 
     ui->spinStillCount->setValue(m_settings.value("lastStillCount", 5).toInt());
@@ -217,8 +218,16 @@ void MainWindow::recalcCuts(int x, int y)
         lastX=x;
         lastY=y;
         QImage img=CImgToQImage(m_video_scaled, m_video_scaled.depth()/2);
-        QImage imgxz=CImgToQImage(extractXZ(m_video_scaled, y));
-        QImage imgyz=CImgToQImage(extractZY(m_video_scaled, x));
+        cimg_library::CImg<uint8_t> cxz=extractXZ(m_video_scaled, y);
+        cimg_library::CImg<uint8_t> cyz=extractZY(m_video_scaled, x);
+
+        if (ui->chkNormalize->isChecked()) {
+            ProcessingTask::normalizeZY(cyz, ui->spinNormalizeY->value()/video_xyFactor);
+            ProcessingTask::normalizeXZ(cxz, ui->spinNormalizeX->value()/video_xyFactor);
+        }
+
+        QImage imgxz=CImgToQImage(cxz);
+        QImage imgyz=CImgToQImage(cyz);
         {
             QPainter pnt(&img);
             pnt.setPen(QPen(QColor("red")));

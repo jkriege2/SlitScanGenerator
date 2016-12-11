@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QSettings>
 #include <QDir>
+#include <QDebug>
 
 ProcessingTask::ProcessingTask():
     filename(),
@@ -163,26 +164,10 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
             // normalize image if necessary
             if (normalize) {
                 if (pi.mode==Mode::ZY && normalizeY>=0 && normalizeY<results[m_savingFrame].height()) {
-                    auto avg0=results[m_savingFrame].get_row(normalizeY).get_channel(0).mean();
-                    auto avg1=results[m_savingFrame].get_row(normalizeY).get_channel(1).mean();
-                    auto avg2=results[m_savingFrame].get_row(normalizeY).get_channel(2).mean();
-
-                    cimg_forXY(results[m_savingFrame],x,y) {
-                        results[m_savingFrame](x,y,0,0)=results[m_savingFrame](x,y,0,0)*avg0/results[m_savingFrame](x,normalizeY,0,0);
-                        results[m_savingFrame](x,y,0,1)=results[m_savingFrame](x,y,0,1)*avg1/results[m_savingFrame](x,normalizeY,0,1);
-                        results[m_savingFrame](x,y,0,2)=results[m_savingFrame](x,y,0,2)*avg2/results[m_savingFrame](x,normalizeY,0,2);
-                    }
+                    normalizeZY(results[m_savingFrame], normalizeY);
                 }
                 if (pi.mode==Mode::XZ && normalizeX>=0 && normalizeX<results[m_savingFrame].width()) {
-                    auto avg0=results[m_savingFrame].get_column(normalizeX).get_channel(0).mean();
-                    auto avg1=results[m_savingFrame].get_column(normalizeX).get_channel(1).mean();
-                    auto avg2=results[m_savingFrame].get_column(normalizeX).get_channel(2).mean();
-
-                    cimg_forXY(results[m_savingFrame],x,y) {
-                        results[m_savingFrame](x,y,0,0)=results[m_savingFrame](x,y,0,0)*avg0/results[m_savingFrame](normalizeX,y,0,0);
-                        results[m_savingFrame](x,y,0,1)=results[m_savingFrame](x,y,0,1)*avg1/results[m_savingFrame](normalizeX,y,0,1);
-                        results[m_savingFrame](x,y,0,2)=results[m_savingFrame](x,y,0,2)*avg2/results[m_savingFrame](normalizeX,y,0,2);
-                    }
+                    normalizeXZ(results[m_savingFrame], normalizeX);
                 }
             }
 
@@ -222,4 +207,38 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
 void ProcessingTask::processFinalize()
 {
     closeFFMPEGVideo(vid);
+}
+
+void ProcessingTask::normalizeZY(cimg_library::CImg<uint8_t> &img, int normalizeY)
+{
+    if (normalizeY>=0 && normalizeY<img.height()) {
+        cimg_library::CImg<uint8_t> img_in=img;
+        //qDebug()<<"img="<<img.width()<<"x"<<img.height()<<"x"<<img.depth()<<"x"<<img.spectrum();
+        cimg_forC(img,c) {
+            const auto ch=img_in.get_channel(c);
+            const auto row=ch.get_row(normalizeY);
+            const double avg0=row.mean();
+            //qDebug()<<"c="<<c<<"  ch="<<ch.width()<<"x"<<ch.height()<<"x"<<ch.depth()<<"x"<<ch.spectrum()<<"  row="<<row.width()<<"x"<<row.height()<<"x"<<row.depth()<<"x"<<row.spectrum()<<"  => avg0="<<avg0;
+            cimg_forXYZ(img,x,y,z) {
+                const double v=double(img(x,y,z,c))*avg0/double(img_in(x,normalizeY,z,c));
+                img(x,y,z,c)=(v<0)?0:((v>255)?255:v);
+            }
+        }
+    }
+}
+
+void ProcessingTask::normalizeXZ(cimg_library::CImg<uint8_t> &img, int normalizeX)
+{
+    if (normalizeX>=0 && normalizeX<img.width()) {
+        cimg_library::CImg<uint8_t> img_in=img;
+        cimg_forC(img,c) {
+            const auto ch=img_in.get_channel(c);
+            const auto col=ch.get_column(normalizeX);
+            const double avg0=col.mean();
+            cimg_forXYZ(img,x,y,z) {
+                const double v=double(img(x,y,z,c))*avg0/double(img_in(normalizeX,y,z,c));
+                img(x,y,z,c)=(v<0)?0:((v>255)?255:v);
+            }
+        }
+    }
 }

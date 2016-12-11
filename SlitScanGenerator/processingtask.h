@@ -39,6 +39,8 @@ struct ProcessingTask
         bool processStep(int& prog, int& maxProg, QString &message);
         void processFinalize();
 
+        static void normalizeZY(cimg_library::CImg<uint8_t> &img, int normalizeY);
+        static void normalizeXZ(cimg_library::CImg<uint8_t> &img, int normalizeX);
     private:
         QVector<cimg_library::CImg<uint8_t> > results;
         QVector<QString> result_filenames;
