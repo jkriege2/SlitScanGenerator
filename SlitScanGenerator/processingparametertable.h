@@ -2,22 +2,14 @@
 #define PROCESSINGPARAMETERTABLE_H
 
 #include <QAbstractTableModel>
+#include "processingtask.h"
 
 class ProcessingParameterTable : public QAbstractTableModel
 {
         Q_OBJECT
 
     public:
-        enum class Mode {
-            XZ,
-            ZY
-        };
 
-        struct ProcessingItem {
-            inline ProcessingItem(): mode(Mode::XZ), location(-1) {}
-            Mode mode;
-            int location;
-        };
 
         explicit ProcessingParameterTable(QObject *parent = 0);
 
@@ -26,7 +18,7 @@ class ProcessingParameterTable : public QAbstractTableModel
         // Header:
         QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
-        ProcessingItem getItem(const QModelIndex &idx) const;
+        ProcessingTask::ProcessingItem getItem(const QModelIndex &idx) const;
 
         // Basic functionality:
         int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -42,17 +34,17 @@ class ProcessingParameterTable : public QAbstractTableModel
 
         // Add data:
         bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
-        bool addItem(const ProcessingItem& item) ;
+        bool addItem(const ProcessingTask::ProcessingItem& item) ;
 
         // Remove data:
         bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
 
-        const QVector<ProcessingItem>& data() const { return m_data; }
+        inline const QVector<ProcessingTask::ProcessingItem>& dataVector() const { return m_data; }
     public slots:
         void load(QString filename=QString(), QString *videoFile=nullptr);
         void save(QString filename, QString videoFile) const;
     private:
-        QVector<ProcessingItem> m_data;
+        QVector<ProcessingTask::ProcessingItem> m_data;
 };
 
 #endif // PROCESSINGPARAMETERTABLE_H

@@ -20,5 +20,6 @@ void ImageViewer::mouseMoveEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton) {
         emit mouseClicked(event->x(), event->y());
     }
+    emit mouseMoved(event->x(), event->y());
     QLabel::mouseMoveEvent(event);
 }

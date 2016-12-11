@@ -26,8 +26,11 @@ class MainWindow : public QMainWindow
     protected slots:
         void saveINI();
         void loadINI();
+        void loadINI(const QString& filename, QString *vfn);
         void openVideo(const QString &filename=QString());
         void recalcCuts(int x, int y);
+        void recalcCuts();
+        void ImageClicked(int x, int y);
 
         void on_btnAddXZ_clicked();
         void on_btnAddZY_clicked();
@@ -49,6 +52,10 @@ class MainWindow : public QMainWindow
             loaded
         };
 
+
+        int lastX;
+        int lastY;
+
         DisplayModes m_mode;
 
         /** \brief internal video, scaled version */
@@ -60,9 +67,6 @@ class MainWindow : public QMainWindow
         QString m_ffmpegPath;
 
         ProcessingParameterTable* m_procModel;
-
-        int lastX;
-        int lastY;
 
         int video_everyNthFrame;
         double video_xyFactor;

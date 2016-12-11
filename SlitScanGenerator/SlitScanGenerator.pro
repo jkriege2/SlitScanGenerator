@@ -24,7 +24,11 @@ SOURCES += main.cpp\
     imageviewer.cpp \
     processingparametertable.cpp \
     aboutbox.cpp \
-    importdialog.cpp
+    importdialog.cpp \
+    processingwidget.cpp \
+    processingthread.cpp \
+    processingtask.cpp \
+    taskswidget.cpp
 
 HEADERS  += mainwindow.h \
             ../CImg/CImg.h \
@@ -33,11 +37,16 @@ HEADERS  += mainwindow.h \
     imageviewer.h \
     processingparametertable.h \
     aboutbox.h \
-    importdialog.h
+    importdialog.h \
+    processingwidget.h \
+    processingthread.h \
+    processingtask.h \
+    taskswidget.h
 
 FORMS    += mainwindow.ui \
     aboutbox.ui \
-    importdialog.ui
+    importdialog.ui \
+    processingwidget.ui
 
 INCLUDEPATH += ../CImg \
                ../ffmpeg/include

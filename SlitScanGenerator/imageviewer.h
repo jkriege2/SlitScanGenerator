@@ -11,6 +11,7 @@ class ImageViewer : public QLabel
         explicit ImageViewer(QWidget *parent = 0);
     signals:
         void mouseClicked(int x, int y);
+        void mouseMoved(int x, int y);
     protected:
         void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
         void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;

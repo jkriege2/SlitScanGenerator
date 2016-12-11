@@ -12,6 +12,7 @@
 #include <QSettings>
 #include <vector>
 #include "importdialog.h"
+#include "processingthread.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -45,15 +46,24 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->scrollXY->verticalScrollBar(), SIGNAL(sliderMoved(int)), ui->scrollYZ->verticalScrollBar(), SLOT(setValue(int)));
     connect(ui->scrollYZ->verticalScrollBar(), SIGNAL(sliderMoved(int)), ui->scrollXY->verticalScrollBar(), SLOT(setValue(int)));
     connect(ui->table, SIGNAL(clicked(QModelIndex)), this, SLOT(tableRowClicked(QModelIndex)));
-    connect(labXY, SIGNAL(mouseClicked(int,int)), this, SLOT(recalcCuts(int,int)));
+    connect(labXY, SIGNAL(mouseClicked(int,int)), this, SLOT(ImageClicked(int,int)));
     connect(m_procModel, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(setWidgetsEnabledForCurrentMode()));
     connect(m_procModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(setWidgetsEnabledForCurrentMode()));
     connect(m_procModel, SIGNAL(modelReset()), this, SLOT(setWidgetsEnabledForCurrentMode()));
     setWidgetsEnabledForCurrentMode();
+
+    ui->spinStillCount->setValue(m_settings.value("lastStillCount", 5).toInt());
+    ui->spinStillDelta->setValue(m_settings.value("lastStillDelta", 60).toInt());
+    ui->chkStillStrip->setChecked(m_settings.value("lastStillStrip", true).toBool());
+    ui->chkStillDeparateFile->setChecked(m_settings.value("lastStillSeparateFiles", false).toBool());
 }
 
 MainWindow::~MainWindow()
 {
+    m_settings.setValue("lastStillCount", ui->spinStillCount->value());
+    m_settings.setValue("lastStillDelta", ui->spinStillDelta->value());
+    m_settings.setValue("lastStillStrip", ui->chkStillStrip->isChecked());
+    m_settings.setValue("lastStillSeparateFiles", ui->chkStillDeparateFile->isChecked());
 
     delete ui;
 }
@@ -63,7 +73,31 @@ void MainWindow::saveINI()
     QString fn=QFileDialog::getSaveFileName(this, tr("Save Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
     if (fn.size()>0) {
         m_procModel->save(fn, m_filename);
+        QSettings setall(fn, QSettings::IniFormat);
+        setall.setValue("stills/count", ui->spinStillCount->value());
+        setall.setValue("stills/delta", ui->spinStillDelta->value());
+        setall.setValue("stills/strip", ui->chkStillStrip->isChecked());
+        setall.setValue("stills/separate_files", ui->chkStillDeparateFile->isChecked());
+        setall.setValue("normalize/enabled", ui->chkNormalize->isChecked());
+        setall.setValue("normalize/x", ui->spinNormalizeX->value());
+        setall.setValue("normalize/y", ui->spinNormalizeY->value());
         m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
+    }
+}
+
+void MainWindow::loadINI(const QString &fn, QString* vfn)
+{
+    if (fn.size()>0) {
+        m_procModel->load(fn, vfn);
+
+        QSettings setall(fn, QSettings::IniFormat);
+        ui->spinStillCount->setValue(setall.value("stills/count", ui->spinStillCount->value()).toInt());
+        ui->spinStillDelta->setValue(setall.value("stills/delta", ui->spinStillDelta->value()).toInt());
+        ui->chkStillStrip->setChecked(setall.value("stills/strip", ui->chkStillStrip->isChecked()).toBool());
+        ui->chkStillDeparateFile->setChecked(setall.value("stills/separate_files", ui->chkStillDeparateFile->isChecked()).toBool());
+        ui->chkNormalize->setChecked(setall.value("normalize/enabled", ui->chkNormalize->isChecked()).toBool());
+        ui->spinNormalizeX->setValue(setall.value("normalize/x", ui->spinNormalizeX->value()).toInt());
+        ui->spinNormalizeY->setValue(setall.value("normalize/y", ui->spinNormalizeY->value()).toInt());
     }
 }
 
@@ -73,7 +107,7 @@ void MainWindow::loadINI()
     if (fn.size()>0) {
         m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
         QString vfn;
-        m_procModel->load(fn, &vfn);
+        loadINI(fn, &vfn);
         if (vfn!=m_filename && vfn.size()>0 && QFile::exists(vfn)) {
             if (QMessageBox::question(this, tr("Load Video File?"), tr("The INI-file you loaded mentioned a video. Should this video be loaded?"), QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)==QMessageBox::Yes) {
                 openVideo(vfn);
@@ -82,10 +116,11 @@ void MainWindow::loadINI()
     }
 }
 
+
 void MainWindow::setWidgetsEnabledForCurrentMode() {
     const bool isloaded =(m_mode==DisplayModes::loaded);
 
-    ui->widProps->setEnabled(isloaded);
+    ui->tabWidget->setEnabled(isloaded);
     ui->grpParams->setEnabled(isloaded);
     ui->scrollXY->setEnabled(isloaded);
     ui->scrollYZ->setEnabled(isloaded);
@@ -121,7 +156,7 @@ void MainWindow::openVideo(const QString& filename) {
         if (dlg->openVideo(fn, ini)) {
            m_procModel->clear();
            if (QFile::exists(ini)) {
-               m_procModel->load(ini);
+               loadINI(ini, NULL);
            }
            if (dlg->exec()==QDialog::Accepted) {
                ui->labFilename->setText(fn);
@@ -158,14 +193,14 @@ void MainWindow::openVideo(const QString& filename) {
                    QApplication::restoreOverrideCursor();
                    QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
                    m_filename="";
-                   m_mode==DisplayModes::unloaded;
+                   m_mode=DisplayModes::unloaded;
                } else {
                    progress.close();
                    QApplication::restoreOverrideCursor();
                    recalcCuts(m_video_scaled.width()/2, m_video_scaled.height()/2);
                    QMessageBox::information(this, tr("Video opened"), tr("Video: %1\nframe size: %2x%3\n frames: %4\n color channels: %5").arg(fn).arg(m_video_scaled.width()).arg(m_video_scaled.height()).arg(m_video_scaled.depth()).arg(m_video_scaled.spectrum()));
                    m_filename=fn;
-                   m_mode==DisplayModes::loaded;
+                   m_mode=DisplayModes::loaded;
                }
            }
         }
@@ -182,24 +217,57 @@ void MainWindow::recalcCuts(int x, int y)
         lastX=x;
         lastY=y;
         QImage img=CImgToQImage(m_video_scaled, m_video_scaled.depth()/2);
+        QImage imgxz=CImgToQImage(extractXZ(m_video_scaled, y));
+        QImage imgyz=CImgToQImage(extractZY(m_video_scaled, x));
         {
             QPainter pnt(&img);
             pnt.setPen(QPen(QColor("red")));
             pnt.drawLine(0, y,img.width(),y);
             pnt.drawLine(x, 0,x, img.height());
+            if (ui->chkNormalize->isChecked()) {
+                pnt.setPen(QPen(QColor("blue")));
+                pnt.drawRect(QRect(ui->spinNormalizeX->value()/video_xyFactor-1, ui->spinNormalizeY->value()/video_xyFactor-1,3,3));
+            }
+        }
+        if (ui->chkNormalize->isChecked()) {
+            QPainter pnt(&imgxz);
+            pnt.setPen(QPen(QColor("blue")));
+            pnt.drawLine(ui->spinNormalizeX->value()/video_xyFactor, 0,ui->spinNormalizeX->value()/video_xyFactor, imgxz.height());
+        }
+        if (ui->chkNormalize->isChecked()) {
+            QPainter pnt(&imgyz);
+            pnt.setPen(QPen(QColor("blue")));
+            pnt.drawLine(0,ui->spinNormalizeY->value()/video_xyFactor, imgyz.width(),ui->spinNormalizeY->value()/video_xyFactor);
         }
 
+
         labXY->setPixmap(QPixmap::fromImage(img));
-        labXZ->setPixmap(QPixmap::fromImage(CImgToQImage(extractXZ(m_video_scaled, y))));
-        labYZ->setPixmap(QPixmap::fromImage(CImgToQImage(extractZY(m_video_scaled, x))));
+        labXZ->setPixmap(QPixmap::fromImage(imgxz));
+        labYZ->setPixmap(QPixmap::fromImage(imgyz));
+    }
+}
+
+void MainWindow::recalcCuts()
+{
+    recalcCuts(lastX, lastY);
+}
+
+void MainWindow::ImageClicked(int x, int y)
+{
+    if (ui->tabWidget->currentIndex()==2) {
+        ui->spinNormalizeX->setValue(x*video_xyFactor);
+        ui->spinNormalizeY->setValue(y*video_xyFactor);
+        recalcCuts();
+    } else {
+        recalcCuts(x,y);
     }
 }
 
 void MainWindow::on_btnAddXZ_clicked()
 {
     if (lastY<0) return;
-    ProcessingParameterTable::ProcessingItem item;
-    item.mode=ProcessingParameterTable::Mode::XZ;
+    ProcessingTask::ProcessingItem item;
+    item.mode=ProcessingTask::Mode::XZ;
     item.location=lastY*video_xyFactor;
     m_procModel->addItem(item);
 }
@@ -207,8 +275,8 @@ void MainWindow::on_btnAddXZ_clicked()
 void MainWindow::on_btnAddZY_clicked()
 {
     if (lastX<0) return;
-    ProcessingParameterTable::ProcessingItem item;
-    item.mode=ProcessingParameterTable::Mode::ZY;
+    ProcessingTask::ProcessingItem item;
+    item.mode=ProcessingTask::Mode::ZY;
     item.location=lastX*video_xyFactor;
     m_procModel->addItem(item);
 }
@@ -218,8 +286,13 @@ void MainWindow::on_btnDelete_clicked()
     //if (ui->table->currentIndex().row()>=0 && ui->table->currentIndex().row()<m_procModel->rowCount()) {
         auto rows=ui->table->selectionModel()->selectedRows();
         //qDebug()<<"delete "<<rows.size();
+        QVector<int> r;
         for (auto idx: rows) {
-            m_procModel->removeRow(idx.row());
+            r.push_back(idx.row());
+        }
+        std::sort(r.begin(), r.end(), [](int a, int b) { return a>=b;});
+        for (auto idx: r) {
+            m_procModel->removeRow(idx);
         }
     //}
 }
@@ -228,111 +301,33 @@ void MainWindow::processAll()
 {
     if (m_filename.size()<=0) return;
     if (m_procModel->rowCount()<=0) return;
-    QProgressDialog progress(tr("Processing Video"), tr("Cancel"), 0, m_video_scaled.depth()*video_everyNthFrame, this);
-    progress.setLabelText(tr("Opening file '%1' ...").arg(m_filename));
-    progress.setMinimumDuration(0);
-    QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
-    progress.setWindowModality(Qt::WindowModal);
-    QApplication::processEvents();
-    QApplication::processEvents();
-    std::string error;
-    FFMPEGVideo* vid=openFFMPEGVideo(m_filename.toStdString(), &error);
-    int z=0;
-    cimg_library::CImg<uint8_t> frame;
-    if (vid && readFFMPEGFrame(frame, vid)) {
-        std::vector<cimg_library::CImg<uint8_t> > results;
-        QVector<ProcessingParameterTable::ProcessingItem> pis=m_procModel->data();
-        int j=0;
-        qDebug()<<"frame: "<<frame.width()<<"x"<<frame.height()<<"x"<<frame.depth()<<" - "<<frame.spectrum();
-        qDebug()<<"m_video_scaled: "<<m_video_scaled.width()<<"x"<<m_video_scaled.height()<<"x"<<m_video_scaled.depth()<<" - "<<m_video_scaled.spectrum();
-        qDebug()<<"video_everyNthFrame="<<video_everyNthFrame;
-        for (ProcessingParameterTable::ProcessingItem pi: pis) {
-            if (pi.mode==ProcessingParameterTable::Mode::ZY) {
-                results.push_back(cimg_library::CImg<uint8_t>());
-                results[j].assign(m_video_scaled.depth()*video_everyNthFrame, frame.height(), 1, 3);
-                qDebug()<<j<<": ZY "<<results[j].width()<<"x"<<results[j].height();
-            } else if (pi.mode==ProcessingParameterTable::Mode::XZ) {
-                results.push_back(cimg_library::CImg<uint8_t>());
-                results[j].assign(frame.width(), m_video_scaled.depth()*video_everyNthFrame, 1, 3);
-                qDebug()<<j<<": XZ "<<results[j].width()<<"x"<<results[j].height();
-            }
-            j++;
-        }
-        progress.setLabelText(tr("Processing video '%1' ...").arg(m_filename));
-        QApplication::processEvents();
-        do {
 
-            for (int j=0; j<pis.size(); j++) {
-                ProcessingParameterTable::ProcessingItem pi=pis[j];
-                if (pi.mode==ProcessingParameterTable::Mode::ZY && z<results[j].width()) {
-                    cimg_forY( frame, y )
-                    {
-                        results[j](z, y, 0,0)=frame(pi.location, y, 0, 0);
-                        results[j](z, y, 0,1)=frame(pi.location, y, 0, 1);
-                        results[j](z, y, 0,2)=frame(pi.location, y, 0, 2);
-                    }
-                } else if (pi.mode==ProcessingParameterTable::Mode::XZ && z<results[j].height()) {
-                    cimg_forX( frame, x )
-                    {
-                        results[j](x, z, 0,0)=frame(x, pi.location,  0, 0);
-                        results[j](x, z, 0,1)=frame(x, pi.location,  0, 1);
-                        results[j](x, z, 0,2)=frame(x, pi.location,  0, 2);
-                    }
-                }
-            }
+    ProcessingTask* task=new ProcessingTask();
+    task->filename=m_filename;
+    task->outputFrames=m_video_scaled.depth()*video_everyNthFrame;
+    task->pis=m_procModel->dataVector();
 
-            if (z%5==0) {
-                progress.setValue(z);
-                QApplication::processEvents();
-            }
-            z++;
-        } while (!progress.wasCanceled() && readFFMPEGFrame(frame, vid));
-        closeFFMPEGVideo(vid);
+    task->stillCnt=ui->spinStillCount->value();
+    task->stillDelta=ui->spinStillDelta->value();
+    task->stillStrip=ui->chkStillStrip->isChecked();
+    task->stillSeparateFiles=ui->chkStillDeparateFile->isChecked();
 
-        if (!progress.wasCanceled()) {
-            QFileInfo fi(m_filename);
-            QString allini=fi.absoluteDir().absoluteFilePath(QString("%1.ini").arg(fi.baseName()));
-            QSettings setall(allini, QSettings::IniFormat);
-            setall.setValue("count", results.size());
-            setall.setValue("input_file", m_filename);
-            for (size_t j=0; j<results.size(); j++) {
+    task->normalize=ui->chkNormalize->isChecked();
+    task->normalizeX=ui->spinNormalizeX->value();
+    task->normalizeY=ui->spinNormalizeY->value();
 
-                QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.png").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
-                QString fnini=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.ini").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
-                progress.setLabelText(tr("Saving result %2: '%1' ...").arg(fn).arg(j+1));
-                QApplication::processEvents();
-                QApplication::processEvents();
-                QImage img=CImgToQImage(results[j]);
-                img.save(fn);
-                QSettings set(fnini, QSettings::IniFormat);
-                ProcessingParameterTable::ProcessingItem pi=pis[j];
-                if (pi.mode==ProcessingParameterTable::Mode::ZY) {
-                    set.setValue("mode", "ZY");
-                    setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "ZY");
-                }
-                if (pi.mode==ProcessingParameterTable::Mode::XZ) {
-                    set.setValue("mode", "XZ");
-                    setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "XZ");
-                }
-                set.setValue("location", pi.location);
-                setall.setValue(QString("item%1/location").arg(j,3,10,QChar('0')), pi.location);
-                setall.setValue(QString("item%1/file").arg(j,3,10,QChar('0')), QFileInfo(allini).absoluteDir().relativeFilePath(QFileInfo(fn).absoluteFilePath()));
-            }
-        }
-    } else {
-        progress.close();
-        QApplication::restoreOverrideCursor();
-        QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
-    }
+    ProcessingThread* thr=new ProcessingThread(task, this);
+    ui->widProcessing->push_back(thr);
+
 }
 
 void MainWindow::tableRowClicked(const QModelIndex &index)
 {
     //qDebug()<<"clicked "<<index<<"  "<<m_procModel->getItem(index).location;
     //if (index.isValid()) {
-        if (m_procModel->getItem(index).mode==ProcessingParameterTable::Mode::ZY) {
+        if (m_procModel->getItem(index).mode==ProcessingTask::Mode::ZY) {
             recalcCuts(m_procModel->getItem(index).location/video_xyFactor, lastY);
-        } else if (m_procModel->getItem(index).mode==ProcessingParameterTable::Mode::XZ) {
+        } else if (m_procModel->getItem(index).mode==ProcessingTask::Mode::XZ) {
             recalcCuts(lastX, m_procModel->getItem(index).location/video_xyFactor);
         }
     //}
