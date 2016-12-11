@@ -187,6 +187,7 @@ struct FFMPEGVideo {
     uint8_t *buffer ;
     int numBytes;
     struct SwsContext *sws_ctx ;
+    int nb_frames;
     int frameFinished;
     AVPacket packet;
     int videoStream;
@@ -291,6 +292,8 @@ FFMPEGVideo *openFFMPEGVideo(const std::string &filename, std::string *error)
 
     res->i=0;
 
+    res->nb_frames =res-> pFormatCtx->streams[res->videoStream]->nb_frames;
+
     return res;
 }
 
@@ -352,4 +355,9 @@ void closeFFMPEGVideo(FFMPEGVideo *video)
 
         free(video);
     }
+}
+
+int getFrameCount(const FFMPEGVideo *video)
+{
+    return video->nb_frames;
 }

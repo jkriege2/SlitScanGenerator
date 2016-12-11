@@ -34,7 +34,7 @@ class MainWindow : public QMainWindow
         void on_btnDelete_clicked();
         void processAll();
         void tableRowClicked(const QModelIndex &index);
-        void setButtonsEnabled();
+        void setWidgetsEnabledForCurrentMode();
         void showAbout();
     private:
         Ui::MainWindow *ui;
@@ -43,6 +43,14 @@ class MainWindow : public QMainWindow
         QLabel* labXZ;
         QLabel* labYZ;
     protected:
+
+        enum class DisplayModes {
+            unloaded,
+            loaded
+        };
+
+        DisplayModes m_mode;
+
         /** \brief internal video, scaled version */
         cimg_library::CImg<uint8_t> m_video_scaled;
         QString m_filename;

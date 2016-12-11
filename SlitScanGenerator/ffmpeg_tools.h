@@ -17,6 +17,7 @@ struct FFMPEGVideo;
 FFMPEGVideo* openFFMPEGVideo(const std::string& filename, std::string* error=nullptr);
 bool readFFMPEGFrame(cimg_library::CImg<uint8_t>& frame, FFMPEGVideo* video);
 void closeFFMPEGVideo(FFMPEGVideo* video);
+int getFrameCount(const FFMPEGVideo* video);
 
 void initFFMPEG();
 #endif // CIMG_TOOLS_H

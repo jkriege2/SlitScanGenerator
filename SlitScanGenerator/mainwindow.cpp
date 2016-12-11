@@ -11,12 +11,14 @@
 #include <QFileInfo>
 #include <QSettings>
 #include <vector>
+#include "importdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     lastX(-1),
     lastY(-1),
+    m_mode(DisplayModes::unloaded),
     m_settings(QSettings::UserScope, "jkrieger.de", "SlitScanGenerator")
 {
     initFFMPEG();
@@ -44,18 +46,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->scrollYZ->verticalScrollBar(), SIGNAL(sliderMoved(int)), ui->scrollXY->verticalScrollBar(), SLOT(setValue(int)));
     connect(ui->table, SIGNAL(clicked(QModelIndex)), this, SLOT(tableRowClicked(QModelIndex)));
     connect(labXY, SIGNAL(mouseClicked(int,int)), this, SLOT(recalcCuts(int,int)));
-    connect(m_procModel, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(setButtonsEnabled()));
-    connect(m_procModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(setButtonsEnabled()));
-    connect(m_procModel, SIGNAL(modelReset()), this, SLOT(setButtonsEnabled()));
-    setButtonsEnabled();
-    ui->spinEveryNThFrame->setValue(m_settings.value("lastNthFrame", 10).toInt());
-    ui->spinXYFactor->setValue(m_settings.value("lastXYFactor", 4).toDouble());
+    connect(m_procModel, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(setWidgetsEnabledForCurrentMode()));
+    connect(m_procModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(setWidgetsEnabledForCurrentMode()));
+    connect(m_procModel, SIGNAL(modelReset()), this, SLOT(setWidgetsEnabledForCurrentMode()));
+    setWidgetsEnabledForCurrentMode();
 }
 
 MainWindow::~MainWindow()
 {
-    m_settings.setValue("lastNthFrame",ui->spinEveryNThFrame->value());
-    m_settings.setValue("lastXYFactor",ui->spinXYFactor->value());
 
     delete ui;
 }
@@ -84,7 +82,15 @@ void MainWindow::loadINI()
     }
 }
 
-void MainWindow::setButtonsEnabled() {
+void MainWindow::setWidgetsEnabledForCurrentMode() {
+    const bool isloaded =(m_mode==DisplayModes::loaded);
+
+    ui->widProps->setEnabled(isloaded);
+    ui->grpParams->setEnabled(isloaded);
+    ui->scrollXY->setEnabled(isloaded);
+    ui->scrollYZ->setEnabled(isloaded);
+    ui->scrollXZ->setEnabled(isloaded);
+
     ui->btnDelete->setEnabled(m_procModel->rowCount()>0);
     ui->actProcessAll->setEnabled(m_procModel->rowCount()>0);
     ui->btnAddXZ->setEnabled(m_video_scaled.depth()>0);
@@ -104,55 +110,69 @@ void MainWindow::openVideo(const QString& filename) {
         fn=QFileDialog::getOpenFileName(this, tr("Open Video File ..."), m_settings.value("lastVideoDir", "").toString());
     }
     QFileInfo fi(fn);
-    QString ini=fi.absoluteDir().absoluteFilePath(fi.baseName()+".ini");
+    QString ini;
     if (fn.size()>0) {
         m_settings.setValue("lastVideoDir", QFileInfo(fn).absolutePath());
         //m_video.load_ffmpeg_external(filename.toLatin1().data(), 'z');
         std::string error;
-        m_procModel->clear();
-        if (QFile::exists(ini)) {
-            m_procModel->load(ini);
-        }
-        QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
-        QProgressDialog progress(tr("Opening Video"), tr("Cancel"), 0, 2, this);
-        progress.setLabelText(tr("opening file '%1'...").arg(fn));
-        progress.setMinimumDuration(0);
-        QApplication::processEvents();
-        progress.setWindowModality(Qt::WindowModal);
-        progress.show();
-        QApplication::processEvents();
-        QApplication::processEvents();
-        auto progCB=std::bind([](QProgressDialog* progress, int frame, int maxi) -> bool {
-                    if (frame%5==0) {
-                        if (maxi>1) {
-                            progress->setValue(frame);
-                            progress->setMaximum(maxi+1);
-                            progress->setLabelText(tr("Reading frame %1/%2...").arg(frame).arg(maxi));
-                        } else {
-                            progress->setValue(1);
-                            progress->setMaximum(2);
-                            progress->setLabelText(tr("Reading frame %1...").arg(frame));
-                        }
 
-                        QApplication::processEvents();
 
-                    }
-                    return progress->wasCanceled();
-            }, &progress, std::placeholders::_1, std::placeholders::_2);
-        if (!readFFMPEGAsImageStack(m_video_scaled, fn.toStdString(), video_everyNthFrame=ui->spinEveryNThFrame->value(), video_xyFactor=ui->spinXYFactor->value(), &error, progCB)) {
-            progress.close();
-            QApplication::restoreOverrideCursor();
-            QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
-            m_filename="";
-        } else {
-            progress.close();
-            QApplication::restoreOverrideCursor();
-            recalcCuts(m_video_scaled.width()/2, m_video_scaled.height()/2);
-            QMessageBox::information(this, tr("Video opened"), tr("Video: %1\nframe size: %2x%3\n frames: %4\n color channels: %5").arg(fn).arg(m_video_scaled.width()).arg(m_video_scaled.height()).arg(m_video_scaled.depth()).arg(m_video_scaled.spectrum()));
-            m_filename=fn;
+        ImportDialog* dlg=new ImportDialog(this, &m_settings);
+        if (dlg->openVideo(fn, ini)) {
+           m_procModel->clear();
+           if (QFile::exists(ini)) {
+               m_procModel->load(ini);
+           }
+           if (dlg->exec()==QDialog::Accepted) {
+               ui->labFilename->setText(fn);
+               ui->labProps->setText(tr("%1 frames, %2x%3 Pixels^2").arg(dlg->getFrames()).arg(dlg->getWidth()).arg(dlg->getHeight()));
+               ui->labPreviewSettings->setText(tr("every %1-th frame, 1/%2x-scaling").arg(dlg->getEveryNthFrame()).arg(dlg->getXYScaleFactor()));
+               QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+               QProgressDialog progress(tr("Opening Video"), tr("Cancel"), 0, 2, this);
+               progress.setLabelText(tr("opening file '%1'...").arg(fn));
+               progress.setMinimumDuration(0);
+               QApplication::processEvents();
+               progress.setWindowModality(Qt::WindowModal);
+               progress.show();
+               QApplication::processEvents();
+               QApplication::processEvents();
+               auto progCB=std::bind([](QProgressDialog* progress, int frame, int maxi) -> bool {
+                           if (frame%5==0) {
+                               if (maxi>1) {
+                                   progress->setValue(frame);
+                                   progress->setMaximum(maxi+1);
+                                   progress->setLabelText(tr("Reading frame %1/%2...").arg(frame).arg(maxi));
+                               } else {
+                                   progress->setValue(1);
+                                   progress->setMaximum(2);
+                                   progress->setLabelText(tr("Reading frame %1...").arg(frame));
+                               }
+
+                               QApplication::processEvents();
+
+                           }
+                           return progress->wasCanceled();
+                   }, &progress, std::placeholders::_1, std::placeholders::_2);
+               if (!readFFMPEGAsImageStack(m_video_scaled, fn.toStdString(), video_everyNthFrame=dlg->getEveryNthFrame(), video_xyFactor=dlg->getXYScaleFactor(), &error, progCB)) {
+                   progress.close();
+                   QApplication::restoreOverrideCursor();
+                   QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
+                   m_filename="";
+                   m_mode==DisplayModes::unloaded;
+               } else {
+                   progress.close();
+                   QApplication::restoreOverrideCursor();
+                   recalcCuts(m_video_scaled.width()/2, m_video_scaled.height()/2);
+                   QMessageBox::information(this, tr("Video opened"), tr("Video: %1\nframe size: %2x%3\n frames: %4\n color channels: %5").arg(fn).arg(m_video_scaled.width()).arg(m_video_scaled.height()).arg(m_video_scaled.depth()).arg(m_video_scaled.spectrum()));
+                   m_filename=fn;
+                   m_mode==DisplayModes::loaded;
+               }
+           }
         }
+
+        delete dlg;
     }
-    setButtonsEnabled();
+    setWidgetsEnabledForCurrentMode();
 }
 
 void MainWindow::recalcCuts(int x, int y)
