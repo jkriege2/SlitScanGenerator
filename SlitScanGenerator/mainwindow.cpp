@@ -215,7 +215,7 @@ void MainWindow::openVideo(const QString& filename) {
                    m_filename="";
                    m_mode=DisplayModes::unloaded;
                } else {
-                   if (dlg->getFramesHR()>0 && readFFMPEGAsImageStack(m_video_some_frames, fn.toStdString(), 1, 1, &error, progCB, dlg->getFramesHR())) {
+                   if (dlg->getFramesHR()<=0 || readFFMPEGAsImageStack(m_video_some_frames, fn.toStdString(), 1, 1, &error, progCB, dlg->getFramesHR())) {
                        progress.close();
                        QApplication::restoreOverrideCursor();
                        recalcAndRedisplaySamples(m_video_xytscaled.width()/2, m_video_xytscaled.height()/2);
