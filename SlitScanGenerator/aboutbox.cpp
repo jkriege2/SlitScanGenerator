@@ -7,7 +7,8 @@ AboutBox::AboutBox(QWidget *parent) :
     ui(new Ui::AboutBox)
 {
     ui->setupUi(this);
-    connect(ui->labelText, SIGNAL(openURL(QUrl)), this, SLOT(openURL(QUrl)));
+    connect(ui->labelText, SIGNAL(linkActivated(QString)), this, SLOT(openURL(QUrl)));
+    ui->labVersion->setText(tr("%1-bits").arg(sizeof(void*)*8));
 }
 
 AboutBox::~AboutBox()

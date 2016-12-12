@@ -45,7 +45,6 @@ void TasksWidget::startNext()
     int maxT=QThread::idealThreadCount()-1;
     if (maxT<0) maxT=1;
 
-    maxT=1;
 
     for (int i=0; i<m_threads.size(); i++) {
         if (m_running<maxT && !m_threads[i]->isWaiting()) {

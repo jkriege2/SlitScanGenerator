@@ -6,15 +6,32 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>648</width>
-    <height>299</height>
+    <width>661</width>
+    <height>372</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>About ...</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,0" columnstretch="0,1">
-   <item row="0" column="1">
+  <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,1">
+   <item row="2" column="2">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2">
+    <widget class="QLabel" name="labVersion">
+     <property name="text">
+      <string/>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="2">
     <widget class="QLabel" name="label_2">
      <property name="font">
       <font>
@@ -31,7 +48,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
+   <item row="6" column="0" colspan="3">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -41,7 +58,20 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
+   <item row="0" column="0" rowspan="5">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="slitscangenerator.qrc">:/icons/icons/logo_128x128.png</pixmap>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="2">
     <widget class="QLabel" name="labelText">
      <property name="text">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This softwrae generates SlitScan photography images from videos, i.e. XT/YT-slices.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;(c) 2016 by Jan W. Krieger (jan@jkrieger.de)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;It is licensed under the terms of the &lt;/span&gt;&lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;&lt;span style=&quot; font-weight:600; text-decoration: underline; color:#0000ff;&quot;&gt;GPL 3.0&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;, or above.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The source code if this application is available from:&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/jkriege2/SlitScanGenerator&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://github.com/jkriege2/SlitScanGenerator&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;It uses these libraries for its GUI, image processing and reading videos:&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;Qt (&lt;a href=&quot;https://www.qt.io/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://www.qt.io/&lt;/span&gt;&lt;/a&gt;) -- CImg (&lt;a href=&quot;http://cimg.eu/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;http://cimg.eu/&lt;/span&gt;&lt;/a&gt;) -- FFMPEG (&lt;a href=&quot;https://ffmpeg.org/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://ffmpeg.org/&lt;/span&gt;&lt;/a&gt;)&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -54,18 +84,41 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0" rowspan="2">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string/>
-     </property>
-     <property name="pixmap">
-      <pixmap resource="slitscangenerator.qrc">:/icons/icons/logo_128x128.png</pixmap>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+   <item row="5" column="0" colspan="3">
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
      </property>
     </widget>
+   </item>
+   <item row="0" column="1">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="3" column="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>

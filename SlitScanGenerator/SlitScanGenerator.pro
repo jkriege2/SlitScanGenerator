@@ -12,10 +12,12 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = SlitScanGenerator
 TEMPLATE = app
 
-QMAKE_TARGET_PRODUCT="SlitScanGenerator"
-QMAKE_TARGET_COPYRIGHT="(c) 2016 by Jan W. Krieger"
+QMAKE_TARGET_PRODUCT = "SlitScanGenerator"
+QMAKE_TARGET_COPYRIGHT = "(c) 2016 by Jan W. Krieger"
 win32:RC_ICONS += ./icons/logo_64x64.ico
-QMAKE_TARGET_COMPANY="https://github.com/jkriege2/SlitScanGenerator"
+QMAKE_TARGET_COMPANY = "https://github.com/jkriege2/SlitScanGenerator"
+
+FFMPEG_PATH = ../ffmpeg/win64
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -49,11 +51,11 @@ FORMS    += mainwindow.ui \
     processingwidget.ui
 
 INCLUDEPATH += ../CImg \
-               ../ffmpeg/include
+               $$FFMPEG_PATH/include
 
 DEFINES +=
 
-LIBS += -lm -L../ffmpeg/lib -lavutil -lavcodec -lavdevice -lswscale -lavformat -lswresample -lpostproc -lavfilter
+LIBS += -lm -L$$FFMPEG_PATH/lib -lavutil -lavcodec -lavdevice -lswscale -lavformat -lswresample -lpostproc -lavfilter
 
 MAKE_CXXFLAGS_RELEASE += -O3 -fopenmp -msse2 -msse -fpmath=both
 
