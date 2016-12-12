@@ -11,7 +11,7 @@ extern "C" {
 
 
 
-bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::string& filename, int everyNthFrame, double xyscale, std::string* error, std::function<bool(int, int)> frameCallback)
+bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::string& filename, int everyNthFrame, double xyscale, std::string* error, std::function<bool(int, int)> frameCallback, int maxFrame)
 {
 
     // see  http://dranger.com/ffmpeg/tutorial01.html
@@ -153,6 +153,9 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
         av_free_packet(&packet);
 
         i++;
+        if (maxFrame>0 && ifc>=maxFrame) {
+            break;
+        }
     }
 
     // Free the RGB image

@@ -25,6 +25,9 @@ class ImportDialog : public QDialog
         int getWidth() const;
         int getHeight() const;
         int getFrames() const;
+        int getFramesHR() const;
+    public slots:
+        void on_spinHRFrames_valueChanged(int nth);
     protected slots:
         void on_spinXYFactor_valueChanged(double scale);
         void on_spinEveryNThFrame_valueChanged(int nth);
@@ -35,6 +38,7 @@ class ImportDialog : public QDialog
         int m_width;
         int m_height;
         int m_frames;
+        int m_framesHR;
         cimg_library::CImg<uint8_t> frame;
 };
 

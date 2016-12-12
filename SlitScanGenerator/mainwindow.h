@@ -28,8 +28,8 @@ class MainWindow : public QMainWindow
         void loadINI();
         void loadINI(const QString& filename, QString *vfn);
         void openVideo(const QString &filename=QString());
-        void recalcCuts(int x, int y);
-        void recalcCuts();
+        void recalcAndRedisplaySamples(int x, int y);
+        void recalcAndRedisplaySamples();
         void ImageClicked(int x, int y);
 
         void on_btnAddXZ_clicked();
@@ -58,8 +58,10 @@ class MainWindow : public QMainWindow
 
         DisplayModes m_mode;
 
-        /** \brief internal video, scaled version */
-        cimg_library::CImg<uint8_t> m_video_scaled;
+        /** \brief internal video, xyt-scaled version */
+        cimg_library::CImg<uint8_t> m_video_xytscaled;
+        /** \brief internal video, xy-scaled version */
+        cimg_library::CImg<uint8_t> m_video_some_frames;
         QString m_filename;
 
 

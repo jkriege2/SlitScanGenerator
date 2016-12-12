@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->toolBar->addAction(ui->actOpenVideo);
     ui->toolBar->addAction(ui->actProcessAll);
     ui->btnProcessAll->setDefaultAction(ui->actProcessAll);
+    ui->tabWidget->setCurrentIndex(0);
 
 
     connect(ui->actQuit, SIGNAL(triggered()), this, SLOT(close()));
@@ -50,13 +51,22 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_procModel, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(setWidgetsEnabledForCurrentMode()));
     connect(m_procModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(setWidgetsEnabledForCurrentMode()));
     connect(m_procModel, SIGNAL(modelReset()), this, SLOT(setWidgetsEnabledForCurrentMode()));
-    connect(ui->chkNormalize, SIGNAL(toggled(bool)),this, SLOT(recalcCuts()));
+    connect(ui->chkNormalize, SIGNAL(toggled(bool)),this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->spinWavelength, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->spinFilterDelta, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->chkWavelength, SIGNAL(toggled(bool)), this, SLOT(recalcAndRedisplaySamples()));
     setWidgetsEnabledForCurrentMode();
 
+    ui->spinWavelength->setValue(m_settings.value("lastFilterWavelength", 5).toDouble());
+    ui->spinFilterDelta->setValue(m_settings.value("lastFilterDelta", 0.5).toDouble());
     ui->spinStillCount->setValue(m_settings.value("lastStillCount", 5).toInt());
     ui->spinStillDelta->setValue(m_settings.value("lastStillDelta", 60).toInt());
     ui->chkStillStrip->setChecked(m_settings.value("lastStillStrip", true).toBool());
     ui->chkStillDeparateFile->setChecked(m_settings.value("lastStillSeparateFiles", false).toBool());
+
+    ui->chkWavelength->setChecked(false);
+    ui->tabWidget->setTabEnabled(3, false);
 }
 
 MainWindow::~MainWindow()
@@ -65,6 +75,8 @@ MainWindow::~MainWindow()
     m_settings.setValue("lastStillDelta", ui->spinStillDelta->value());
     m_settings.setValue("lastStillStrip", ui->chkStillStrip->isChecked());
     m_settings.setValue("lastStillSeparateFiles", ui->chkStillDeparateFile->isChecked());
+    m_settings.setValue("lastFilterWavelength", ui->spinWavelength->value());
+    m_settings.setValue("lastFilterDelta", ui->spinFilterDelta->value());
 
     delete ui;
 }
@@ -82,6 +94,9 @@ void MainWindow::saveINI()
         setall.setValue("normalize/enabled", ui->chkNormalize->isChecked());
         setall.setValue("normalize/x", ui->spinNormalizeX->value());
         setall.setValue("normalize/y", ui->spinNormalizeY->value());
+        setall.setValue("filter/notch/enabled", ui->chkWavelength->isChecked());
+        setall.setValue("filter/notch/wavelength", ui->spinWavelength->value());
+        setall.setValue("filter/notch/delta", ui->spinFilterDelta->value());
         m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
     }
 }
@@ -99,6 +114,9 @@ void MainWindow::loadINI(const QString &fn, QString* vfn)
         ui->chkNormalize->setChecked(setall.value("normalize/enabled", ui->chkNormalize->isChecked()).toBool());
         ui->spinNormalizeX->setValue(setall.value("normalize/x", ui->spinNormalizeX->value()).toInt());
         ui->spinNormalizeY->setValue(setall.value("normalize/y", ui->spinNormalizeY->value()).toInt());
+        ui->chkWavelength->setChecked(setall.value("filter/notch/enabled", ui->chkWavelength->isChecked()).toBool());
+        ui->spinWavelength->setValue(setall.value("filter/notch/wavelength", ui->spinWavelength->value()).toDouble());
+        ui->spinWavelength->setValue(setall.value("filter/notch/delta", ui->spinFilterDelta->value()).toDouble());
     }
 }
 
@@ -129,8 +147,8 @@ void MainWindow::setWidgetsEnabledForCurrentMode() {
 
     ui->btnDelete->setEnabled(m_procModel->rowCount()>0);
     ui->actProcessAll->setEnabled(m_procModel->rowCount()>0);
-    ui->btnAddXZ->setEnabled(m_video_scaled.depth()>0);
-    ui->btnAddZY->setEnabled(m_video_scaled.depth()>0);
+    ui->btnAddXZ->setEnabled(m_video_xytscaled.depth()>0);
+    ui->btnAddZY->setEnabled(m_video_xytscaled.depth()>0);
 }
 
 void MainWindow::showAbout()
@@ -189,19 +207,28 @@ void MainWindow::openVideo(const QString& filename) {
                            }
                            return progress->wasCanceled();
                    }, &progress, std::placeholders::_1, std::placeholders::_2);
-               if (!readFFMPEGAsImageStack(m_video_scaled, fn.toStdString(), video_everyNthFrame=dlg->getEveryNthFrame(), video_xyFactor=dlg->getXYScaleFactor(), &error, progCB)) {
+               if ((!readFFMPEGAsImageStack(m_video_xytscaled, fn.toStdString(), video_everyNthFrame=dlg->getEveryNthFrame(), video_xyFactor=dlg->getXYScaleFactor(), &error, progCB))) {
+
                    progress.close();
                    QApplication::restoreOverrideCursor();
                    QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
                    m_filename="";
                    m_mode=DisplayModes::unloaded;
                } else {
-                   progress.close();
-                   QApplication::restoreOverrideCursor();
-                   recalcCuts(m_video_scaled.width()/2, m_video_scaled.height()/2);
-                   QMessageBox::information(this, tr("Video opened"), tr("Video: %1\nframe size: %2x%3\n frames: %4\n color channels: %5").arg(fn).arg(m_video_scaled.width()).arg(m_video_scaled.height()).arg(m_video_scaled.depth()).arg(m_video_scaled.spectrum()));
-                   m_filename=fn;
-                   m_mode=DisplayModes::loaded;
+                   if (dlg->getFramesHR()>0 && readFFMPEGAsImageStack(m_video_some_frames, fn.toStdString(), 1, 1, &error, progCB, dlg->getFramesHR())) {
+                       progress.close();
+                       QApplication::restoreOverrideCursor();
+                       recalcAndRedisplaySamples(m_video_xytscaled.width()/2, m_video_xytscaled.height()/2);
+                       QMessageBox::information(this, tr("Video opened"), tr("Video: %1\nframe size: %2x%3\n frames: %4\n color channels: %5").arg(fn).arg(m_video_xytscaled.width()).arg(m_video_xytscaled.height()).arg(m_video_xytscaled.depth()).arg(m_video_xytscaled.spectrum()));
+                       m_filename=fn;
+                       m_mode=DisplayModes::loaded;
+                   } else {
+                       progress.close();
+                       QApplication::restoreOverrideCursor();
+                       QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
+                       m_filename="";
+                       m_mode=DisplayModes::unloaded;
+                   }
                }
            }
         }
@@ -211,19 +238,52 @@ void MainWindow::openVideo(const QString& filename) {
     setWidgetsEnabledForCurrentMode();
 }
 
-void MainWindow::recalcCuts(int x, int y)
+void MainWindow::recalcAndRedisplaySamples(int x, int y)
 {
+    cimg_library::CImg<uint8_t>* video_input=&m_video_xytscaled;
+    if (ui->tabWidget->currentIndex()==3) {
+        video_input=&m_video_some_frames;
+    }
     //qDebug()<<"recalcCuts("<<x<<", "<<y<<")  "<<m_video_scaled.width()<<","<<m_video_scaled.height();
-    if (x>=0 && x<m_video_scaled.width() && y>=0 && y<m_video_scaled.height()) {
-        lastX=x;
-        lastY=y;
-        QImage img=CImgToQImage(m_video_scaled, m_video_scaled.depth()/2);
-        cimg_library::CImg<uint8_t> cxz=extractXZ(m_video_scaled, y);
-        cimg_library::CImg<uint8_t> cyz=extractZY(m_video_scaled, x);
+    if (x>=0 && x<video_input->width() && y>=0 && y<video_input->height()) {
+        if (ui->tabWidget->currentIndex()==3) {
+            lastX=x/video_xyFactor;
+            lastY=y/video_xyFactor;
+        } else {
+            lastX=x;
+            lastY=y;
+        }
+
+    }
+    recalcAndRedisplaySamples();
+}
+
+void MainWindow::recalcAndRedisplaySamples()
+{
+    cimg_library::CImg<uint8_t>* video_input=&m_video_xytscaled;
+    double xyFactor=1;
+    double invxyFactor=video_xyFactor;
+    if (ui->tabWidget->currentIndex()==3) {
+        video_input=&m_video_some_frames;
+        xyFactor=video_xyFactor;
+        invxyFactor=1;
+    }
+
+    if (lastX*xyFactor>=0 && lastX*xyFactor<video_input->width() && lastX*xyFactor>=0 && lastX*xyFactor<video_input->height()) {
+
+
+        QImage img=CImgToQImage(*video_input, video_input->depth()/2);
+        cimg_library::CImg<uint8_t> cxz=extractXZ(*video_input, lastY*xyFactor);
+        cimg_library::CImg<uint8_t> cyz=extractZY(*video_input, lastX*xyFactor);
 
         if (ui->chkNormalize->isChecked()) {
-            ProcessingTask::normalizeZY(cyz, ui->spinNormalizeY->value()/video_xyFactor);
-            ProcessingTask::normalizeXZ(cxz, ui->spinNormalizeX->value()/video_xyFactor);
+            ProcessingTask::normalizeZY(cyz, ui->spinNormalizeY->value()/invxyFactor);
+            ProcessingTask::normalizeXZ(cxz, ui->spinNormalizeX->value()/invxyFactor);
+        }
+
+        if (ui->tabWidget->currentIndex()==3 && ui->chkWavelength->isChecked()) {
+            ProcessingTask::applyFilterNotch(cyz, ui->spinWavelength->value(), ui->spinFilterDelta->value());
+            ProcessingTask::applyFilterNotch(cxz, ui->spinNormalizeX->value(), ui->spinFilterDelta->value());
         }
 
         QImage imgxz=CImgToQImage(cxz);
@@ -231,22 +291,22 @@ void MainWindow::recalcCuts(int x, int y)
         {
             QPainter pnt(&img);
             pnt.setPen(QPen(QColor("red")));
-            pnt.drawLine(0, y,img.width(),y);
-            pnt.drawLine(x, 0,x, img.height());
+            pnt.drawLine(0, lastY*xyFactor,img.width(),lastY*xyFactor);
+            pnt.drawLine(lastX*xyFactor, 0,lastX*xyFactor, img.height());
             if (ui->chkNormalize->isChecked()) {
                 pnt.setPen(QPen(QColor("blue")));
-                pnt.drawRect(QRect(ui->spinNormalizeX->value()/video_xyFactor-1, ui->spinNormalizeY->value()/video_xyFactor-1,3,3));
+                pnt.drawRect(QRect(ui->spinNormalizeX->value()/invxyFactor-1, ui->spinNormalizeY->value()/invxyFactor-1,3,3));
             }
         }
         if (ui->chkNormalize->isChecked()) {
             QPainter pnt(&imgxz);
             pnt.setPen(QPen(QColor("blue")));
-            pnt.drawLine(ui->spinNormalizeX->value()/video_xyFactor, 0,ui->spinNormalizeX->value()/video_xyFactor, imgxz.height());
+            pnt.drawLine(ui->spinNormalizeX->value()/invxyFactor, 0,ui->spinNormalizeX->value()/invxyFactor, imgxz.height());
         }
         if (ui->chkNormalize->isChecked()) {
             QPainter pnt(&imgyz);
             pnt.setPen(QPen(QColor("blue")));
-            pnt.drawLine(0,ui->spinNormalizeY->value()/video_xyFactor, imgyz.width(),ui->spinNormalizeY->value()/video_xyFactor);
+            pnt.drawLine(0,ui->spinNormalizeY->value()/invxyFactor, imgyz.width(),ui->spinNormalizeY->value()/invxyFactor);
         }
 
 
@@ -256,19 +316,14 @@ void MainWindow::recalcCuts(int x, int y)
     }
 }
 
-void MainWindow::recalcCuts()
-{
-    recalcCuts(lastX, lastY);
-}
-
 void MainWindow::ImageClicked(int x, int y)
 {
     if (ui->tabWidget->currentIndex()==2) {
         ui->spinNormalizeX->setValue(x*video_xyFactor);
         ui->spinNormalizeY->setValue(y*video_xyFactor);
-        recalcCuts();
+        recalcAndRedisplaySamples();
     } else {
-        recalcCuts(x,y);
+        recalcAndRedisplaySamples(x,y);
     }
 }
 
@@ -313,7 +368,7 @@ void MainWindow::processAll()
 
     ProcessingTask* task=new ProcessingTask();
     task->filename=m_filename;
-    task->outputFrames=m_video_scaled.depth()*video_everyNthFrame;
+    task->outputFrames=m_video_xytscaled.depth()*video_everyNthFrame;
     task->pis=m_procModel->dataVector();
 
     task->stillCnt=ui->spinStillCount->value();
@@ -325,6 +380,10 @@ void MainWindow::processAll()
     task->normalizeX=ui->spinNormalizeX->value();
     task->normalizeY=ui->spinNormalizeY->value();
 
+    task->filterNotch=ui->chkWavelength->isChecked();
+    task->fiterNotchWavelength=ui->spinWavelength->value();
+    task->fiterNotchWidth=ui->spinFilterDelta->value();
+
     ProcessingThread* thr=new ProcessingThread(task, this);
     ui->widProcessing->push_back(thr);
 
@@ -335,9 +394,9 @@ void MainWindow::tableRowClicked(const QModelIndex &index)
     //qDebug()<<"clicked "<<index<<"  "<<m_procModel->getItem(index).location;
     //if (index.isValid()) {
         if (m_procModel->getItem(index).mode==ProcessingTask::Mode::ZY) {
-            recalcCuts(m_procModel->getItem(index).location/video_xyFactor, lastY);
+            recalcAndRedisplaySamples(m_procModel->getItem(index).location/video_xyFactor, lastY);
         } else if (m_procModel->getItem(index).mode==ProcessingTask::Mode::XZ) {
-            recalcCuts(lastX, m_procModel->getItem(index).location/video_xyFactor);
+            recalcAndRedisplaySamples(lastX, m_procModel->getItem(index).location/video_xyFactor);
         }
     //}
 }

@@ -34,6 +34,10 @@ struct ProcessingTask
         int normalizeX;
         int normalizeY;
 
+        bool filterNotch;
+        double fiterNotchWavelength;
+        double fiterNotchWidth;
+
 
         bool processInit(int &prog, int &maxProg, QString &message, QString &error);
         bool processStep(int& prog, int& maxProg, QString &message);
@@ -41,6 +45,7 @@ struct ProcessingTask
 
         static void normalizeZY(cimg_library::CImg<uint8_t> &img, int normalizeY);
         static void normalizeXZ(cimg_library::CImg<uint8_t> &img, int normalizeX);
+        static void applyFilterNotch(cimg_library::CImg<uint8_t> &img, double center, double delta);
     private:
         QVector<cimg_library::CImg<uint8_t> > results;
         QVector<QString> result_filenames;
@@ -52,6 +57,7 @@ struct ProcessingTask
         bool m_saving;
         int m_savingFrame;
         int stills;
+
 };
 
 #endif // PROCESSINGTASK_H

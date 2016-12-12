@@ -49,6 +49,10 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
     setall.setValue("normalize/x", normalizeX);
     setall.setValue("normalize/y", normalizeY);
 
+    setall.setValue("filter/notch/enabled", filterNotch);
+    setall.setValue("filter/notch/wavelength", fiterNotchWavelength);
+    setall.setValue("filter/notch/delta", fiterNotchWidth);
+
     int j=0;
     for (ProcessingTask::ProcessingItem pi: pis) {
         if (pi.mode==Mode::ZY) {
@@ -191,6 +195,9 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
             set.setValue("normalize/enabled", normalize);
             set.setValue("normalize/x", normalizeX);
             set.setValue("normalize/y", normalizeY);
+            set.setValue("filter/notch/enabled", filterNotch);
+            set.setValue("filter/notch/wavelength", fiterNotchWavelength);
+            set.setValue("filter/notch/delta", fiterNotchWidth);
 
             QImage imgs=CImgToQImage(stillStripImg[m_savingFrame]);
             QFileInfo fi(filename);
@@ -239,6 +246,35 @@ void ProcessingTask::normalizeXZ(cimg_library::CImg<uint8_t> &img, int normalize
                 const double v=double(img(x,y,z,c))*avg0/double(img_in(normalizeX,y,z,c));
                 img(x,y,z,c)=(v<0)?0:((v>255)?255:v);
             }
+        }
+    }
+}
+
+void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, double center, double delta)
+{
+    cimg_forC(imgrgb, c) {
+        cimg_library::CImg<uint8_t> img_in=imgrgb.get_channel(c);
+
+        int nx=ceil(log(img_in.width())/log(2));
+        int ny=ceil(log(img_in.height())/log(2));
+        cimg_library::CImg<uint8_t> img(pow(2,nx), pow(2,ny),1,3,0);
+        int offx=(img.width()-img_in.width())/2;
+        int offy=(img.height()-img_in.height())/2;
+        cimg_forXYC(img,x,y,c) {
+            img(offx+x,offy+y,0,c)=img_in(x,y,0,c);
+        }
+
+        cimg_library::CImgList<> F = img.get_FFT();
+        cimglist_apply(F,shift)(img.width()/2,img.height()/2,0,0,2);
+        cimg_library::CImg<unsigned char> mask(img.width(),img.height(),1,1,1);
+        unsigned char one[] = { 1 }, zero[] = { 0 };
+        mask.fill(0).draw_circle(img.width()/2,img.height()/2,center+delta/2.0,zero).
+                    draw_circle(img.width()/2,img.height()/2,center-delta/2.0,one);
+        cimg_library::CImgList<> nF(F);
+        cimglist_for(F,l) nF[l].mul(mask).shift(-img.width()/2,-img.height()/2,0,0,2);
+        cimg_library::CImg<uint8_t> r = nF.FFT(true)[0].normalize(0,255);
+        cimg_forXY(r,x,y) {
+            imgrgb(std::max<int>(0,x-offx),std::max<int>(0,y-offy),0,c)=r(x,y);
         }
     }
 }
