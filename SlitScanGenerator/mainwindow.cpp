@@ -269,7 +269,7 @@ void MainWindow::recalcAndRedisplaySamples()
         invxyFactor=1;
     }
 
-    if (lastX*xyFactor>=0 && lastX*xyFactor<video_input->width() && lastX*xyFactor>=0 && lastX*xyFactor<video_input->height()) {
+    if (lastX*xyFactor>=0 && lastX*xyFactor<video_input->width() && lastY*xyFactor>=0 && lastY*xyFactor<video_input->height()) {
 
 
         QImage img=CImgToQImage(*video_input, video_input->depth()/2);
