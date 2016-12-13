@@ -88,8 +88,7 @@ int ImportDialog::getFrames() const
 
 int ImportDialog::getFramesHR() const
 {
-    return 0;
-    //return m_framesHR;
+    return m_framesHR;
 }
 
 

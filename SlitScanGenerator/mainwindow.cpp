@@ -4,6 +4,7 @@
 #include <functional>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QInputDialog>
 #include <QDebug>
 #include <QPainter>
 #include <QScrollBar>
@@ -13,6 +14,8 @@
 #include <vector>
 #include "importdialog.h"
 #include "processingthread.h"
+
+#define USE_FILTERING
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -36,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->setCurrentIndex(0);
 
 
+    connect(ui->actTest, SIGNAL(triggered()), this, SLOT(test()));
     connect(ui->actQuit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
     connect(ui->actProcessAll, SIGNAL(triggered()), this, SLOT(processAll()));
@@ -64,9 +68,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->spinStillDelta->setValue(m_settings.value("lastStillDelta", 60).toInt());
     ui->chkStillStrip->setChecked(m_settings.value("lastStillStrip", true).toBool());
     ui->chkStillDeparateFile->setChecked(m_settings.value("lastStillSeparateFiles", false).toBool());
-
+#ifndef USE_FILTERING
     ui->chkWavelength->setChecked(false);
     ui->tabWidget->setTabEnabled(3, false);
+#endif
 }
 
 MainWindow::~MainWindow()
@@ -156,6 +161,19 @@ void MainWindow::showAbout()
   AboutBox* dlg=new AboutBox(this);
   dlg->exec();
   delete dlg;
+}
+
+void MainWindow::test()
+{
+    QString fn=QFileDialog::getOpenFileName(this, tr("Open Test Image ..."), m_settings.value("lastTestDir", "").toString());
+    if (fn.size()>0) {
+        m_settings.setValue("lastTestDir", QFileInfo(fn).absolutePath());
+        cimg_library::CImg<uint8_t> img;
+        img.load_bmp(fn.toLocal8Bit().data());
+        labXY->setPixmap(QPixmap::fromImage(CImgToQImage(img)));
+        ProcessingTask::applyFilterNotch(img, QInputDialog::getInt(this, "TEST", "wavelength=", 10, 0,1000,2), 2);
+        labYZ->setPixmap(QPixmap::fromImage(CImgToQImage(img)));
+    }
 }
 
 void MainWindow::openVideo(const QString& filename) {
@@ -283,7 +301,7 @@ void MainWindow::recalcAndRedisplaySamples()
 
         if (ui->tabWidget->currentIndex()==3 && ui->chkWavelength->isChecked()) {
             ProcessingTask::applyFilterNotch(cyz, ui->spinWavelength->value(), ui->spinFilterDelta->value());
-            ProcessingTask::applyFilterNotch(cxz, ui->spinNormalizeX->value(), ui->spinFilterDelta->value());
+            ProcessingTask::applyFilterNotch(cxz, ui->spinWavelength->value(), ui->spinFilterDelta->value());
         }
 
         QImage imgxz=CImgToQImage(cxz);

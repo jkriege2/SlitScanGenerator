@@ -39,6 +39,7 @@ class MainWindow : public QMainWindow
         void tableRowClicked(const QModelIndex &index);
         void setWidgetsEnabledForCurrentMode();
         void showAbout();
+        void test();
     private:
         Ui::MainWindow *ui;
 

@@ -45,10 +45,11 @@ struct ProcessingTask
 
         static void normalizeZY(cimg_library::CImg<uint8_t> &img, int normalizeY);
         static void normalizeXZ(cimg_library::CImg<uint8_t> &img, int normalizeX);
-        static void applyFilterNotch(cimg_library::CImg<uint8_t> &img, double center, double delta);
+        static void applyFilterNotch(cimg_library::CImg<uint8_t> &img, double center, double delta, bool testoutput=false);
     private:
         QVector<cimg_library::CImg<uint8_t> > results;
         QVector<QString> result_filenames;
+        QVector<QString> resultfilt_filenames;
         QVector<QString> result_inifilenames;
         FFMPEGVideo* vid;
         int z;

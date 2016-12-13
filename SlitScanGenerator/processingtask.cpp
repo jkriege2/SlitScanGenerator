@@ -81,8 +81,10 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
             }
             QFileInfo fi(filename);
             QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.png").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
+            QString fnfilt=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2_filtered.png").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
             QString fnini=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.ini").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
             result_filenames.push_back(fn);
+            resultfilt_filenames.push_back(fnfilt);
             result_inifilenames.push_back(fnini);
             setall.setValue(QString("item%1/file").arg(j,3,10,QChar('0')), QFileInfo(allini).absoluteDir().relativeFilePath(QFileInfo(fn).absoluteFilePath()));
             if (stillStrip && stillCnt>0) {
@@ -180,6 +182,11 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
             message=QObject::tr("saved result %2: '%1' ...").arg(fn).arg(m_savingFrame+1);
             QImage img=CImgToQImage(results[m_savingFrame]);
             img.save(fn);
+            if (filterNotch) {
+                applyFilterNotch(results[m_savingFrame], fiterNotchWavelength, fiterNotchWidth);
+                QImage img=CImgToQImage(results[m_savingFrame]);
+                img.save(resultfilt_filenames[m_savingFrame]);
+            }
             QSettings set(fnini, QSettings::IniFormat);
             if (pi.mode==Mode::ZY) {
                 set.setValue("mode", "ZY");
@@ -250,31 +257,71 @@ void ProcessingTask::normalizeXZ(cimg_library::CImg<uint8_t> &img, int normalize
     }
 }
 
-void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, double center, double delta)
+void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, double center, double delta, bool testoutput)
 {
-    cimg_forC(imgrgb, c) {
-        cimg_library::CImg<uint8_t> img_in=imgrgb.get_channel(c);
 
-        int nx=ceil(log(img_in.width())/log(2));
-        int ny=ceil(log(img_in.height())/log(2));
-        cimg_library::CImg<uint8_t> img(pow(2,nx), pow(2,ny),1,3,0);
-        int offx=(img.width()-img_in.width())/2;
-        int offy=(img.height()-img_in.height())/2;
-        cimg_forXYC(img,x,y,c) {
-            img(offx+x,offy+y,0,c)=img_in(x,y,0,c);
+    char fn[1000];
+    int nx=ceil(log(imgrgb.width())/log(2));
+    int ny=ceil(log(imgrgb.height())/log(2));
+    int nnx=pow(2,nx);
+    int nny=pow(2,ny);
+    cimg_library::CImg<uint8_t> img(nnx, nny,1,1,0);
+    int offx=(img.width()-imgrgb.width())/2;
+    int offy=(img.height()-imgrgb.height())/2;
+
+    unsigned char one[] = { 1 }, zero[] = { 0 };
+    cimg_library::CImg<unsigned char> mask(img.width(),img.height(),1,1,1);
+    double kmin=1.0/double(center+delta);
+    double kmax=1.0/double(center-delta);
+
+    cimg_forXY(mask,x,y) {
+        mask(x,y)=1;
+        float kx=double(x-mask.width()/2)/double(mask.width());
+        float ky=double(y-mask.height()/2)/double(mask.height());
+        float kabs2=kx*kx+ky*ky;
+        if (kabs2>=kmin*kmin && kabs2<=kmax*kmax) mask(x,y)=0;
+    }
+    if (testoutput) {
+        sprintf(fn, "testmask.bmp");
+        mask.get_normalize(0,255).save_bmp(fn);
+    }
+
+    cimg_forC(imgrgb, c) {
+        img.fill(0);
+        cimg_forXY(imgrgb,x,y) {
+            img(offx+x,offy+y)=imgrgb(x,y,0,c);
+        }
+        if (testoutput) {
+            sprintf(fn, "c%d_testinput.bmp", int(c));
+            img.save_bmp(fn);
         }
 
-        cimg_library::CImgList<> F = img.get_FFT();
+        //get Fourier tranform image
+        cimg_library::CImgList<float> F = img.get_FFT();
         cimglist_apply(F,shift)(img.width()/2,img.height()/2,0,0,2);
-        cimg_library::CImg<unsigned char> mask(img.width(),img.height(),1,1,1);
-        unsigned char one[] = { 1 }, zero[] = { 0 };
-        mask.fill(0).draw_circle(img.width()/2,img.height()/2,center+delta/2.0,zero).
-                    draw_circle(img.width()/2,img.height()/2,center-delta/2.0,one);
-        cimg_library::CImgList<> nF(F);
+        //magnitude
+        if (testoutput) {
+            const cimg_library::CImg<unsigned char> mag = ((F[0].get_pow(2) + F[1].get_pow(2)).sqrt() + 1).log().normalize(0,255);
+            sprintf(fn, "c%d_testfftabs.bmp", int(c));
+            mag.save_bmp(fn);
+            sprintf(fn, "c%d_testfft0.bmp", int(c));
+            F[0].save_bmp(fn);
+            sprintf(fn, "c%d_testfft1.bmp", int(c));
+            F[1].save_bmp(fn);
+        }
+
+        cimg_library::CImgList<float> nF(F);
         cimglist_for(F,l) nF[l].mul(mask).shift(-img.width()/2,-img.height()/2,0,0,2);
         cimg_library::CImg<uint8_t> r = nF.FFT(true)[0].normalize(0,255);
-        cimg_forXY(r,x,y) {
-            imgrgb(std::max<int>(0,x-offx),std::max<int>(0,y-offy),0,c)=r(x,y);
+        if (testoutput) {
+            sprintf(fn, "c%d_testNF0.bmp", int(c));
+            F[0].save_bmp(fn);
+            sprintf(fn, "c%d_testNF1.bmp", int(c));
+            F[1].save_bmp(fn);
+        }
+        cimg_forXY(imgrgb,x,y) {
+            imgrgb(x,y,0,c)=r(x+offx,y+offy);
         }
     }
+
 }
