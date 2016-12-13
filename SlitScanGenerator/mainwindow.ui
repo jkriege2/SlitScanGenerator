@@ -512,6 +512,7 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="actAbout"/>
+    <addaction name="actTest"/>
    </widget>
    <addaction name="menu_Datei"/>
    <addaction name="menu_Help"/>
@@ -579,6 +580,11 @@
    </property>
    <property name="text">
     <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="actTest">
+   <property name="text">
+    <string>Test</string>
    </property>
   </action>
  </widget>
