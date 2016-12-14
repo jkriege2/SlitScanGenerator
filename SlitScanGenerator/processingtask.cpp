@@ -44,6 +44,9 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
     setall.setValue("stills/delta", stillDelta);
     setall.setValue("stills/strip", stillStrip);
     setall.setValue("stills/separate_files", stillSeparateFiles);
+    setall.setValue("stills/gap", stillGap);
+    setall.setValue("stills/border", stillBorder);
+    setall.setValue("stills/line_width", stillLineWidth);
 
     setall.setValue("normalize/enabled", normalize);
     setall.setValue("normalize/x", normalizeX);
@@ -68,6 +71,8 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
     std::string err;
     vid=openFFMPEGVideo(filename.toStdString(), &err);
     if (vid && readFFMPEGFrame(frame, vid)) {
+        int still_b=stillBorder/100.0*frame.width();
+        int still_g=stillGap/100.0*frame.height();
         maxProg=pis.size()+2+getFrameCount(vid);
         prog=1;
         int j=0;
@@ -89,7 +94,7 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
             setall.setValue(QString("item%1/file").arg(j,3,10,QChar('0')), QFileInfo(allini).absoluteDir().relativeFilePath(QFileInfo(fn).absoluteFilePath()));
             if (stillStrip && stillCnt>0) {
                 stillStripImg.push_back(cimg_library::CImg<uint8_t>());
-                stillStripImg[j].resize(frame.width()+10, 5+(frame.height()+5)*stillCnt, 1, 3);
+                stillStripImg[j].resize(frame.width()+2*still_b, still_b+(frame.height()+still_g)*stillCnt-still_g+still_b, 1, 3);
             }
             j++;
         }
@@ -103,11 +108,16 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
 
 bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
 {
+
     prog++;
     maxProg=pis.size()+2+getFrameCount(vid);
     if (!m_saving) {
         // process old frame
         message=QObject::tr("processing frame %1/%2 ...").arg(z+1).arg(outputFrames);
+        int still_b=stillBorder/100.0*frame.width();
+        int still_g=stillGap/100.0*frame.height();
+        int stilllw=std::max<int>(1,stillLineWidth/100.0*frame.width());
+
         for (int j=0; j<results.size(); j++) {
             ProcessingTask::ProcessingItem pi=pis[j];
             if (pi.mode==Mode::ZY && z<results[j].width()) {
@@ -131,9 +141,13 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
                 auto frame_s=frame;
                 const unsigned char color[] = { 255,0,0 };
                 if (pi.mode==Mode::ZY && z<results[j].width()) {
-                    frame_s.draw_line(pi.location,0,pi.location,frame.height(), color);
+                    for (int x=pi.location-stilllw/2; x<pi.location-stilllw/2+stilllw; x++) {
+                        frame_s.draw_line(x,0,x,frame.height(), color);
+                    }
                 } else if (pi.mode==Mode::XZ && z<results[j].height()) {
-                    frame_s.draw_line(0,pi.location,frame.width(),pi.location, color);
+                    for (int y=pi.location-stilllw/2; y<pi.location-stilllw/2+stilllw; y++) {
+                        frame_s.draw_line(0,y,frame.width(),y, color);
+                    }
                 }
                 if (stillSeparateFiles) {
                     QFileInfo fi(filename);
@@ -143,9 +157,9 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
                 }
                 if (stillStrip) {
                     cimg_forXY(frame,x,y) {
-                        stillStripImg[j](5+x,5+y+stills*(5+frame.height()),0,0)=frame_s(x,y,0,0);
-                        stillStripImg[j](5+x,5+y+stills*(5+frame.height()),0,1)=frame_s(x,y,0,1);
-                        stillStripImg[j](5+x,5+y+stills*(5+frame.height()),0,2)=frame_s(x,y,0,2);
+                        stillStripImg[j](still_b+x,still_b+y+stills*(still_g+frame.height()),0,0)=frame_s(x,y,0,0);
+                        stillStripImg[j](still_b+x,still_b+y+stills*(still_g+frame.height()),0,1)=frame_s(x,y,0,1);
+                        stillStripImg[j](still_b+x,still_b+y+stills*(still_g+frame.height()),0,2)=frame_s(x,y,0,2);
                     }
                 }
             }
@@ -199,6 +213,9 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
             set.setValue("stills/delta", stillDelta);
             set.setValue("stills/strip", stillStrip);
             set.setValue("stills/separate_files", stillSeparateFiles);
+            set.setValue("stills/gap", stillGap);
+            set.setValue("stills/border", stillBorder);
+            set.setValue("stills/line_width", stillLineWidth);
             set.setValue("normalize/enabled", normalize);
             set.setValue("normalize/x", normalizeX);
             set.setValue("normalize/y", normalizeY);
@@ -270,17 +287,22 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
     int offy=(img.height()-imgrgb.height())/2;
 
     unsigned char one[] = { 1 }, zero[] = { 0 };
-    cimg_library::CImg<unsigned char> mask(img.width(),img.height(),1,1,1);
+    cimg_library::CImg<float> mask(img.width(),img.height(),1,1,1);
     double kmin=1.0/double(center+delta);
     double kmax=1.0/double(center-delta);
 
     cimg_forXY(mask,x,y) {
+        const float kx=double(x-mask.width()/2)/double(mask.width());
+        const float ky=double(y-mask.height()/2)/double(mask.height());
+        const float kabs2=kx*kx+ky*ky;
+        const float kabs=sqrt(kabs2);
         mask(x,y)=1;
-        float kx=double(x-mask.width()/2)/double(mask.width());
-        float ky=double(y-mask.height()/2)/double(mask.height());
-        float kabs2=kx*kx+ky*ky;
         if (kabs2>=kmin*kmin && kabs2<=kmax*kmax) mask(x,y)=0;
+        //else if (kabs<kmin) mask(x,y)=exp(-(kabs-kmin)*(kabs-kmin)/(2.0*2.0*2.0));
+        //else if (kabs>kmax) mask(x,y)=exp(-(kmax-kabs)*(kmax-kabs)/(2.0*2.0*2.0));
+
     }
+    mask.blur(2,2,2,false);
     if (testoutput) {
         sprintf(fn, "testmask.bmp");
         mask.get_normalize(0,255).save_bmp(fn);
@@ -288,8 +310,15 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
 
     cimg_forC(imgrgb, c) {
         img.fill(0);
-        cimg_forXY(imgrgb,x,y) {
+        /*cimg_forXY(imgrgb,x,y) {
             img(offx+x,offy+y)=imgrgb(x,y,0,c);
+        }*/
+        img=imgrgb.get_channel(c);
+        uint8_t cMin,cMax;
+        cMin=img.min_max(cMax);
+        img.resize(nnx, nny,1,1,0,1,0.5,0.5);//double(offx)/double(nnx),double(offy)/double(nny));
+        if (offx>0 || offy>0) {
+            // reflective boundary
         }
         if (testoutput) {
             sprintf(fn, "c%d_testinput.bmp", int(c));
@@ -312,7 +341,7 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
 
         cimg_library::CImgList<float> nF(F);
         cimglist_for(F,l) nF[l].mul(mask).shift(-img.width()/2,-img.height()/2,0,0,2);
-        cimg_library::CImg<uint8_t> r = nF.FFT(true)[0].normalize(0,255);
+        cimg_library::CImg<uint8_t> r = nF.FFT(true)[0].normalize(cMin,cMax);
         if (testoutput) {
             sprintf(fn, "c%d_testNF0.bmp", int(c));
             F[0].save_bmp(fn);
@@ -322,6 +351,10 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
         cimg_forXY(imgrgb,x,y) {
             imgrgb(x,y,0,c)=r(x+offx,y+offy);
         }
+    }
+    if (testoutput) {
+        sprintf(fn, "testoutput.bmp");
+        imgrgb.save_bmp(fn);
     }
 
 }

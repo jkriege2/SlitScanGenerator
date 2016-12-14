@@ -29,6 +29,9 @@ struct ProcessingTask
         int stillDelta;
         bool stillStrip;
         bool stillSeparateFiles;
+        double stillGap;
+        double stillBorder;
+        double stillLineWidth;
 
         bool normalize;
         int normalizeX;

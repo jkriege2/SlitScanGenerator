@@ -64,6 +64,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->spinWavelength->setValue(m_settings.value("lastFilterWavelength", 5).toDouble());
     ui->spinFilterDelta->setValue(m_settings.value("lastFilterDelta", 0.5).toDouble());
+    ui->spinStillGap->setValue(m_settings.value("lastStillGap", 5).toDouble());
+    ui->spinStillBorder->setValue(m_settings.value("lastStillBorder", 5).toDouble());
+    ui->spinStillLineWidth->setValue(m_settings.value("lastStillLineWidth", 0.2).toDouble());
     ui->spinStillCount->setValue(m_settings.value("lastStillCount", 5).toInt());
     ui->spinStillDelta->setValue(m_settings.value("lastStillDelta", 60).toInt());
     ui->chkStillStrip->setChecked(m_settings.value("lastStillStrip", true).toBool());
@@ -82,7 +85,9 @@ MainWindow::~MainWindow()
     m_settings.setValue("lastStillSeparateFiles", ui->chkStillDeparateFile->isChecked());
     m_settings.setValue("lastFilterWavelength", ui->spinWavelength->value());
     m_settings.setValue("lastFilterDelta", ui->spinFilterDelta->value());
-
+    m_settings.setValue("lastStillGap", ui->spinStillGap->value());
+    m_settings.setValue("lastStillBorder", ui->spinStillBorder->value());
+    m_settings.setValue("lastStillLineWidth", ui->spinStillLineWidth->value());
     delete ui;
 }
 
@@ -96,6 +101,9 @@ void MainWindow::saveINI()
         setall.setValue("stills/delta", ui->spinStillDelta->value());
         setall.setValue("stills/strip", ui->chkStillStrip->isChecked());
         setall.setValue("stills/separate_files", ui->chkStillDeparateFile->isChecked());
+        setall.setValue("stills/gap", ui->spinStillGap->value());
+        setall.setValue("stills/border", ui->spinStillBorder->value());
+        setall.setValue("stills/line_width", ui->spinStillLineWidth->value());
         setall.setValue("normalize/enabled", ui->chkNormalize->isChecked());
         setall.setValue("normalize/x", ui->spinNormalizeX->value());
         setall.setValue("normalize/y", ui->spinNormalizeY->value());
@@ -116,12 +124,15 @@ void MainWindow::loadINI(const QString &fn, QString* vfn)
         ui->spinStillDelta->setValue(setall.value("stills/delta", ui->spinStillDelta->value()).toInt());
         ui->chkStillStrip->setChecked(setall.value("stills/strip", ui->chkStillStrip->isChecked()).toBool());
         ui->chkStillDeparateFile->setChecked(setall.value("stills/separate_files", ui->chkStillDeparateFile->isChecked()).toBool());
+        ui->spinStillGap->setValue(setall.value("stills/gap", ui->spinStillGap->value()).toInt());
+        ui->spinStillBorder->setValue(setall.value("stills/border", ui->spinStillBorder->value()).toInt());
+        ui->spinStillLineWidth->setValue(setall.value("stills/line_width", ui->spinStillLineWidth->value()).toInt());
         ui->chkNormalize->setChecked(setall.value("normalize/enabled", ui->chkNormalize->isChecked()).toBool());
         ui->spinNormalizeX->setValue(setall.value("normalize/x", ui->spinNormalizeX->value()).toInt());
         ui->spinNormalizeY->setValue(setall.value("normalize/y", ui->spinNormalizeY->value()).toInt());
         ui->chkWavelength->setChecked(setall.value("filter/notch/enabled", ui->chkWavelength->isChecked()).toBool());
         ui->spinWavelength->setValue(setall.value("filter/notch/wavelength", ui->spinWavelength->value()).toDouble());
-        ui->spinWavelength->setValue(setall.value("filter/notch/delta", ui->spinFilterDelta->value()).toDouble());
+        ui->spinFilterDelta->setValue(setall.value("filter/notch/delta", ui->spinFilterDelta->value()).toDouble());
     }
 }
 
@@ -171,7 +182,7 @@ void MainWindow::test()
         cimg_library::CImg<uint8_t> img;
         img.load_bmp(fn.toLocal8Bit().data());
         labXY->setPixmap(QPixmap::fromImage(CImgToQImage(img)));
-        ProcessingTask::applyFilterNotch(img, QInputDialog::getInt(this, "TEST", "wavelength=", 10, 0,1000,2), 2);
+        ProcessingTask::applyFilterNotch(img, QInputDialog::getInt(this, "TEST", "wavelength=", 10, 0,1000,2), 2, true);
         labYZ->setPixmap(QPixmap::fromImage(CImgToQImage(img)));
     }
 }
@@ -393,6 +404,9 @@ void MainWindow::processAll()
     task->stillDelta=ui->spinStillDelta->value();
     task->stillStrip=ui->chkStillStrip->isChecked();
     task->stillSeparateFiles=ui->chkStillDeparateFile->isChecked();
+    task->stillGap=ui->spinStillGap->value();
+    task->stillBorder=ui->spinStillBorder->value();
+    task->stillLineWidth=ui->spinStillLineWidth->value();
 
     task->normalize=ui->chkNormalize->isChecked();
     task->normalizeX=ui->spinNormalizeX->value();
