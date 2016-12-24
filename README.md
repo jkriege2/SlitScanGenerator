@@ -1,7 +1,7 @@
 # SlitScanGenerator
 C++ program that generates slit scan photography 
 
-![rose](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_5967_stack005.jpg) (https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_5967_stack011.jpg) 
+![rose](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_5967_stack005.jpg) !(https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_5967_stack011.jpg) 
 
 
 ## Usage:
