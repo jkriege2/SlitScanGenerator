@@ -1,7 +1,7 @@
 # SlitScanGenerator
 C++ program that generates slit scan photography 
 
-![rose](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_5956_stack007.jpg)
+![rose](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_5967_stack005.jpg)  ![rose](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_5967_stack011.jpg)
 
 ## Usage:
 
@@ -11,7 +11,7 @@ C++ program that generates slit scan photography
 
 3. Finally click on ![img](https://github.com/jkriege2/SlitScanGenerator/blob/master/SlitScanGenerator/icons/wizard2.png) "Process All" to generate the output images (in the same folder as the video). Note that ürpcessing is done with the full resolution video, not the size-reduced video used for display.
 
-![screenshot](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/2016-12-03%2000_07_24-MainWindow.png)
+![screenshot](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/MainWindow.png)
 
 ## Download:
   https://github.com/jkriege2/SlitScanGenerator/releases/
