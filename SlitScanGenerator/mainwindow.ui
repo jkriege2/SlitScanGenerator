@@ -78,7 +78,7 @@
     <item row="5" column="1">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="widProps">
        <attribute name="title">
@@ -95,7 +95,7 @@
           </property>
           <property name="icon">
            <iconset resource="slitscangenerator.qrc">
-            <normaloff>:/icons/icons/list_add.png</normaloff>:/icons/icons/list_add.png</iconset>
+            <normaloff>:/icons/icons/list_add_down.png</normaloff>:/icons/icons/list_add_down.png</iconset>
           </property>
          </widget>
         </item>
@@ -109,7 +109,7 @@
           </property>
           <property name="icon">
            <iconset resource="slitscangenerator.qrc">
-            <normaloff>:/icons/icons/list_add.png</normaloff>:/icons/icons/list_add.png</iconset>
+            <normaloff>:/icons/icons/list_add_right.png</normaloff>:/icons/icons/list_add_right.png</iconset>
           </property>
          </widget>
         </item>
