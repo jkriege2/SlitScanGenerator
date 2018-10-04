@@ -40,6 +40,7 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
     QSettings setall(allini, QSettings::IniFormat);
     setall.setValue("count", pis.size());
     setall.setValue("input_file", filename);
+
     setall.setValue("stills/count", stillCnt);
     setall.setValue("stills/delta", stillDelta);
     setall.setValue("stills/strip", stillStrip);
@@ -64,7 +65,10 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
         if (pi.mode==Mode::XZ) {
             setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "XZ");
         }
-        setall.setValue(QString("item%1/location").arg(j,3,10,QChar('0')), pi.location);
+        setall.setValue(QString("item%1/location_x").arg(j,3,10,QChar('0')), pi.location_x);
+        setall.setValue(QString("item%1/location_y").arg(j,3,10,QChar('0')), pi.location_y);
+        setall.setValue(QString("item%1/angle_mode").arg(j,3,10,QChar('0')), static_cast<int>(pi.angleMode));
+        setall.setValue(QString("item%1/angle").arg(j,3,10,QChar('0')), pi.angle);
         j++;
     }
 
@@ -77,12 +81,34 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
         prog=1;
         int j=0;
         for (ProcessingTask::ProcessingItem pi: pis) {
+            cimg_library::CImg<uint8_t> line;
+            bool zok=true;
+            int zout=0;
+            int len=outputFrames;
             if (pi.mode==Mode::ZY) {
+                if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
+                    line=extractZY_atz(0, frame, pi.location_x);
+                } else if (pi.angleMode==AngleMode::AngleRoll) {
+                    line=extractZY_atz_roll(0, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
+                } else if (pi.angleMode==AngleMode::AnglePitch) {
+                    line=extractZY_atz_pitch(0, outputFrames, frame, pi.location_x, pi.angle, zout, &len);
+                }
                 results.push_back(cimg_library::CImg<uint8_t>());
-                results[j].assign(outputFrames, frame.height(), 1, 3);
+                results[j].assign(len, line.width(), 1, 3);
+                qDebug()<<"output size: "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
+                zs_vals.push_back(0);
             } else if (pi.mode==Mode::XZ) {
+                if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
+                    line=extractXZ_atz(0, frame, pi.location_x);
+                } else if (pi.angleMode==AngleMode::AngleRoll) {
+                    line=extractXZ_atz_roll(0, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
+                } else if (pi.angleMode==AngleMode::AnglePitch) {
+                    line=extractXZ_atz_pitch(0, outputFrames, frame, pi.location_y, pi.angle, zout, &len);
+                }
                 results.push_back(cimg_library::CImg<uint8_t>());
-                results[j].assign(frame.width(), outputFrames, 1, 3);
+                results[j].assign(line.width(), len, 1, 3);
+                qDebug()<<"output size: "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
+                zs_vals.push_back(0);
             }
             QFileInfo fi(filename);
             QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.png").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
@@ -120,33 +146,86 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
 
         for (int j=0; j<results.size(); j++) {
             ProcessingTask::ProcessingItem pi=pis[j];
-            if (pi.mode==Mode::ZY && z<results[j].width()) {
-                for (int y=0; y<std::min(frame.height(),results[j].height()); y++)
-                {                    
-                    results[j](z, y, 0,0)=frame(pi.location, y, 0, 0);
-                    results[j](z, y, 0,1)=frame(pi.location, y, 0, 1);
-                    results[j](z, y, 0,2)=frame(pi.location, y, 0, 2);
+
+            cimg_library::CImg<uint8_t> line;
+            if (pi.mode==Mode::ZY) {
+                int z0=zs_vals[j];
+                if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
+                    line=extractZY_atz(z, frame, pi.location_x);
+                    zs_vals[j]++;
+                } else if (pi.angleMode==AngleMode::AngleRoll) {
+                    line=extractZY_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
+                    zs_vals[j]++;
+                } else if (pi.angleMode==AngleMode::AnglePitch) {
+                    line=extractZY_atz_pitch(z, outputFrames, frame, pi.location_x, pi.angle, zs_vals[j]);
+                    qDebug()<<"extractZY_atz_pitch: z="<<z<<", zs_vals[j]="<<zs_vals[j]<<", line.height="<<line.height();
                 }
-            } else if (pi.mode==Mode::XZ && z<results[j].height()) {
-                for (int x=0; x<std::min(frame.width(),results[j].width()); x++)
-                {
-                    results[j](x, z, 0,0)=frame(x, pi.location,  0, 0);
-                    results[j](x, z, 0,1)=frame(x, pi.location,  0, 1);
-                    results[j](x, z, 0,2)=frame(x, pi.location,  0, 2);
+                /*if (z0+line.height()-1>=results[j].width()) {
+                    // resize of necessary
+                    qDebug()<<"resize "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum()<<"  -> "<<z0+line.height()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
+                    results[j].resize(z0+line.height(), results[j].height(), results[j].depth(), results[j].spectrum());
+                }*/
+                if (zs_vals[j]>z0) {
+                    for (int x=0; x<line.height(); x++) {
+                        if (z0+x<results[j].width()) {
+                            for (int y=0; y<line.width(); y++)
+                            {
+                                results[j](z0+x, y, 0,0)=line(y, x, 0, 0);
+                                results[j](z0+x, y, 0,1)=line(y, x, 0, 1);
+                                results[j](z0+x, y, 0,2)=line(y, x, 0, 2);
+                            }
+                        }
+                    }
+                }
+            } else if (pi.mode==Mode::XZ) {
+                int z0=zs_vals[j];
+                if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
+                    line=extractXZ_atz(z, frame, pi.location_x);
+                    zs_vals[j]++;
+                } else if (pi.angleMode==AngleMode::AngleRoll) {
+                    line=extractXZ_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
+                    zs_vals[j]++;
+                } else if (pi.angleMode==AngleMode::AnglePitch) {
+                    line=extractXZ_atz_pitch(z, outputFrames, frame, pi.location_y, pi.angle, zs_vals[j]);
+                    qDebug()<<"extractXZ_atz_pitch: z="<<z<<", zs_vals[j]="<<zs_vals[j]<<", line.height="<<line.height();
+                }
+                /*if (z0+line.height()-1>=results[j].height()) {
+                    // resize of necessary
+                    qDebug()<<"resize "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum()<<"  -> "<<results[j].width()<<"x"<<z0+line.height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
+                    results[j].resize(results[j].width(), z0+line.height(), results[j].depth(), results[j].spectrum());
+
+                }*/
+                if (zs_vals[j]>z0) {
+                    for (int y=0; y<line.height(); y++) {
+                        if (z0+y<results[j].height()) {
+                            for (int x=0; x<line.width(); x++)
+                            {
+                                results[j](x, z0+y, 0,0)=line(x, y, 0, 0);
+                                results[j](x, z0+y, 0,1)=line(x, y, 0, 1);
+                                results[j](x, z0+y, 0,2)=line(x, y, 0, 2);
+                            }
+                        }
+                    }
                 }
             }
+
+
 
             // process stills
             if (stills<stillCnt && z%stillDelta==0) {
                 auto frame_s=frame;
                 const unsigned char color[] = { 255,0,0 };
-                if (pi.mode==Mode::ZY && z<results[j].width()) {
-                    for (int x=pi.location-stilllw/2; x<pi.location-stilllw/2+stilllw; x++) {
-                        frame_s.draw_line(x,0,x,frame.height(), color);
+                if (pi. filteredAngleMode()==AngleMode::AngleNone && pi.mode==Mode::ZY && z<results[j].width()) {
+                    if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
+                        for (int x=pi.location_x-stilllw/2; x<pi.location_x-stilllw/2+stilllw; x++) {
+                            frame_s.draw_line(x,0,x,frame.height(), color);
+                        }
                     }
-                } else if (pi.mode==Mode::XZ && z<results[j].height()) {
-                    for (int y=pi.location-stilllw/2; y<pi.location-stilllw/2+stilllw; y++) {
-                        frame_s.draw_line(0,y,frame.width(),y, color);
+                } else if (pi. filteredAngleMode()==AngleMode::AngleNone && pi.mode==Mode::XZ && z<results[j].height()) {
+                    if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
+                        for (int y=pi.location_y-stilllw/2; y<pi.location_y-stilllw/2+stilllw; y++) {
+                            frame_s.draw_line(0,y,frame.width(),y, color);
+                        }
                     }
                 }
                 if (stillSeparateFiles) {
@@ -208,7 +287,10 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
             if (pi.mode==Mode::XZ) {
                 set.setValue("mode", "XZ");
             }
-            set.setValue("location", pi.location);
+            set.setValue("angle_mode", static_cast<int>(pi.angleMode));
+            set.setValue("angle", pi.angle);
+            set.setValue("location_x", pi.location_x);
+            set.setValue("location_y", pi.location_y);
             set.setValue("stills/count", stillCnt);
             set.setValue("stills/delta", stillDelta);
             set.setValue("stills/strip", stillStrip);

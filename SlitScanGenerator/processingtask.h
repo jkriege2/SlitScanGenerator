@@ -13,10 +13,30 @@ struct ProcessingTask
             ZY
         };
 
+        enum class AngleMode {
+            AngleNone=0,
+            AngleRoll=1,
+            AnglePitch=2,
+        };
+
         struct ProcessingItem {
-            inline ProcessingItem(): mode(ProcessingTask::Mode::XZ), location(-1) {}
+            inline ProcessingItem(): mode(ProcessingTask::Mode::XZ), location_x(-1), location_y(-1), angle(0), angleMode(AngleMode::AngleNone) {}
             Mode mode;
-            int location;
+            int location_x;
+            int location_y;
+            double angle;
+            AngleMode angleMode;
+
+
+            int angleModeForCombo() const {
+                if (filteredAngleMode()==AngleMode::AnglePitch) return 1;
+                return 0;
+            }
+
+            inline AngleMode filteredAngleMode() const {
+                if (angle==0) return AngleMode::AngleNone;
+                else return angleMode;
+            }
         };
 
         ProcessingTask();
@@ -51,6 +71,7 @@ struct ProcessingTask
         static void applyFilterNotch(cimg_library::CImg<uint8_t> &img, double center, double delta, bool testoutput=false);
     private:
         QVector<cimg_library::CImg<uint8_t> > results;
+        QVector<int> zs_vals;
         QVector<QString> result_filenames;
         QVector<QString> resultfilt_filenames;
         QVector<QString> result_inifilenames;

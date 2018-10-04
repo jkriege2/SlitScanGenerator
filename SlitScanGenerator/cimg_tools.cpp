@@ -21,6 +21,29 @@ QImage CImgToQImage(const cimg_library::CImg<uint8_t> &img, int z)
     return imgQt;
 }
 
+cimg_library::CImg<uint8_t> extractXZ_atz(int z, const cimg_library::CImg<uint8_t> &img_src, int y)
+{
+    cimg_library::CImg<uint8_t> img(img_src.width(), 1,1,3);
+    cimg_forX( img_src, x )
+    {
+        img(x,0,0,0)=img_src(x,y,0,0);
+        img(x,0,0,1)=img_src(x,y,0,1);
+        img(x,0,0,2)=img_src(x,y,0,2);
+    }
+    return img;
+}
+
+cimg_library::CImg<uint8_t> extractZY_atz(int z, const cimg_library::CImg<uint8_t> &img_src, int x)
+{
+    cimg_library::CImg<uint8_t> img(img_src.height(),1, 1,3);
+    cimg_forY( img_src, y)
+    {
+        img(y,0,0,0)=img_src(x,y,0,0);
+        img(y,0,0,1)=img_src(x,y,0,1);
+        img(y,0,0,2)=img_src(x,y,0,2);
+    }
+    return img;
+}
 
 
 cimg_library::CImg<uint8_t> extractXZ(const cimg_library::CImg<uint8_t> &img_src, int y)
@@ -45,6 +68,124 @@ cimg_library::CImg<uint8_t> extractZY(const cimg_library::CImg<uint8_t> &img_src
         img(z,y,0,2)=img_src(x,y,z,2);
     }
     return img;
+}
+
+
+cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int y, double angle, int& zout, int* lenout)
+{
+    if (angle==0) {
+        if (lenout) *lenout=img_src.depth();
+        return extractXZ_atz(z, img_src, y);
+    } else {
+        int dy=static_cast<int>(std::ceil(double(depth)*std::sin(angle/180.0*M_PI)));
+        int dymax=img_src.height()-y-1;
+        //qDebug()<<"dy="<<dy;
+        //qDebug()<<"dymax="<<dymax;
+
+        int length=0;
+        if (dy<=dymax) {
+            length=static_cast<int>(std::ceil(double(depth)/std::cos(angle/180.0*M_PI)))-1;
+            //qDebug()<<"dy<=dymax => length="<<length;
+        } else {
+            length=static_cast<int>(std::ceil(double(dymax)/std::sin(angle/180.0*M_PI)))-1;
+            //qDebug()<<"dy>dymax => length="<<length;
+        }
+        if (lenout) *lenout=length;
+
+
+        const double cosa=std::cos(angle/180.0*M_PI);
+        const double sina=std::sin(angle/180.0*M_PI);
+        cimg_library::CImg<uint8_t> img(img_src.width(), 1,1,3);
+        int zs=z;
+        int zimg=0;
+        int oldzout=zout;
+        while ((zs=static_cast<int>(std::round(static_cast<double>(zout)*cosa)))==z) {
+            int ys=y+static_cast<int>(std::round(static_cast<double>(zout)*sina));
+            if (ys>=0&&ys<img_src.height()) {
+                zimg++;
+            }
+            zout++;
+        }
+        if (zimg>=img.height()) {
+            // grow if necessary
+            img.resize(img.width(), zimg, 1, 3);
+        }
+        zimg=0;
+        zout=oldzout;
+        while ((zs=static_cast<int>(std::round(static_cast<double>(zout)*cosa)))==z) {
+            int ys=y+static_cast<int>(std::round(static_cast<double>(zout)*sina));
+            //qDebug()<<"z="<<z<<"<<"", zout="<<zout<<", ys="<<ys<<"["<<img_src.height()<<"], zs="<<zs<<"["<<depth<<"]";
+            if (ys>=0&&ys<img_src.height()) {//&&zs>=0&&zs<depth) {
+
+                for (int x=0; x<img_src.width(); x++) {
+                    img(x,0,0,0)=img_src(x,ys,0,0);
+                    img(x,0,0,1)=img_src(x,ys,0,1);
+                    img(x,0,0,2)=img_src(x,ys,0,2);
+                }
+                zimg++;
+            }
+            zout++;
+        }
+        if (zimg<=0) return cimg_library::CImg<uint8_t>();
+        return img;
+    }
+}
+
+cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, double angle, int& zout, int* lenout)
+{
+    if (angle==0) {
+        if (lenout) *lenout=img_src.depth();
+        return extractZY_atz(z, img_src, x);
+    } else {
+        int dx=static_cast<int>(std::ceil(double(depth)*std::sin(angle/180.0*M_PI)));
+        int dxmax=img_src.width()-x-1;
+
+        int length=0;
+        if (dx<=dxmax) {
+            length=static_cast<int>(std::ceil(double(depth)/std::cos(angle/180.0*M_PI)))-1;
+        } else {
+            length=static_cast<int>(std::ceil(double(dxmax)/std::sin(angle/180.0*M_PI)))-1;
+        }
+        if (lenout) *lenout=length;
+
+        const double cosa=std::cos(angle/180.0*M_PI);
+        const double sina=std::sin(angle/180.0*M_PI);
+        cimg_library::CImg<uint8_t> img(img_src.height(),1, 1,3);
+        int zs=z;
+        int zimg=0;
+        int oldzout=zout;
+        while ((zs=static_cast<int>(std::round(static_cast<double>(zout)*cosa)))==z) {
+            int xs=x+static_cast<int>(std::round(static_cast<double>(zout)*sina));
+            if (xs>=0&&xs<img_src.width()) {
+                zimg++;
+            }
+            zout++;
+        }
+        if (zimg>=img.height()) {
+            // grow if necessary
+            img.resize(img.width(), zimg, 1, 3);
+        }
+        zimg=0;
+        zout=oldzout;
+        while ((zs=static_cast<int>(std::round(static_cast<double>(zout)*cosa)))==z) {
+            int xs=x+static_cast<int>(std::round(static_cast<double>(zout)*sina));
+
+            //qDebug()<<"xs="<<xs<<"["<<img_src.width()<<"], z="<<z<<"["<<length<<"], zs="<<zs<<"["<<depth<<"]";
+            if (xs>=0&&xs<img_src.width()) {//&&zs>=0&&zs<depth) {
+                for (int y=0; y<img_src.height(); y++) {
+                    img(y,zimg,0,0)=img_src(xs,y,0,0);
+                    img(y,zimg,0,1)=img_src(xs,y,0,1);
+                    img(y,zimg,0,2)=img_src(xs,y,0,2);
+                }
+                zimg++;
+            }
+            zout++;
+        }
+        if (zimg<=0) return cimg_library::CImg<uint8_t>();
+        return img;
+    }
+
+
 }
 
 
@@ -124,8 +265,6 @@ cimg_library::CImg<uint8_t> extractZY_pitch(const cimg_library::CImg<uint8_t> &i
 
 }
 
-
-
 static inline uint qHash(const QPoint &p, uint /*seed*/) {
     return static_cast<uint>(abs(p.x()+p.y()));
 }
@@ -155,10 +294,10 @@ cimg_library::CImg<uint8_t> extractXZ_roll(const cimg_library::CImg<uint8_t> &im
         x0=img_src.width()-1;
         y0=0;
         if (intersects_yrange(l, x0, 0, img_src.height()-1, y0)) points.insert(QPointF(x0, y0));
-        qDebug()<<"==================================================================";
-        qDebug()<<"img: "<<img_src.width()<<"x"<<img_src.height()<<"x"<<img_src.depth()<<"x"<<img_src.spectrum();
+        //qDebug()<<"==================================================================";
+        //qDebug()<<"img: "<<img_src.width()<<"x"<<img_src.height()<<"x"<<img_src.depth()<<"x"<<img_src.spectrum();
         /*for (auto p: points) {
-            qDebug()<<"p="<<p;
+            //qDebug()<<"p="<<p;
         }*/
 
         if (points.size()>=2) {
@@ -168,7 +307,7 @@ cimg_library::CImg<uint8_t> extractXZ_roll(const cimg_library::CImg<uint8_t> &im
             if (p1.x()>p2.x()) qSwap(p1,p2);
 
             int length=static_cast<int>(std::round(std::sqrt(sqr(p1.x()-p2.x())+sqr(p1.y()-p2.y()))));
-            qDebug()<<"p1="<<p1<<", p2="<<p2<<", l="<<length;
+            //qDebug()<<"p1="<<p1<<", p2="<<p2<<", l="<<length;
 
             //const double cosa=std::cos(angle/180.0*M_PI);
             //const double sina=std::sin(angle/180.0*M_PI);
@@ -179,7 +318,7 @@ cimg_library::CImg<uint8_t> extractXZ_roll(const cimg_library::CImg<uint8_t> &im
                 for (int l=0; l<length; l++) {
                     float xs=static_cast<double>(p1.x())+static_cast<double>(l)*(p2.x()-p1.x())/static_cast<double>(length);
                     float ys=static_cast<double>(p1.y())+static_cast<double>(l)*(p2.y()-p1.y())/static_cast<double>(length);
-                    //if (z==0) qDebug()<<"xs="<<xs<<", ys="<<ys;
+                    //if (z==0) //qDebug()<<"xs="<<xs<<", ys="<<ys;
                     if (xs>=0 && xs<img_src.width() && ys>0 && ys<img_src.height()) {
                         //minx=std::min(minx,l);
                         //maxx=std::max(maxx,l);
@@ -189,7 +328,7 @@ cimg_library::CImg<uint8_t> extractXZ_roll(const cimg_library::CImg<uint8_t> &im
                     }
                 }
             }
-            qDebug()<<"img_out: "<<img.width()<<"x"<<img.height()<<"x"<<img.depth()<<"x"<<img.spectrum();
+            //qDebug()<<"img_out: "<<img.width()<<"x"<<img.height()<<"x"<<img.depth()<<"x"<<img.spectrum();
             return img;
         } else {
             return extractXZ(img_src, y);
@@ -201,4 +340,72 @@ cimg_library::CImg<uint8_t> extractZY_roll(const cimg_library::CImg<uint8_t> &im
 {
     if (angle==0) return extractZY(img_src, x);
     else return extractXZ_roll(img_src, x, y, angle-90.0);
+}
+
+
+
+
+
+
+cimg_library::CImg<uint8_t> extractXZ_atz_roll(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, int y, double angle)
+{
+    if (angle==0) return extractXZ_atz(z, img_src, y);
+    else {
+        double x0=0,y0=0;
+        line2 l(x,y,angle);
+        QSet<QPointF> points;
+        x0=0;
+        y0=0;
+        if (intersects_xrange(l, 0, img_src.width()-1, y0, x0)) points.insert(QPointF(x0, y0));
+        x0=0;
+        y0=img_src.height()-1;
+        if (intersects_xrange(l, 0, img_src.width()-1, y0, x0)) points.insert(QPointF(x0, y0));
+        x0=0;
+        y0=0;
+        if (intersects_yrange(l, x0, 0, img_src.height()-1, y0)) points.insert(QPointF(x0, y0));
+        x0=img_src.width()-1;
+        y0=0;
+        if (intersects_yrange(l, x0, 0, img_src.height()-1, y0)) points.insert(QPointF(x0, y0));
+        //qDebug()<<"==================================================================";
+        //qDebug()<<"img: "<<img_src.width()<<"x"<<img_src.height()<<"x"<<depth<<"x"<<img_src.spectrum();
+        /*for (auto p: points) {
+            //qDebug()<<"p="<<p;
+        }*/
+
+        if (points.size()>=2) {
+            QPointF p1=*(points.begin());
+            QPointF p2=*(points.rbegin());
+            //if (QPointF::dotProduct(p1, QPointF(0,0))>QPointF::dotProduct(p2, QPointF(0,0))) qSwap(p1,p2);
+            if (p1.x()>p2.x()) qSwap(p1,p2);
+
+            int length=static_cast<int>(std::round(std::sqrt(sqr(p1.x()-p2.x())+sqr(p1.y()-p2.y()))));
+            //qDebug()<<"p1="<<p1<<", p2="<<p2<<", l="<<length;
+
+            //const double cosa=std::cos(angle/180.0*M_PI);
+            //const double sina=std::sin(angle/180.0*M_PI);
+            cimg_library::CImg<uint8_t> img(length, 1,1,3);
+            //int minx=length;
+            //int maxx=-1;
+            for (int l=0; l<length; l++) {
+                float xs=static_cast<double>(p1.x())+static_cast<double>(l)*(p2.x()-p1.x())/static_cast<double>(length);
+                float ys=static_cast<double>(p1.y())+static_cast<double>(l)*(p2.y()-p1.y())/static_cast<double>(length);
+                //if (z==0) //qDebug()<<"xs="<<xs<<", ys="<<ys;
+                if (xs>=0 && xs<img_src.width() && ys>0 && ys<img_src.height()) {
+                    img(l,0,0,0)=img_src.linear_atXY(xs,ys,0,0);
+                    img(l,0,0,1)=img_src.linear_atXY(xs,ys,0,1);
+                    img(l,0,0,2)=img_src.linear_atXY(xs,ys,0,2);
+                }
+            }
+            //qDebug()<<"img_out: "<<img.width()<<"x"<<img.height()<<"x"<<img.depth()<<"x"<<img.spectrum();
+            return img;
+        } else {
+            return extractXZ_atz(z,img_src, y);
+        }
+    }
+}
+
+cimg_library::CImg<uint8_t> extractZY_atz_roll(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, int y, double angle)
+{
+    if (angle==0) return extractZY_atz(z, img_src, x);
+    else return extractXZ_atz_roll(z, depth, img_src, x, y, angle-90.0);
 }

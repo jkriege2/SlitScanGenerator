@@ -254,7 +254,7 @@ void MainWindow::openVideo(const QString& filename) {
                    if (dlg->getFramesHR()<=0 || readFFMPEGAsImageStack(m_video_some_frames, fn.toStdString(), 1, 1, &error, progCB, dlg->getFramesHR())) {
                        progress.close();
                        QApplication::restoreOverrideCursor();
-                       recalcAndRedisplaySamples(m_video_xytscaled.width()/2, m_video_xytscaled.height()/2);
+                       recalcAndRedisplaySamples(m_video_xytscaled.width()/2, m_video_xytscaled.height()/2, 0, 0);
                        QMessageBox::information(this, tr("Video opened"), tr("Video: %1\nframe size: %2x%3\n frames: %4\n color channels: %5").arg(fn).arg(m_video_xytscaled.width()).arg(m_video_xytscaled.height()).arg(m_video_xytscaled.depth()).arg(m_video_xytscaled.spectrum()));
                        m_filename=fn;
                        m_mode=DisplayModes::loaded;
@@ -274,7 +274,7 @@ void MainWindow::openVideo(const QString& filename) {
     setWidgetsEnabledForCurrentMode();
 }
 
-void MainWindow::recalcAndRedisplaySamples(int x, int y)
+void MainWindow::recalcAndRedisplaySamples(int x, int y, double angle, int angleMode)
 {
     cimg_library::CImg<uint8_t>* video_input=&m_video_xytscaled;
     if (ui->tabWidget->currentIndex()==3) {
@@ -291,6 +291,9 @@ void MainWindow::recalcAndRedisplaySamples(int x, int y)
         }
 
     }
+
+    if (ui->spinAngle->value()!=angle) ui->spinAngle->setValue(angle);
+    if (ui->cmbAngle->currentIndex()!=angleMode) ui->cmbAngle->setCurrentIndex(angleMode);
     recalcAndRedisplaySamples();
 }
 
@@ -345,6 +348,7 @@ void MainWindow::recalcAndRedisplaySamples()
                 const int l=2*std::max(img.width(), img.height());
                 pnt.drawLine(-l,0,l,0);
                 pnt.drawLine(0,-l,0,l);
+                pnt.restore();
             } else {
                 pnt.drawLine(0, lastY*xyFactor,img.width(),lastY*xyFactor);
                 pnt.drawLine(lastX*xyFactor, 0,lastX*xyFactor, img.height());
@@ -380,7 +384,7 @@ void MainWindow::ImageClicked(int x, int y)
         ui->spinNormalizeY->setValue(y*video_xyFactor);
         recalcAndRedisplaySamples();
     } else {
-        recalcAndRedisplaySamples(x,y);
+        recalcAndRedisplaySamples(x,y,ui->spinAngle->value(), ui->cmbAngle->currentIndex());
     }
 }
 
@@ -389,7 +393,12 @@ void MainWindow::on_btnAddXZ_clicked()
     if (lastY<0) return;
     ProcessingTask::ProcessingItem item;
     item.mode=ProcessingTask::Mode::XZ;
-    item.location=lastY*video_xyFactor;
+    item.location_x=lastX*video_xyFactor;
+    item.location_y=lastY*video_xyFactor;
+    item.angle=ui->spinAngle->value();
+    item.angleMode=ProcessingTask::AngleMode::AngleNone;
+    if (ui->cmbAngle->currentIndex()==0) item.angleMode=ProcessingTask::AngleMode::AngleRoll;
+    if (ui->cmbAngle->currentIndex()==1) item.angleMode=ProcessingTask::AngleMode::AnglePitch;
     m_procModel->addItem(item);
 }
 
@@ -398,7 +407,12 @@ void MainWindow::on_btnAddZY_clicked()
     if (lastX<0) return;
     ProcessingTask::ProcessingItem item;
     item.mode=ProcessingTask::Mode::ZY;
-    item.location=lastX*video_xyFactor;
+    item.location_x=lastX*video_xyFactor;
+    item.location_y=lastY*video_xyFactor;
+    item.angle=ui->spinAngle->value();
+    item.angleMode=ProcessingTask::AngleMode::AngleNone;
+    if (ui->cmbAngle->currentIndex()==0) item.angleMode=ProcessingTask::AngleMode::AngleRoll;
+    if (ui->cmbAngle->currentIndex()==1) item.angleMode=ProcessingTask::AngleMode::AnglePitch;
     m_procModel->addItem(item);
 }
 
@@ -454,9 +468,9 @@ void MainWindow::tableRowClicked(const QModelIndex &index)
     //qDebug()<<"clicked "<<index<<"  "<<m_procModel->getItem(index).location;
     //if (index.isValid()) {
         if (m_procModel->getItem(index).mode==ProcessingTask::Mode::ZY) {
-            recalcAndRedisplaySamples(m_procModel->getItem(index).location/video_xyFactor, lastY);
+            recalcAndRedisplaySamples(m_procModel->getItem(index).location_x/video_xyFactor, m_procModel->getItem(index).location_y/video_xyFactor, m_procModel->getItem(index).angle, m_procModel->getItem(index).angleModeForCombo());
         } else if (m_procModel->getItem(index).mode==ProcessingTask::Mode::XZ) {
-            recalcAndRedisplaySamples(lastX, m_procModel->getItem(index).location/video_xyFactor);
+            recalcAndRedisplaySamples(m_procModel->getItem(index).location_x/video_xyFactor, m_procModel->getItem(index).location_y/video_xyFactor, m_procModel->getItem(index).angle, m_procModel->getItem(index).angleModeForCombo());
         }
     //}
 }
