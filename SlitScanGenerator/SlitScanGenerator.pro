@@ -13,7 +13,7 @@ TARGET = SlitScanGenerator
 TEMPLATE = app
 
 QMAKE_TARGET_PRODUCT = "SlitScanGenerator"
-QMAKE_TARGET_COPYRIGHT = "(c) 2016 by Jan W. Krieger"
+QMAKE_TARGET_COPYRIGHT = "(c) 2016-2018 by Jan W. Krieger"
 win32:RC_ICONS += ./icons/logo_64x64.ico
 QMAKE_TARGET_COMPANY = "https://github.com/jkriege2/SlitScanGenerator"
 
@@ -30,7 +30,8 @@ SOURCES += main.cpp\
     processingwidget.cpp \
     processingthread.cpp \
     processingtask.cpp \
-    taskswidget.cpp
+    taskswidget.cpp \
+    geo_tools.cpp
 
 HEADERS  += mainwindow.h \
             ../CImg/CImg.h \
@@ -43,7 +44,8 @@ HEADERS  += mainwindow.h \
     processingwidget.h \
     processingthread.h \
     processingtask.h \
-    taskswidget.h
+    taskswidget.h \
+    geo_tools.h
 
 FORMS    += mainwindow.ui \
     aboutbox.ui \

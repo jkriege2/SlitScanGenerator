@@ -10,6 +10,8 @@
         <file>icons/list_add_down.png</file>
         <file>icons/list_remove.png</file>
         <file>icons/wizard2.png</file>
+        <file>icons/roll.png</file>
+        <file>icons/pitch.png</file>
         <file>icons/logo_32x32.png</file>
         <file>icons/logo_128x128.png</file>
     </qresource>

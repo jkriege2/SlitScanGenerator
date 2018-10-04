@@ -85,59 +85,73 @@
         <string>ZY/XZ-cuts</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="0" column="2">
-         <widget class="QPushButton" name="btnAddZY">
+        <item row="0" column="0">
+         <widget class="QWidget" name="widAngle" native="true">
           <property name="enabled">
            <bool>false</bool>
           </property>
-          <property name="text">
-           <string>add ZY</string>
-          </property>
-          <property name="icon">
-           <iconset resource="slitscangenerator.qrc">
-            <normaloff>:/icons/icons/list_add_down.png</normaloff>:/icons/icons/list_add_down.png</iconset>
-          </property>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QComboBox" name="cmbAngle">
+             <property name="iconSize">
+              <size>
+               <width>24</width>
+               <height>24</height>
+              </size>
+             </property>
+             <item>
+              <property name="text">
+               <string>roll</string>
+              </property>
+              <property name="icon">
+               <iconset resource="slitscangenerator.qrc">
+                <normaloff>:/icons/icons/roll.png</normaloff>:/icons/icons/roll.png</iconset>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>pitch</string>
+              </property>
+              <property name="icon">
+               <iconset resource="slitscangenerator.qrc">
+                <normaloff>:/icons/icons/pitch.png</normaloff>:/icons/icons/pitch.png</iconset>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="spinAngle">
+             <property name="suffix">
+              <string> °</string>
+             </property>
+             <property name="decimals">
+              <number>2</number>
+             </property>
+             <property name="minimum">
+              <double>-89.900000000000006</double>
+             </property>
+             <property name="maximum">
+              <double>89.900000000000006</double>
+             </property>
+             <property name="singleStep">
+              <double>0.100000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QPushButton" name="btnAddXZ">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>add XZ</string>
-          </property>
-          <property name="icon">
-           <iconset resource="slitscangenerator.qrc">
-            <normaloff>:/icons/icons/list_add_right.png</normaloff>:/icons/icons/list_add_right.png</iconset>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="3">
-         <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="0" column="1">
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
         </item>
         <item row="2" column="1" colspan="3">
          <widget class="QWidget" name="gridWidget" native="true">
@@ -183,6 +197,60 @@
             </widget>
            </item>
           </layout>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="2" column="0">
+         <widget class="QPushButton" name="btnAddXZ">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>add XZ</string>
+          </property>
+          <property name="icon">
+           <iconset resource="slitscangenerator.qrc">
+            <normaloff>:/icons/icons/list_add_right.png</normaloff>:/icons/icons/list_add_right.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="btnAddZY">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>add ZY</string>
+          </property>
+          <property name="icon">
+           <iconset resource="slitscangenerator.qrc">
+            <normaloff>:/icons/icons/list_add_down.png</normaloff>:/icons/icons/list_add_down.png</iconset>
+          </property>
          </widget>
         </item>
        </layout>
@@ -699,11 +767,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>397</y>
+     <y>380</y>
     </hint>
     <hint type="destinationlabel">
      <x>616</x>
-     <y>423</y>
+     <y>406</y>
     </hint>
    </hints>
   </connection>
@@ -715,11 +783,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>397</y>
+     <y>380</y>
     </hint>
     <hint type="destinationlabel">
      <x>1031</x>
-     <y>423</y>
+     <y>406</y>
     </hint>
    </hints>
   </connection>
@@ -731,11 +799,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>397</y>
+     <y>380</y>
     </hint>
     <hint type="destinationlabel">
      <x>616</x>
-     <y>449</y>
+     <y>432</y>
     </hint>
    </hints>
   </connection>
@@ -747,11 +815,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>397</y>
+     <y>380</y>
     </hint>
     <hint type="destinationlabel">
      <x>1031</x>
-     <y>449</y>
+     <y>432</y>
     </hint>
    </hints>
   </connection>
@@ -762,8 +830,8 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>615</x>
-     <y>395</y>
+     <x>656</x>
+     <y>380</y>
     </hint>
     <hint type="destinationlabel">
      <x>714</x>

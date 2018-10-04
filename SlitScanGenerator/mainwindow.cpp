@@ -58,6 +58,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->chkNormalize, SIGNAL(toggled(bool)),this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->spinWavelength, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->spinAngle, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->cmbAngle, SIGNAL(currentIndexChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->spinFilterDelta, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->chkWavelength, SIGNAL(toggled(bool)), this, SLOT(recalcAndRedisplaySamples()));
     setWidgetsEnabledForCurrentMode();
@@ -69,6 +71,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->spinStillLineWidth->setValue(m_settings.value("lastStillLineWidth", 0.2).toDouble());
     ui->spinStillCount->setValue(m_settings.value("lastStillCount", 5).toInt());
     ui->spinStillDelta->setValue(m_settings.value("lastStillDelta", 60).toInt());
+    ui->spinAngle->setValue(m_settings.value("lastAngle", 0).toDouble());
+    ui->cmbAngle->setCurrentIndex(m_settings.value("lastAngleMode", 0).toInt());
     ui->chkStillStrip->setChecked(m_settings.value("lastStillStrip", true).toBool());
     ui->chkStillDeparateFile->setChecked(m_settings.value("lastStillSeparateFiles", false).toBool());
 #ifndef USE_FILTERING
@@ -88,6 +92,8 @@ MainWindow::~MainWindow()
     m_settings.setValue("lastStillGap", ui->spinStillGap->value());
     m_settings.setValue("lastStillBorder", ui->spinStillBorder->value());
     m_settings.setValue("lastStillLineWidth", ui->spinStillLineWidth->value());
+    m_settings.setValue("lastAngle", ui->spinAngle->value());
+    m_settings.setValue("lastAngleMode", ui->cmbAngle->currentIndex());
     delete ui;
 }
 
@@ -160,6 +166,7 @@ void MainWindow::setWidgetsEnabledForCurrentMode() {
     ui->scrollXY->setEnabled(isloaded);
     ui->scrollYZ->setEnabled(isloaded);
     ui->scrollXZ->setEnabled(isloaded);
+    ui->widAngle->setEnabled(isloaded);
 
     ui->btnDelete->setEnabled(m_procModel->rowCount()>0);
     ui->actProcessAll->setEnabled(m_procModel->rowCount()>0);
@@ -292,6 +299,7 @@ void MainWindow::recalcAndRedisplaySamples()
     cimg_library::CImg<uint8_t>* video_input=&m_video_xytscaled;
     double xyFactor=1;
     double invxyFactor=video_xyFactor;
+    double angle=ui->spinAngle->value();
     if (ui->tabWidget->currentIndex()==3) {
         video_input=&m_video_some_frames;
         xyFactor=video_xyFactor;
@@ -302,8 +310,18 @@ void MainWindow::recalcAndRedisplaySamples()
 
 
         QImage img=CImgToQImage(*video_input, video_input->depth()/2);
-        cimg_library::CImg<uint8_t> cxz=extractXZ(*video_input, lastY*xyFactor);
-        cimg_library::CImg<uint8_t> cyz=extractZY(*video_input, lastX*xyFactor);
+        cimg_library::CImg<uint8_t> cxz;
+        cimg_library::CImg<uint8_t> cyz;
+        if (angle==0) {
+            cxz=extractXZ(*video_input, lastY*xyFactor);
+            cyz=extractZY(*video_input, lastX*xyFactor);
+        } else if (ui->cmbAngle->currentIndex()==0) {
+            cxz=extractXZ_roll(*video_input, lastX*xyFactor, lastY*xyFactor, angle);
+            cyz=extractZY_roll(*video_input, lastX*xyFactor, lastY*xyFactor, angle);
+        } else {
+            cxz=extractXZ_pitch(*video_input, lastY*xyFactor, angle);
+            cyz=extractZY_pitch(*video_input, lastX*xyFactor, angle);
+        }
 
         if (ui->chkNormalize->isChecked()) {
             ProcessingTask::normalizeZY(cyz, ui->spinNormalizeY->value()/invxyFactor);
@@ -320,8 +338,18 @@ void MainWindow::recalcAndRedisplaySamples()
         {
             QPainter pnt(&img);
             pnt.setPen(QPen(QColor("red")));
-            pnt.drawLine(0, lastY*xyFactor,img.width(),lastY*xyFactor);
-            pnt.drawLine(lastX*xyFactor, 0,lastX*xyFactor, img.height());
+            if (ui->cmbAngle->currentIndex()==0) {
+                pnt.save();
+                pnt.translate(lastX,lastY);
+                pnt.rotate(angle);
+                const int l=2*std::max(img.width(), img.height());
+                pnt.drawLine(-l,0,l,0);
+                pnt.drawLine(0,-l,0,l);
+            } else {
+                pnt.drawLine(0, lastY*xyFactor,img.width(),lastY*xyFactor);
+                pnt.drawLine(lastX*xyFactor, 0,lastX*xyFactor, img.height());
+            }
+
             if (ui->chkNormalize->isChecked()) {
                 pnt.setPen(QPen(QColor("blue")));
                 pnt.drawRect(QRect(ui->spinNormalizeX->value()/invxyFactor-1, ui->spinNormalizeY->value()/invxyFactor-1,3,3));
