@@ -169,6 +169,7 @@ void MainWindow::setWidgetsEnabledForCurrentMode() {
     ui->widAngle->setEnabled(isloaded);
 
     ui->btnDelete->setEnabled(m_procModel->rowCount()>0);
+    ui->btnDeleteAll->setEnabled(m_procModel->rowCount()>0);
     ui->actProcessAll->setEnabled(m_procModel->rowCount()>0);
     ui->btnAddXZ->setEnabled(m_video_xytscaled.depth()>0);
     ui->btnAddZY->setEnabled(m_video_xytscaled.depth()>0);
@@ -306,8 +307,10 @@ void MainWindow::recalcAndRedisplaySamples()
     if (ui->tabWidget->currentIndex()==3) {
         video_input=&m_video_some_frames;
         xyFactor=video_xyFactor;
-        invxyFactor=1;
+        invxyFactor=1;        
     }
+
+    qDebug()<<"lastX="<<lastX<<", lastY="<<lastY<<", xyFactor="<<xyFactor<<", video_xyFactor="<<video_xyFactor<<", video_everyNthFrame="<<video_everyNthFrame<<", angle="<<angle;
 
     if (lastX*xyFactor>=0 && lastX*xyFactor<video_input->width() && lastY*xyFactor>=0 && lastY*xyFactor<video_input->height()) {
 
@@ -322,8 +325,8 @@ void MainWindow::recalcAndRedisplaySamples()
             cxz=extractXZ_roll(*video_input, lastX*xyFactor, lastY*xyFactor, angle);
             cyz=extractZY_roll(*video_input, lastX*xyFactor, lastY*xyFactor, angle);
         } else {
-            cxz=extractXZ_pitch(*video_input, lastY*xyFactor, angle);
-            cyz=extractZY_pitch(*video_input, lastX*xyFactor, angle);
+            cxz=extractXZ_pitch(*video_input, lastY, angle, video_xyFactor, video_everyNthFrame);
+            cyz=extractZY_pitch(*video_input, lastX, angle, video_xyFactor, video_everyNthFrame);
         }
 
         if (ui->chkNormalize->isChecked()) {
@@ -418,18 +421,21 @@ void MainWindow::on_btnAddZY_clicked()
 
 void MainWindow::on_btnDelete_clicked()
 {
-    //if (ui->table->currentIndex().row()>=0 && ui->table->currentIndex().row()<m_procModel->rowCount()) {
-        auto rows=ui->table->selectionModel()->selectedRows();
-        //qDebug()<<"delete "<<rows.size();
-        QVector<int> r;
-        for (auto idx: rows) {
-            r.push_back(idx.row());
-        }
-        std::sort(r.begin(), r.end(), [](int a, int b) { return a>=b;});
-        for (auto idx: r) {
-            m_procModel->removeRow(idx);
-        }
-    //}
+    auto rows=ui->table->selectionModel()->selectedRows();
+    //qDebug()<<"delete "<<rows.size();
+    QVector<int> r;
+    for (auto idx: rows) {
+        r.push_back(idx.row());
+    }
+    std::sort(r.begin(), r.end(), [](int a, int b) { return a>=b;});
+    for (auto idx: r) {
+        m_procModel->removeRow(idx);
+    }
+}
+
+void MainWindow::on_btnDeleteAll_clicked()
+{
+    m_procModel->clear();
 }
 
 void MainWindow::processAll()

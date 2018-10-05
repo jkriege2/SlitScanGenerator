@@ -35,6 +35,7 @@ class MainWindow : public QMainWindow
         void on_btnAddXZ_clicked();
         void on_btnAddZY_clicked();
         void on_btnDelete_clicked();
+        void on_btnDeleteAll_clicked();
         void processAll();
         void tableRowClicked(const QModelIndex &index);
         void setWidgetsEnabledForCurrentMode();

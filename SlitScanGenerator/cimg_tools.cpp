@@ -5,6 +5,20 @@
 #include <QSet>
 #include "geo_tools.h"
 
+static inline uint qHash(const QPoint &p, uint /*seed*/) {
+    return static_cast<uint>(abs(p.x()+p.y()));
+}
+
+static inline uint qHash(const QPointF &p, uint /*seed*/) {
+    return static_cast<uint>(abs(p.x()+p.y()));
+}
+
+#define sqr(x) ((x)*(x))
+
+template<class T>
+static inline bool approx0(T v, double limit=0.0001) {
+    return std::fabs(double(v))<limit;
+}
 
 QImage CImgToQImage(const cimg_library::CImg<uint8_t> &img, int z)
 {
@@ -73,11 +87,11 @@ cimg_library::CImg<uint8_t> extractZY(const cimg_library::CImg<uint8_t> &img_src
 
 cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int y, double angle, int& zout, int* lenout)
 {
-    if (angle==0) {
+    if (approx0(angle)) {
         if (lenout) *lenout=img_src.depth();
         return extractXZ_atz(z, img_src, y);
     } else {
-        int dy=static_cast<int>(std::ceil(double(depth)*std::sin(angle/180.0*M_PI)));
+        int dy=static_cast<int>(std::ceil(double(depth)*std::tan(angle/180.0*M_PI)));
         int dymax=img_src.height()-y-1;
         //qDebug()<<"dy="<<dy;
         //qDebug()<<"dymax="<<dymax;
@@ -133,11 +147,11 @@ cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_lib
 
 cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, double angle, int& zout, int* lenout)
 {
-    if (angle==0) {
+    if (approx0(angle)) {
         if (lenout) *lenout=img_src.depth();
         return extractZY_atz(z, img_src, x);
     } else {
-        int dx=static_cast<int>(std::ceil(double(depth)*std::sin(angle/180.0*M_PI)));
+        int dx=static_cast<int>(std::ceil(double(depth)*std::tan(angle/180.0*M_PI)));
         int dxmax=img_src.width()-x-1;
 
         int length=0;
@@ -189,95 +203,105 @@ cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_lib
 }
 
 
-cimg_library::CImg<uint8_t> extractXZ_pitch(const cimg_library::CImg<uint8_t> &img_src, int y, double angle)
+cimg_library::CImg<uint8_t> extractXZ_pitch(const cimg_library::CImg<uint8_t> &img_src, int y, double angle, double video_xyFactor, double video_everyNthFrame)
 {
-    if (angle==0) return extractXZ(img_src, y);
+    if (approx0(angle)) return extractXZ(img_src, y);
     else {
-        int dy=static_cast<int>(std::ceil(double(img_src.depth())*std::sin(angle/180.0*M_PI)));
+        //qDebug()<<"y="<<y<<", img="<<img_src.width()<<"x"<<img_src.height()<<"x"<<img_src.depth()<<", angle="<<angle<<", video_xyFactor="<<video_xyFactor<<", video_everyNthFrame="<<video_everyNthFrame;
+        int dy=static_cast<int>(std::ceil(double(img_src.depth())*video_everyNthFrame*std::tan(angle/180.0*M_PI))/video_xyFactor);
         int dymax=img_src.height()-y-1;
         //qDebug()<<"dy="<<dy;
         //qDebug()<<"dymax="<<dymax;
 
         int length=0;
+        double ystart=y;
+        double zstart=0;
+        double yend=y;
+        double zend=0;
         if (dy<=dymax) {
-            length=static_cast<int>(std::ceil(double(img_src.depth())/std::cos(angle/180.0*M_PI)))-1;
+            yend=y+dy;
+            zend=img_src.depth();
+            length=static_cast<int>(std::ceil(sqrt(sqr(zend-zstart)+sqr(yend-ystart))));
             //qDebug()<<"dy<=dymax => length="<<length;
         } else {
-            length=static_cast<int>(std::ceil(double(dymax)/std::sin(angle/180.0*M_PI)))-1;
+            yend=y+dymax;
+            zend=double(dymax)*video_xyFactor/std::tan(angle/180.0*M_PI)/video_everyNthFrame;
+            length=static_cast<int>(std::ceil(sqrt(sqr(zend-zstart)+sqr(yend-ystart))));
             //qDebug()<<"dy>dymax => length="<<length;
         }
+        //qDebug()<<"ystart="<<ystart<<", yend="<<yend<<", zstart="<<zstart<<", zend="<<zend<<", length="<<length;
 
-        const double cosa=std::cos(angle/180.0*M_PI);
-        const double sina=std::sin(angle/180.0*M_PI);
+
+
         cimg_library::CImg<uint8_t> img(img_src.width(), length,1,3);
         int maxz=0;
         for (int z=0; z<length; z++) {
-            int ys=y+static_cast<int>(std::round(static_cast<double>(z)*sina));
-            int zs=static_cast<int>(std::round(static_cast<double>(z)*cosa));
+            int ys=static_cast<int>(std::round(ystart+static_cast<double>(z)/double(length)*(yend-ystart)));
+            int zs=static_cast<int>(std::round(zstart+static_cast<double>(z)/double(length)*(zend-zstart)));
             //qDebug()<<"z="<<z<<", ys="<<ys<<"["<<img_src.height()<<"], zs="<<zs<<"["<<img_src.depth()<<"]";
             if (ys>=0&&ys<img_src.height()&&zs>=0&&zs<img_src.depth()) {
                 maxz=std::max(z,maxz);
-                for (int x=0; x<img_src.width(); x++) {
+                for (unsigned int x=0; x<img_src.width(); x++) {
                     img(x,z,0,0)=img_src(x,ys,zs,0);
                     img(x,z,0,1)=img_src(x,ys,zs,1);
                     img(x,z,0,2)=img_src(x,ys,zs,2);
                 }
             }
         }
-        return img.resize(img.width(),maxz+1,1,3,0);
+        return img.crop(img.width(),maxz,img.depth(),img.spectrum());
     }
 }
 
-cimg_library::CImg<uint8_t> extractZY_pitch(const cimg_library::CImg<uint8_t> &img_src, int x, double angle)
+cimg_library::CImg<uint8_t> extractZY_pitch(const cimg_library::CImg<uint8_t> &img_src, int x, double angle, double video_xyFactor, double video_everyNthFrame)
 {
-    if (angle==0) return extractZY(img_src, x);
+    if (approx0(angle)) return extractZY(img_src, x);
     else {
-        int dx=static_cast<int>(std::ceil(double(img_src.depth())*std::sin(angle/180.0*M_PI)));
+        int dx=static_cast<int>(std::ceil(double(img_src.depth())*video_everyNthFrame*std::tan(angle/180.0*M_PI))/video_xyFactor);
         int dxmax=img_src.width()-x-1;
+        //qDebug()<<"dy="<<dy;
+        //qDebug()<<"dymax="<<dymax;
 
         int length=0;
+        double xstart=x;
+        double zstart=0;
+        double xend=x;
+        double zend=0;
         if (dx<=dxmax) {
-            length=static_cast<int>(std::ceil(double(img_src.depth())/std::cos(angle/180.0*M_PI)))-1;
+            xend=x+dx;
+            zend=img_src.depth();
+            length=static_cast<int>(std::ceil(sqrt(sqr(zend-zstart)+sqr(xend-xstart))));
+            //qDebug()<<"dy<=dymax => length="<<length;
         } else {
-            length=static_cast<int>(std::ceil(double(dxmax)/std::sin(angle/180.0*M_PI)))-1;
+            xend=x+dxmax;
+            zend=double(dxmax)*video_xyFactor/std::tan(angle/180.0*M_PI)/video_everyNthFrame;
+            length=static_cast<int>(std::ceil(sqrt(sqr(zend-zstart)+sqr(xend-xstart))));
+            //qDebug()<<"dy>dymax => length="<<length;
         }
 
-        const double cosa=std::cos(angle/180.0*M_PI);
-        const double sina=std::sin(angle/180.0*M_PI);
-        cimg_library::CImg<uint8_t> img(length,img_src.height(), 1,3);
+
+        cimg_library::CImg<uint8_t> img(length, img_src.height(), 1,3);
         int maxz=0;
         for (int z=0; z<length; z++) {
-            int xs=x+static_cast<int>(std::round(static_cast<double>(z)*sina));
-            int zs=static_cast<int>(std::round(static_cast<double>(z)*cosa));
-            //qDebug()<<"xs="<<xs<<"["<<img_src.width()<<"], z="<<z<<"["<<length<<"], zs="<<zs<<"["<<img_src.depth()<<"]";
+            int xs=static_cast<int>(std::round(xstart+static_cast<double>(z)/double(length)*(xend-xstart)));
+            int zs=static_cast<int>(std::round(zstart+static_cast<double>(z)/double(length)*(zend-zstart)));
+            //qDebug()<<"z="<<z<<", ys="<<ys<<"["<<img_src.height()<<"], zs="<<zs<<"["<<img_src.depth()<<"]";
             if (xs>=0&&xs<img_src.width()&&zs>=0&&zs<img_src.depth()) {
                 maxz=std::max(z,maxz);
-                for (int y=0; y<img_src.height(); y++) {
+                for (unsigned int y=0; y<img_src.height(); y++) {
                     img(z,y,0,0)=img_src(xs,y,zs,0);
                     img(z,y,0,1)=img_src(xs,y,zs,1);
                     img(z,y,0,2)=img_src(xs,y,zs,2);
                 }
             }
         }
-        return img.resize(maxz+1,img.height(),1,3,0);
+        return img.crop(maxz,img.height(),img.depth(),img.spectrum());
     }
-
-
 }
 
-static inline uint qHash(const QPoint &p, uint /*seed*/) {
-    return static_cast<uint>(abs(p.x()+p.y()));
-}
-
-static inline uint qHash(const QPointF &p, uint /*seed*/) {
-    return static_cast<uint>(abs(p.x()+p.y()));
-}
-
-#define sqr(x) ((x)*(x))
 
 cimg_library::CImg<uint8_t> extractXZ_roll(const cimg_library::CImg<uint8_t> &img_src, int x, int y, double angle)
 {
-    if (angle==0) return extractXZ(img_src, y);
+    if (approx0(angle)) return extractXZ(img_src, y);
     else {
         double x0=0,y0=0;
         line2 l(x,y,angle);
@@ -338,8 +362,8 @@ cimg_library::CImg<uint8_t> extractXZ_roll(const cimg_library::CImg<uint8_t> &im
 
 cimg_library::CImg<uint8_t> extractZY_roll(const cimg_library::CImg<uint8_t> &img_src, int x, int y, double angle)
 {
-    if (angle==0) return extractZY(img_src, x);
-    else return extractXZ_roll(img_src, x, y, angle-90.0);
+    if (approx0(angle)) return extractZY(img_src, x);
+    else return extractXZ_roll(img_src, x, y, angle-90.0).permute_axes("yxzc");
 }
 
 
@@ -349,7 +373,7 @@ cimg_library::CImg<uint8_t> extractZY_roll(const cimg_library::CImg<uint8_t> &im
 
 cimg_library::CImg<uint8_t> extractXZ_atz_roll(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, int y, double angle)
 {
-    if (angle==0) return extractXZ_atz(z, img_src, y);
+    if (approx0(angle)) return extractXZ_atz(z, img_src, y);
     else {
         double x0=0,y0=0;
         line2 l(x,y,angle);
@@ -406,6 +430,6 @@ cimg_library::CImg<uint8_t> extractXZ_atz_roll(int z, int depth, const cimg_libr
 
 cimg_library::CImg<uint8_t> extractZY_atz_roll(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, int y, double angle)
 {
-    if (angle==0) return extractZY_atz(z, img_src, x);
+    if (approx0(angle)) return extractZY_atz(z, img_src, x);
     else return extractXZ_atz_roll(z, depth, img_src, x, y, angle-90.0);
 }

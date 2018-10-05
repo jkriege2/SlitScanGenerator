@@ -161,7 +161,7 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,0" columnstretch="0,0">
+          <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,0,0,0" columnstretch="0,0">
            <item row="0" column="1">
             <widget class="QPushButton" name="btnDelete">
              <property name="enabled">
@@ -176,7 +176,27 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
+           <item row="0" column="0" rowspan="5">
+            <widget class="QTableView" name="table">
+             <property name="selectionBehavior">
+              <enum>QAbstractItemView::SelectRows</enum>
+             </property>
+             <attribute name="horizontalHeaderDefaultSectionSize">
+              <number>75</number>
+             </attribute>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QPushButton" name="btnDeleteAll">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>delete all</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1" rowspan="3">
             <spacer name="verticalSpacer">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -188,16 +208,6 @@
               </size>
              </property>
             </spacer>
-           </item>
-           <item row="0" column="0" rowspan="3">
-            <widget class="QTableView" name="table">
-             <property name="selectionBehavior">
-              <enum>QAbstractItemView::SelectRows</enum>
-             </property>
-             <attribute name="horizontalHeaderDefaultSectionSize">
-              <number>75</number>
-             </attribute>
-            </widget>
            </item>
           </layout>
          </widget>
