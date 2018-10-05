@@ -95,7 +95,7 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
                 }
                 results.push_back(cimg_library::CImg<uint8_t>());
                 results[j].assign(len, line.width(), 1, 3);
-                qDebug()<<"output size: "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
+                //qDebug()<<"output size: "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
                 zs_vals.push_back(0);
             } else if (pi.mode==Mode::XZ) {
                 if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
@@ -107,7 +107,7 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
                 }
                 results.push_back(cimg_library::CImg<uint8_t>());
                 results[j].assign(line.width(), len, 1, 3);
-                qDebug()<<"output size: "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
+                //qDebug()<<"output size: "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
                 zs_vals.push_back(0);
             }
             QFileInfo fi(filename);
@@ -158,11 +158,11 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
                     zs_vals[j]++;
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
                     line=extractZY_atz_pitch(z, outputFrames, frame, pi.location_x, pi.angle, zs_vals[j]);
-                    qDebug()<<"extractZY_atz_pitch: z="<<z<<", zs_vals[j]="<<zs_vals[j]<<", line.height="<<line.height();
+                    //qDebug()<<"extractZY_atz_pitch: z="<<z<<", zs_vals[j]="<<zs_vals[j]<<", line.height="<<line.height();
                 }
                 /*if (z0+line.height()-1>=results[j].width()) {
                     // resize of necessary
-                    qDebug()<<"resize "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum()<<"  -> "<<z0+line.height()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
+                    //qDebug()<<"resize "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum()<<"  -> "<<z0+line.height()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
                     results[j].resize(z0+line.height(), results[j].height(), results[j].depth(), results[j].spectrum());
                 }*/
                 if (zs_vals[j]>z0) {
@@ -187,11 +187,11 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
                     zs_vals[j]++;
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
                     line=extractXZ_atz_pitch(z, outputFrames, frame, pi.location_y, pi.angle, zs_vals[j]);
-                    qDebug()<<"extractXZ_atz_pitch: z="<<z<<", zs_vals[j]="<<zs_vals[j]<<", line.height="<<line.height();
+                    //qDebug()<<"extractXZ_atz_pitch: z="<<z<<", zs_vals[j]="<<zs_vals[j]<<", line.height="<<line.height();
                 }
                 /*if (z0+line.height()-1>=results[j].height()) {
                     // resize of necessary
-                    qDebug()<<"resize "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum()<<"  -> "<<results[j].width()<<"x"<<z0+line.height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
+                    //qDebug()<<"resize "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum()<<"  -> "<<results[j].width()<<"x"<<z0+line.height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
                     results[j].resize(results[j].width(), z0+line.height(), results[j].depth(), results[j].spectrum());
 
                 }*/

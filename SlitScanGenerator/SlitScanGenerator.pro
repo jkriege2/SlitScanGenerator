@@ -56,6 +56,7 @@ INCLUDEPATH += ../CImg \
                $$FFMPEG_PATH/include
 
 DEFINES +=
+CONFIG(debug, debug|release):DEFINES += DEBUG_FLAG
 
 LIBS += -lm -L$$FFMPEG_PATH/lib -lavutil -lavcodec -lavdevice -lswscale -lavformat -lswresample -lpostproc -lavfilter
 

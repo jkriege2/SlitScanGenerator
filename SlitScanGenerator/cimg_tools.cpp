@@ -88,33 +88,41 @@ cimg_library::CImg<uint8_t> extractZY(const cimg_library::CImg<uint8_t> &img_src
 cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int y, double angle, int& zout, int* lenout)
 {
     if (approx0(angle)) {
-        if (lenout) *lenout=img_src.depth();
+        if (lenout) *lenout=depth;
         return extractXZ_atz(z, img_src, y);
     } else {
+        //qDebug()<<"y="<<y<<", img="<<img_src.width()<<"x"<<img_src.height()<<"x"<<depth<<", angle="<<angle<<", video_xyFactor="<<video_xyFactor<<", video_everyNthFrame="<<video_everyNthFrame;
         int dy=static_cast<int>(std::ceil(double(depth)*std::tan(angle/180.0*M_PI)));
         int dymax=img_src.height()-y-1;
         //qDebug()<<"dy="<<dy;
         //qDebug()<<"dymax="<<dymax;
 
         int length=0;
+        double ystart=y;
+        double zstart=0;
+        double yend=y;
+        double zend=0;
         if (dy<=dymax) {
-            length=static_cast<int>(std::ceil(double(depth)/std::cos(angle/180.0*M_PI)))-1;
+            yend=y+dy;
+            zend=depth;
+            length=static_cast<int>(std::ceil(sqrt(sqr(zend-zstart)+sqr(yend-ystart))));
             //qDebug()<<"dy<=dymax => length="<<length;
         } else {
-            length=static_cast<int>(std::ceil(double(dymax)/std::sin(angle/180.0*M_PI)))-1;
+            yend=y+dymax;
+            zend=double(dymax)/std::tan(angle/180.0*M_PI);
+            length=static_cast<int>(std::ceil(sqrt(sqr(zend-zstart)+sqr(yend-ystart))));
             //qDebug()<<"dy>dymax => length="<<length;
         }
-        if (lenout) *lenout=length;
+        //qDebug()<<"ystart="<<ystart<<", yend="<<yend<<", zstart="<<zstart<<", zend="<<zend<<", length="<<length;
 
 
-        const double cosa=std::cos(angle/180.0*M_PI);
-        const double sina=std::sin(angle/180.0*M_PI);
+
         cimg_library::CImg<uint8_t> img(img_src.width(), 1,1,3);
         int zs=z;
         int zimg=0;
         int oldzout=zout;
-        while ((zs=static_cast<int>(std::round(static_cast<double>(zout)*cosa)))==z) {
-            int ys=y+static_cast<int>(std::round(static_cast<double>(zout)*sina));
+        while ((zs=static_cast<int>(std::round(zstart+static_cast<double>(zout)/double(length)*(zend-zstart))))==z) {
+            int ys=static_cast<int>(std::round(ystart+static_cast<double>(zout)/double(length)*(yend-ystart)));
             if (ys>=0&&ys<img_src.height()) {
                 zimg++;
             }
@@ -126,15 +134,15 @@ cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_lib
         }
         zimg=0;
         zout=oldzout;
-        while ((zs=static_cast<int>(std::round(static_cast<double>(zout)*cosa)))==z) {
-            int ys=y+static_cast<int>(std::round(static_cast<double>(zout)*sina));
+        while ((zs=static_cast<int>(std::round(zstart+static_cast<double>(zout)/double(length)*(zend-zstart))))==z) {
+            int ys=static_cast<int>(std::round(ystart+static_cast<double>(zout)/double(length)*(yend-ystart)));
             //qDebug()<<"z="<<z<<"<<"", zout="<<zout<<", ys="<<ys<<"["<<img_src.height()<<"], zs="<<zs<<"["<<depth<<"]";
             if (ys>=0&&ys<img_src.height()) {//&&zs>=0&&zs<depth) {
 
                 for (int x=0; x<img_src.width(); x++) {
-                    img(x,0,0,0)=img_src(x,ys,0,0);
-                    img(x,0,0,1)=img_src(x,ys,0,1);
-                    img(x,0,0,2)=img_src(x,ys,0,2);
+                    img(x,zimg,0,0)=img_src(x,ys,0,0);
+                    img(x,zimg,0,1)=img_src(x,ys,0,1);
+                    img(x,zimg,0,2)=img_src(x,ys,0,2);
                 }
                 zimg++;
             }
@@ -148,28 +156,38 @@ cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_lib
 cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, double angle, int& zout, int* lenout)
 {
     if (approx0(angle)) {
-        if (lenout) *lenout=img_src.depth();
+        if (lenout) *lenout=depth;
         return extractZY_atz(z, img_src, x);
     } else {
         int dx=static_cast<int>(std::ceil(double(depth)*std::tan(angle/180.0*M_PI)));
         int dxmax=img_src.width()-x-1;
+        //qDebug()<<"dy="<<dy;
+        //qDebug()<<"dymax="<<dymax;
 
         int length=0;
+        double xstart=x;
+        double zstart=0;
+        double xend=x;
+        double zend=0;
         if (dx<=dxmax) {
-            length=static_cast<int>(std::ceil(double(depth)/std::cos(angle/180.0*M_PI)))-1;
+            xend=x+dx;
+            zend=depth;
+            length=static_cast<int>(std::ceil(sqrt(sqr(zend-zstart)+sqr(xend-xstart))));
+            //qDebug()<<"dy<=dymax => length="<<length;
         } else {
-            length=static_cast<int>(std::ceil(double(dxmax)/std::sin(angle/180.0*M_PI)))-1;
+            xend=x+dxmax;
+            zend=double(dxmax)/std::tan(angle/180.0*M_PI);
+            length=static_cast<int>(std::ceil(sqrt(sqr(zend-zstart)+sqr(xend-xstart))));
+            //qDebug()<<"dy>dymax => length="<<length;
         }
-        if (lenout) *lenout=length;
 
-        const double cosa=std::cos(angle/180.0*M_PI);
-        const double sina=std::sin(angle/180.0*M_PI);
+
         cimg_library::CImg<uint8_t> img(img_src.height(),1, 1,3);
         int zs=z;
         int zimg=0;
         int oldzout=zout;
-        while ((zs=static_cast<int>(std::round(static_cast<double>(zout)*cosa)))==z) {
-            int xs=x+static_cast<int>(std::round(static_cast<double>(zout)*sina));
+        while ((zs=static_cast<int>(std::round(zstart+static_cast<double>(zout)/double(length)*(zend-zstart))))==z) {
+            int xs=static_cast<int>(std::round(xstart+static_cast<double>(zout)/double(length)*(xend-xstart)));
             if (xs>=0&&xs<img_src.width()) {
                 zimg++;
             }
@@ -181,8 +199,8 @@ cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_lib
         }
         zimg=0;
         zout=oldzout;
-        while ((zs=static_cast<int>(std::round(static_cast<double>(zout)*cosa)))==z) {
-            int xs=x+static_cast<int>(std::round(static_cast<double>(zout)*sina));
+        while ((zs=static_cast<int>(std::round(zstart+static_cast<double>(zout)/double(length)*(zend-zstart))))==z) {
+            int xs=static_cast<int>(std::round(xstart+static_cast<double>(zout)/double(length)*(xend-xstart)));
 
             //qDebug()<<"xs="<<xs<<"["<<img_src.width()<<"], z="<<z<<"["<<length<<"], zs="<<zs<<"["<<depth<<"]";
             if (xs>=0&&xs<img_src.width()) {//&&zs>=0&&zs<depth) {

@@ -38,6 +38,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->btnProcessAll->setDefaultAction(ui->actProcessAll);
     ui->tabWidget->setCurrentIndex(0);
 
+#ifdef DEBUG_FLAG
+    ui->actTest->setVisible(true);
+#else
+    ui->actTest->setVisible(false);
+#endif
+
 
     connect(ui->actTest, SIGNAL(triggered()), this, SLOT(test()));
     connect(ui->actQuit, SIGNAL(triggered()), this, SLOT(close()));
@@ -310,7 +316,7 @@ void MainWindow::recalcAndRedisplaySamples()
         invxyFactor=1;        
     }
 
-    qDebug()<<"lastX="<<lastX<<", lastY="<<lastY<<", xyFactor="<<xyFactor<<", video_xyFactor="<<video_xyFactor<<", video_everyNthFrame="<<video_everyNthFrame<<", angle="<<angle;
+    //qDebug()<<"lastX="<<lastX<<", lastY="<<lastY<<", xyFactor="<<xyFactor<<", video_xyFactor="<<video_xyFactor<<", video_everyNthFrame="<<video_everyNthFrame<<", angle="<<angle;
 
     if (lastX*xyFactor>=0 && lastX*xyFactor<video_input->width() && lastY*xyFactor>=0 && lastY*xyFactor<video_input->height()) {
 
