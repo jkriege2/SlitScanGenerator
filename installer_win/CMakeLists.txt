@@ -27,6 +27,7 @@ if (MSVC)
 else()
   # MinGW
   get_filename_component(MINGW_DLL_DIR ${CMAKE_CXX_COMPILER} PATH)
+  message(${MINGW_DLL_DIR})
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
       # 64 bits
       install(FILES
@@ -60,7 +61,7 @@ else()
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
       # 32 bits
       install(FILES
-        ${MINGW_DLL_DIR}/libgcc_s_seh-1.dll
+        ${MINGW_DLL_DIR}/libgcc_s_dw2-1.dll
         DESTINATION .
       )
   endif()
