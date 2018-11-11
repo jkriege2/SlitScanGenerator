@@ -50,6 +50,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
     connect(ui->actProcessAll, SIGNAL(triggered()), this, SLOT(processAll()));
     connect(ui->actOpenVideo, SIGNAL(triggered()), this, SLOT(openVideo()));
+    connect(ui->actOpenExampleVideo, SIGNAL(triggered()), this, SLOT(openExampleVideo()));
     connect(ui->actOpenINI, SIGNAL(triggered()), this, SLOT(loadINI()));
     connect(ui->actSaveINI, SIGNAL(triggered()), this, SLOT(saveINI()));
     connect(ui->scrollXY->horizontalScrollBar(), SIGNAL(sliderMoved(int)), ui->scrollXZ->horizontalScrollBar(), SLOT(setValue(int)));
@@ -279,6 +280,16 @@ void MainWindow::openVideo(const QString& filename) {
         delete dlg;
     }
     setWidgetsEnabledForCurrentMode();
+}
+
+void MainWindow::openExampleVideo()
+{
+    QDir d(QApplication::instance()->applicationDirPath());
+    d.cd("testmovie");
+    QString fn=QFileDialog::getOpenFileName(this, tr("Open Example Video File ..."), d.absolutePath());
+    if (fn.size()>0) {
+        openVideo(fn);
+    }
 }
 
 void MainWindow::recalcAndRedisplaySamples(int x, int y, double angle, int angleMode)

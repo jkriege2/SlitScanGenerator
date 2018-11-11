@@ -1,4 +1,5 @@
 #include "cimg_tools.h"
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <QPoint>
 #include <QDebug>

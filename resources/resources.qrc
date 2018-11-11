@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>exit.png</file>
+        <file>fileexport.png</file>
+        <file>fileimport.png</file>
+        <file>folder_video.png</file>
+        <file>info.png</file>
+        <file>list_add.png</file>
+        <file>list_add_right.png</file>
+        <file>list_add_down.png</file>
+        <file>list_remove.png</file>
+        <file>wizard2.png</file>
+        <file>roll.png</file>
+        <file>pitch.png</file>
+        <file>logo_32x32.png</file>
+        <file>logo_128x128.png</file>
+    </qresource>
+</RCC>

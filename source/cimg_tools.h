@@ -1,7 +1,7 @@
 #ifndef CIMG_TOOLS_H
 #define CIMG_TOOLS_H
 
-#define cimg_display 0
+#define _USE_MATH_DEFINES
 #include "CImg.h"
 #include <QImage>
 #include <QString>

@@ -28,6 +28,7 @@ class MainWindow : public QMainWindow
         void loadINI();
         void loadINI(const QString& filename, QString *vfn);
         void openVideo(const QString &filename=QString());
+        void openExampleVideo();
         void recalcAndRedisplaySamples(int x, int y, double angle, int angleMode);
         void recalcAndRedisplaySamples();
         void ImageClicked(int x, int y);

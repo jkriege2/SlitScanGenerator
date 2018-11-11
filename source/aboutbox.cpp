@@ -1,6 +1,7 @@
 #include "aboutbox.h"
 #include "ui_aboutbox.h"
 #include <QDesktopServices>
+#include "defines.h"
 
 AboutBox::AboutBox(QWidget *parent) :
     QDialog(parent),
@@ -8,7 +9,7 @@ AboutBox::AboutBox(QWidget *parent) :
 {
     ui->setupUi(this);
     connect(ui->labelText, SIGNAL(linkActivated(QString)), this, SLOT(openURL(QUrl)));
-    ui->labVersion->setText(tr("%1-bits").arg(sizeof(void*)*8));
+    ui->labVersion->setText(tr("%2, %1-bits").arg(sizeof(void*)*8).arg(PROJECT_VERSION));
 }
 
 AboutBox::~AboutBox()

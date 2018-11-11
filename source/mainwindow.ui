@@ -116,8 +116,8 @@
                <string>roll</string>
               </property>
               <property name="icon">
-               <iconset resource="slitscangenerator.qrc">
-                <normaloff>:/icons/icons/roll.png</normaloff>:/icons/icons/roll.png</iconset>
+               <iconset resource="../resources/resources.qrc">
+                <normaloff>:/icons/roll.png</normaloff>:/icons/roll.png</iconset>
               </property>
              </item>
              <item>
@@ -125,8 +125,8 @@
                <string>pitch</string>
               </property>
               <property name="icon">
-               <iconset resource="slitscangenerator.qrc">
-                <normaloff>:/icons/icons/pitch.png</normaloff>:/icons/icons/pitch.png</iconset>
+               <iconset resource="../resources/resources.qrc">
+                <normaloff>:/icons/pitch.png</normaloff>:/icons/pitch.png</iconset>
               </property>
              </item>
             </widget>
@@ -171,8 +171,8 @@
               <string>delete</string>
              </property>
              <property name="icon">
-              <iconset resource="slitscangenerator.qrc">
-               <normaloff>:/icons/icons/list_remove.png</normaloff>:/icons/icons/list_remove.png</iconset>
+              <iconset resource="../resources/resources.qrc">
+               <normaloff>:/icons/list_remove.png</normaloff>:/icons/list_remove.png</iconset>
              </property>
             </widget>
            </item>
@@ -234,8 +234,8 @@
            <string>add XZ</string>
           </property>
           <property name="icon">
-           <iconset resource="slitscangenerator.qrc">
-            <normaloff>:/icons/icons/list_add_right.png</normaloff>:/icons/icons/list_add_right.png</iconset>
+           <iconset resource="../resources/resources.qrc">
+            <normaloff>:/icons/list_add_right.png</normaloff>:/icons/list_add_right.png</iconset>
           </property>
          </widget>
         </item>
@@ -261,8 +261,8 @@
            <string>add ZY</string>
           </property>
           <property name="icon">
-           <iconset resource="slitscangenerator.qrc">
-            <normaloff>:/icons/icons/list_add_down.png</normaloff>:/icons/icons/list_add_down.png</iconset>
+           <iconset resource="../resources/resources.qrc">
+            <normaloff>:/icons/list_add_down.png</normaloff>:/icons/list_add_down.png</iconset>
           </property>
          </widget>
         </item>
@@ -644,8 +644,8 @@
          <string>ProcessAll</string>
         </property>
         <property name="icon">
-         <iconset resource="slitscangenerator.qrc">
-          <normaloff>:/icons/icons/wizard2.png</normaloff>:/icons/icons/wizard2.png</iconset>
+         <iconset resource="../resources/resources.qrc">
+          <normaloff>:/icons/wizard2.png</normaloff>:/icons/wizard2.png</iconset>
         </property>
         <property name="toolButtonStyle">
          <enum>Qt::ToolButtonTextUnderIcon</enum>
@@ -670,6 +670,7 @@
      <string>&amp;File</string>
     </property>
     <addaction name="actOpenVideo"/>
+    <addaction name="actOpenExampleVideo"/>
     <addaction name="separator"/>
     <addaction name="actOpenINI"/>
     <addaction name="actSaveINI"/>
@@ -701,8 +702,8 @@
   </widget>
   <action name="actOpenVideo">
    <property name="icon">
-    <iconset resource="slitscangenerator.qrc">
-     <normaloff>:/icons/icons/folder_video.png</normaloff>:/icons/icons/folder_video.png</iconset>
+    <iconset resource="../resources/resources.qrc">
+     <normaloff>:/icons/folder_video.png</normaloff>:/icons/folder_video.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Open Video</string>
@@ -710,8 +711,8 @@
   </action>
   <action name="actQuit">
    <property name="icon">
-    <iconset resource="slitscangenerator.qrc">
-     <normaloff>:/icons/icons/exit.png</normaloff>:/icons/icons/exit.png</iconset>
+    <iconset resource="../resources/resources.qrc">
+     <normaloff>:/icons/exit.png</normaloff>:/icons/exit.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Quit</string>
@@ -719,8 +720,8 @@
   </action>
   <action name="actOpenINI">
    <property name="icon">
-    <iconset resource="slitscangenerator.qrc">
-     <normaloff>:/icons/icons/fileimport.png</normaloff>:/icons/icons/fileimport.png</iconset>
+    <iconset resource="../resources/resources.qrc">
+     <normaloff>:/icons/fileimport.png</normaloff>:/icons/fileimport.png</iconset>
    </property>
    <property name="text">
     <string>Open INI-file</string>
@@ -728,8 +729,8 @@
   </action>
   <action name="actSaveINI">
    <property name="icon">
-    <iconset resource="slitscangenerator.qrc">
-     <normaloff>:/icons/icons/fileexport.png</normaloff>:/icons/icons/fileexport.png</iconset>
+    <iconset resource="../resources/resources.qrc">
+     <normaloff>:/icons/fileexport.png</normaloff>:/icons/fileexport.png</iconset>
    </property>
    <property name="text">
     <string>Save INI-file</string>
@@ -737,8 +738,8 @@
   </action>
   <action name="actProcessAll">
    <property name="icon">
-    <iconset resource="slitscangenerator.qrc">
-     <normaloff>:/icons/icons/wizard2.png</normaloff>:/icons/icons/wizard2.png</iconset>
+    <iconset resource="../resources/resources.qrc">
+     <normaloff>:/icons/wizard2.png</normaloff>:/icons/wizard2.png</iconset>
    </property>
    <property name="text">
     <string>Process All</string>
@@ -746,8 +747,8 @@
   </action>
   <action name="actAbout">
    <property name="icon">
-    <iconset resource="slitscangenerator.qrc">
-     <normaloff>:/icons/icons/info.png</normaloff>:/icons/icons/info.png</iconset>
+    <iconset resource="../resources/resources.qrc">
+     <normaloff>:/icons/info.png</normaloff>:/icons/info.png</iconset>
    </property>
    <property name="text">
     <string>&amp;About</string>
@@ -756,6 +757,11 @@
   <action name="actTest">
    <property name="text">
     <string>Test</string>
+   </property>
+  </action>
+  <action name="actOpenExampleVideo">
+   <property name="text">
+    <string>Open &amp;Example Video</string>
    </property>
   </action>
  </widget>
@@ -769,7 +775,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="slitscangenerator.qrc"/>
+  <include location="../resources/resources.qrc"/>
  </resources>
  <connections>
   <connection>

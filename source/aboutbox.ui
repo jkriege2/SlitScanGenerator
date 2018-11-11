@@ -64,7 +64,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="slitscangenerator.qrc">:/icons/icons/logo_128x128.png</pixmap>
+      <pixmap resource="slitscangenerator.qrc">:/icons/logo_128x128.png</pixmap>
      </property>
      <property name="alignment">
       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
