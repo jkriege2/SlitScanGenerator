@@ -14,6 +14,7 @@
 #include <vector>
 #include "importdialog.h"
 #include "processingthread.h"
+#include "defines.h"
 
 #define USE_FILTERING
 
@@ -86,6 +87,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->chkWavelength->setChecked(false);
     ui->tabWidget->setTabEnabled(3, false);
 #endif
+
+    setWindowTitle(tr("%1 %2/%3bit").arg(PROJECT_LONGNAME).arg(PROJECT_VERSION).arg(sizeof(void*)*8));
 }
 
 MainWindow::~MainWindow()

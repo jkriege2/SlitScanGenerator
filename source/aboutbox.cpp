@@ -9,7 +9,8 @@ AboutBox::AboutBox(QWidget *parent) :
 {
     ui->setupUi(this);
     connect(ui->labelText, SIGNAL(linkActivated(QString)), this, SLOT(openURL(QUrl)));
-    ui->labVersion->setText(tr("%2, %1-bits").arg(sizeof(void*)*8).arg(PROJECT_VERSION));
+    ui->labVersion->setText(tr("%2, %1-bits, %4\nbuild timestamp: %3").arg(sizeof(void*)*8).arg(PROJECT_VERSION).arg(PROJECT_BUILDATE).arg(PROJECT_BUILDTYPE));
+    ui->labCopyright->setText(tr("%1").arg(PROJECT_COPYRIGHT));
 }
 
 AboutBox::~AboutBox()

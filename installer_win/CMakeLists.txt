@@ -18,112 +18,122 @@
 # Configure the installer scripts
 configure_file(installer.cmake.nsi ${CMAKE_BINARY_DIR}/installer.nsi @ONLY)
 
-# Compiler Runtime DLLs
-if (MSVC)
-  # Visual Studio
-  set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP true)
-  include(InstallRequiredSystemLibraries)
-  install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION .)
-else()
-  # MinGW
-  get_filename_component(MINGW_DLL_DIR ${CMAKE_CXX_COMPILER} PATH)
-  message(${MINGW_DLL_DIR})
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-      # 64 bits
+if (FALSE)
+    # Compiler Runtime DLLs
+    if (MSVC)
+      # Visual Studio
+      set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP true)
+      include(InstallRequiredSystemLibraries)
+      install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION .)
+    else()
+      # MinGW
+      get_filename_component(MINGW_DLL_DIR ${CMAKE_CXX_COMPILER} PATH)
+      message(${MINGW_DLL_DIR})
+      if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+          # 64 bits
+          install(FILES
+              #${MINGW_DLL_DIR}/libgcc_s_seh-1.dll
+              #${MINGW_DLL_DIR}/libbz2-1.dll
+              #${MINGW_DLL_DIR}/libfreetype-6.dll
+              #${MINGW_DLL_DIR}/libglib-2.0-0.dll
+              #${MINGW_DLL_DIR}/libgraphite2.dll
+              #${MINGW_DLL_DIR}/libharfbuzz-0.dll
+              #${MINGW_DLL_DIR}/libiconv-2.dll
+              #${MINGW_DLL_DIR}/libicudt57.dll
+              #${MINGW_DLL_DIR}/libicuin57.dll
+              #${MINGW_DLL_DIR}/libicuio57.dll
+              #${MINGW_DLL_DIR}/libicule57.dll
+              #${MINGW_DLL_DIR}/libiculx57.dll
+              #${MINGW_DLL_DIR}/libicutest57.dll
+              #${MINGW_DLL_DIR}/libicutu57.dll
+              #${MINGW_DLL_DIR}/libicuuc57.dll
+              #${MINGW_DLL_DIR}/libintl-8.dll
+              #${MINGW_DLL_DIR}/libjasper-1.dll
+              #${MINGW_DLL_DIR}/libjpeg-8.dll
+              #${MINGW_DLL_DIR}/liblzma-5.dll
+              #${MINGW_DLL_DIR}/libpcre-1.dll
+              #${MINGW_DLL_DIR}/libpcre16-0.dll
+              #${MINGW_DLL_DIR}/libpng16-16.dll
+              #${MINGW_DLL_DIR}/libtiff-5.dll
+              #${MINGW_DLL_DIR}/libtiffxx-5.dll
+              #${MINGW_DLL_DIR}/zlib1.dll
+              ${MINGW_DLL_DIR}/libgcc_s_seh-1.dll
+            DESTINATION .
+          )
+      elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+          # 32 bits
+          install(FILES
+            ${MINGW_DLL_DIR}/libgcc_s_dw2-1.dll
+            DESTINATION .
+          )
+      endif()
+
       install(FILES
-          ${MINGW_DLL_DIR}/libgcc_s_seh-1.dll
-          ${MINGW_DLL_DIR}/libbz2-1.dll
-          ${MINGW_DLL_DIR}/libfreetype-6.dll
-          ${MINGW_DLL_DIR}/libglib-2.0-0.dll
-          ${MINGW_DLL_DIR}/libgraphite2.dll
-          ${MINGW_DLL_DIR}/libharfbuzz-0.dll
-          ${MINGW_DLL_DIR}/libiconv-2.dll
-          ${MINGW_DLL_DIR}/libicudt57.dll
-          ${MINGW_DLL_DIR}/libicuin57.dll
-          ${MINGW_DLL_DIR}/libicuio57.dll
-          ${MINGW_DLL_DIR}/libicule57.dll
-          ${MINGW_DLL_DIR}/libiculx57.dll
-          ${MINGW_DLL_DIR}/libicutest57.dll
-          ${MINGW_DLL_DIR}/libicutu57.dll
-          ${MINGW_DLL_DIR}/libicuuc57.dll
-          ${MINGW_DLL_DIR}/libintl-8.dll
-          ${MINGW_DLL_DIR}/libjasper-1.dll
-          ${MINGW_DLL_DIR}/libjpeg-8.dll
-          ${MINGW_DLL_DIR}/liblzma-5.dll
-          ${MINGW_DLL_DIR}/libpcre-1.dll
-          ${MINGW_DLL_DIR}/libpcre16-0.dll
-          ${MINGW_DLL_DIR}/libpng16-16.dll
-          ${MINGW_DLL_DIR}/libtiff-5.dll
-          ${MINGW_DLL_DIR}/libtiffxx-5.dll
-          ${MINGW_DLL_DIR}/zlib1.dll
+        ${MINGW_DLL_DIR}/libatomic-1.dll
+        ${MINGW_DLL_DIR}/libstdc++-6.dll
+        ${MINGW_DLL_DIR}/libwinpthread-1.dll
         DESTINATION .
       )
-  elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-      # 32 bits
-      install(FILES
-        ${MINGW_DLL_DIR}/libgcc_s_dw2-1.dll
-        DESTINATION .
-      )
-  endif()
-
-  install(FILES
-    ${MINGW_DLL_DIR}/libatomic-1.dll
-    ${MINGW_DLL_DIR}/libstdc++-6.dll
-    ${MINGW_DLL_DIR}/libwinpthread-1.dll
-    DESTINATION .
-  )
 
 
 
+    endif()
 endif()
 
-# Qt Libraries
-get_target_property(QtCore_LOCATION Qt5::Core LOCATION)
-get_filename_component(QT_DLL_DIR ${QtCore_LOCATION} PATH)
-foreach(plugin ${Qt5Gui_PLUGINS})
-  get_target_property(QT_PLUGIN_DIR ${plugin} LOCATION)
-  #message(${QT_PLUGIN_DIR})
-endforeach()
-get_filename_component(QT_PLUGIN_DIR ${QT_PLUGIN_DIR} PATH)
-#message(${QT_PLUGIN_DIR})
-set(QT_PLUGIN_DIR ${QT_PLUGIN_DIR}/../)
-#message(${QT_PLUGIN_DIR})
+
+if (FALSE)
+
+    # Qt Libraries
+    get_target_property(QtCore_LOCATION Qt5::Core LOCATION)
+    get_filename_component(QT_DLL_DIR ${QtCore_LOCATION} PATH)
+    foreach(plugin ${Qt5Gui_PLUGINS})
+      get_target_property(QT_PLUGIN_DIR ${plugin} LOCATION)
+      #message(${QT_PLUGIN_DIR})
+    endforeach()
+    get_filename_component(QT_PLUGIN_DIR ${QT_PLUGIN_DIR} PATH)
+    #message(${QT_PLUGIN_DIR})
+    set(QT_PLUGIN_DIR ${QT_PLUGIN_DIR}/../)
+    #message(${QT_PLUGIN_DIR})
+endif()
+
+if (FALSE)
+    install(FILES
+    #  ${QT_DLL_DIR}/icudt51.dll
+    #  ${QT_DLL_DIR}/icuin51.dll
+    #  ${QT_DLL_DIR}/icuuc51.dll
+      ${QT_DLL_DIR}/Qt5Core.dll
+      ${QT_DLL_DIR}/Qt5Gui.dll
+      ${QT_DLL_DIR}/Qt5Widgets.dll
+      ${CMAKE_SOURCE_DIR}/installer_win/qt.conf
+      ${CMAKE_SOURCE_DIR}/LICENSE.txt
+      DESTINATION .
+    )
+    # Qt Platform Plugin
+    install(FILES
+      ${QT_PLUGIN_DIR}/platforms/qwindows.dll
+      DESTINATION plugins/platforms
+    )
+    # Qt imageformats Plugin
+    install(FILES
+      ${QT_PLUGIN_DIR}/imageformats/qjpeg.dll
+      ${QT_PLUGIN_DIR}/imageformats/qtiff.dll
+      ${QT_PLUGIN_DIR}/imageformats/qgif.dll
+      ${QT_PLUGIN_DIR}/imageformats/qwebp.dll
+      ${QT_PLUGIN_DIR}/imageformats/qwbmp.dll
+      ${QT_PLUGIN_DIR}/imageformats/qtga.dll
+      ${QT_PLUGIN_DIR}/imageformats/qsvg.dll
+      ${QT_PLUGIN_DIR}/imageformats/qico.dll
+      ${QT_PLUGIN_DIR}/imageformats/qicns.dll
+      DESTINATION plugins/imageformats
+    )
+    # FFMPEG/bin
+    install(DIRECTORY ${FFMPEGDIR}/bin/
+      DESTINATION .
+      FILES_MATCHING PATTERN "*.dll"
+    )
+endif()
 
 
-install(FILES
-#  ${QT_DLL_DIR}/icudt51.dll
-#  ${QT_DLL_DIR}/icuin51.dll
-#  ${QT_DLL_DIR}/icuuc51.dll
-  ${QT_DLL_DIR}/Qt5Core.dll
-  ${QT_DLL_DIR}/Qt5Gui.dll
-  ${QT_DLL_DIR}/Qt5Widgets.dll
-  ${CMAKE_SOURCE_DIR}/installer_win/qt.conf
-  ${CMAKE_SOURCE_DIR}/LICENSE.txt
-  DESTINATION .
-)
-# Qt Platform Plugin
-install(FILES
-  ${QT_PLUGIN_DIR}/platforms/qwindows.dll
-  DESTINATION plugins/platforms
-)
-# Qt imageformats Plugin
-install(FILES
-  ${QT_PLUGIN_DIR}/imageformats/qjpeg.dll
-  ${QT_PLUGIN_DIR}/imageformats/qtiff.dll
-  ${QT_PLUGIN_DIR}/imageformats/qgif.dll
-  ${QT_PLUGIN_DIR}/imageformats/qwebp.dll
-  ${QT_PLUGIN_DIR}/imageformats/qwbmp.dll
-  ${QT_PLUGIN_DIR}/imageformats/qtga.dll
-  ${QT_PLUGIN_DIR}/imageformats/qsvg.dll
-  ${QT_PLUGIN_DIR}/imageformats/qico.dll
-  ${QT_PLUGIN_DIR}/imageformats/qicns.dll
-  DESTINATION plugins/imageformats
-)
-# FFMPEG/bin
-install(DIRECTORY ${FFMPEGDIR}/bin/
-  DESTINATION .
-  FILES_MATCHING PATTERN "*.dll"
-)
 # FFMPEG
 install(DIRECTORY
   ${FFMPEGDIR}/

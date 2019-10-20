@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/defines.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/defines.h)
 
@@ -43,6 +44,17 @@ if (WIN32)
   endif()
 endif()
 
+# Configure FFMPEG
+find_package(FFMPEG REQUIRED)
+include_directories(${FFMPEG_INCLUDE_DIRS})
+
+
+# Configure CImg
+set(CIMG_PREFIX ${CMAKE_SOURCE_DIR}/CImg/cimg)
+find_package(CIMG REQUIRED)
+include_directories(${CIMG_INCLUDE_DIR})
+
+
 add_executable(${CMAKE_PROJECT_NAME} WIN32
   ${UI_HEADERS}
   ${CODE_FILES}
@@ -51,16 +63,35 @@ add_executable(${CMAKE_PROJECT_NAME} WIN32
 )
 target_link_libraries(${CMAKE_PROJECT_NAME}
   Qt5::Widgets
+  ${FFMPEG_LIBRARIES}
 )
 
 
 
 
-
+#install target
 if (UNIX)
-  install(TARGETS ${CMAKE_PROJECT_NAME}
-          RUNTIME DESTINATION bin)
+    install(TARGETS ${CMAKE_PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
 elseif (WIN32)
-  install(TARGETS ${CMAKE_PROJECT_NAME}
-          DESTINATION .)
+  install(TARGETS ${CMAKE_PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install(FILES ${FFMPEG_BIN} DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif()
+
+# install system runtime lib
+if( CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS )
+    install( PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION ${CMAKE_INSTALL_PREFIX} COMPONENT System )
+endif( CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS )
+
+#use windeploy
+if (WIN32)
+    get_filename_component(CMAKE_CXX_COMPILER_BINPATH ${CMAKE_CXX_COMPILER} DIRECTORY )
+    #message(STATUS "${CMAKE_CXX_COMPILER_BINPATH}")
+    add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E
+            env PATH="${CMAKE_CXX_COMPILER_BINPATH}\;${_qt_bin_dir}" "${WINDEPLOYQT_EXECUTABLE}"
+                --dir ${CMAKE_INSTALL_PREFIX}
+                --compiler-runtime
+                \"$<TARGET_FILE:${CMAKE_PROJECT_NAME}>\"
+        COMMENT "Running windeployqt... "
+    )
+endif(WIN32)

@@ -1,6 +1,6 @@
 /**
- * Project: JKHouseholdAccounts (https://github.com/jkriege2/JKHouseholdAccounts)
- * Copyright (c) 2018, Jan Krieger <jan@jkrieger.de>
+ * Project: @PROJECT_LONGNAME@ (https://github.com/jkriege2/JKHouseholdAccounts)
+ * @PROJECT_COPYRIGHT@
  *
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,9 +23,12 @@
 // An anonymous namespace restricts these variables to the scope of the
 // compilation unit.
 namespace {
-  const char* PROJECT_LONGNAME = "@PROJECT_LONGNAME@";
-  const char* PROJECT_VERSION = "@PROJECT_VERSION@";
-  const char* PROJECT_BITNESS = "@PROJECT_BITNESS@";
+  const char* PROJECT_LONGNAME  = "@PROJECT_LONGNAME@";
+  const char* PROJECT_VERSION   = "@PROJECT_VERSION@";
+  const char* PROJECT_BITNESS   = "@PROJECT_BITNESS@";
+  const char* PROJECT_BUILDATE  = "@PROJECT_BUILDDATETIME@";
+  const char* PROJECT_COPYRIGHT = "@PROJECT_COPYRIGHT@";
+  const char* PROJECT_BUILDTYPE = "@CMAKE_BUILD_TYPE@";
 }
 
 #endif

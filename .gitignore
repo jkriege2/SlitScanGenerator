@@ -37,3 +37,13 @@ Makefile*
 CMakeLists.txt.user
 
 /ffmpeg
+/ffmpeg/ffmpeg-4.2.1-win64-static.zip
+/ffmpeg/ffmpeg-3.2-win32-dev.zip
+/ffmpeg/ffmpeg-3.2-win32-shared.zip
+/ffmpeg/ffmpeg-3.2-win64-dev.zip
+/ffmpeg/ffmpeg-3.2-win64-shared.zip
+/ffmpeg/ffmpeg-4.2.1-win32-static.zip
+/*.7z
+/*.zip
+/*.8-pre1
+/*.exe

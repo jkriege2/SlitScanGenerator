@@ -1,5 +1,5 @@
 # Project: SlitScanGenerator (https://github.com/jkriege2/SlitScanGenerator)
-# Copyright (c) 2016-2018, Jan Krieger <jan@jkrieger.de>
+# Copyright (c) 2016-2019, Jan Krieger <jan@jkrieger.de>
 #
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,8 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.11)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
+
+# append path to local cmake modules
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 # Default configuration values. These must be before the project command or
 # they won't work in Windows.
@@ -29,62 +32,62 @@ endif()
 # Install to "dist" directory in Windows for testing and as a staging directory
 # for the installer.
 if (WIN32 AND NOT CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX dist CACHE STRING "Install path prefix.")
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/dist CACHE STRING "Install path prefix.")
 endif()
+message(STATUS "    creating directory: ${CMAKE_INSTALL_PREFIX}")
+file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX})
+message(STATUS "    install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 project(SlitScanGenerator)
 set(PROJECT_LONGNAME "SlitScanGenerator")
-set(PROJECT_VERSION "2018-10-05")
+set(PROJECT_VERSION "2019-10")
+string(TIMESTAMP PROJECT_BUILDYEAR "%Y")
+string(TIMESTAMP PROJECT_BUILDDATETIME "%Y-%m-%d %H:%M:%S")
+set(PROJECT_COPYRIGHT "Copyright (c) 2016-${PROJECT_BUILDYEAR} Jan Krieger jan@jkrieger.de")
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     # 64 bits
-    set(FFMPEGDIR ${CMAKE_SOURCE_DIR}/ffmpeg/win64)
+    set(FFMPEG_PREFIX ${CMAKE_SOURCE_DIR}/ffmpeg/win64)
     set(PROJECT_BITNESS "64")
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     # 32 bits
-    set(FFMPEGDIR ${CMAKE_SOURCE_DIR}/ffmpeg/win32)
+    set(FFMPEG_PREFIX ${CMAKE_SOURCE_DIR}/ffmpeg/win32)
     set(PROJECT_BITNESS "32")
 endif()
 
-set(CIMGDIR ${CMAKE_SOURCE_DIR}/CImg)
+
+
 
 # Global CMake options
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
-
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Configure Qt
 find_package(Qt5Widgets REQUIRED)
+# Retrieve the absolute path to qmake and then use that path to find
+# the binaries
+get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
+get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
+find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
+find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${_qt_bin_dir}")
 
-if (NOT MSVC)
-  # Enable the C++11 standard
-  #set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++11 -O3 -fopenmp -msse2 -msse -fpmath=both)
-  add_compile_options(-std=c++11)
-  add_compile_options(-O3)
-  add_compile_options(-fopenmp)
-  add_compile_options(-msse2)
-  add_compile_options(-msse)
-  #add_compile_options(-fpmath=both)
-  link_libraries(-lm)
-  link_libraries(avutil)
-  link_libraries(avcodec)
-  link_libraries(avdevice)
-  link_libraries(swscale)
-  link_libraries(avformat)
-  link_libraries(swresample)
-  link_libraries(postproc)
-  link_libraries(avfilter)
-endif()
-
-include_directories(${FFMPEGDIR}/include)
-link_directories(${FFMPEGDIR}/lib)
-include_directories(${CIMGDIR})
 
 # Testing configuration
 #enable_testing()
 #set(TEST_LINK_LIBRARIES Qt5::Test)
 
 add_subdirectory(source)
+
+
+# PREPARE install of MinGW system libraries
+#if( MINGW )
+#    message( STATUS "    Installing system-libraries: MinGW DLLs." )
+#    get_filename_component( Mingw_Path ${CMAKE_CXX_COMPILER} PATH )
+#    set( CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS ${Mingw_Path}/mingwm10.dll ${Mingw_Path}/libgcc_s_dw2-1.dll ${Mingw_Path}/libstdc++-6.dll )
+#endif( MINGW )
+include( InstallRequiredSystemLibraries )
 
 if (WIN32)
   add_subdirectory(installer_win)
