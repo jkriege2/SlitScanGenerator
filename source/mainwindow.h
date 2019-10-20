@@ -9,7 +9,7 @@
 #include "processingparametertable.h"
 #include "cimg_tools.h"
 #include "ffmpeg_tools.h"
-
+#include "slitscangeneratorsettings.h"
 
 namespace Ui {
     class MainWindow;
@@ -41,6 +41,7 @@ class MainWindow : public QMainWindow
         void tableRowClicked(const QModelIndex &index);
         void setWidgetsEnabledForCurrentMode();
         void showAbout();
+        void showSettings();
         void test();
     private:
         Ui::MainWindow *ui;
@@ -75,7 +76,7 @@ class MainWindow : public QMainWindow
 
         int video_everyNthFrame;
         double video_xyFactor;
-        QSettings m_settings;
+        SlitScanGeneratorSettings m_settings;
 
 };
 

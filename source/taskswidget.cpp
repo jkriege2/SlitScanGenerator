@@ -1,5 +1,6 @@
 #include "taskswidget.h"
 #include "processingwidget.h"
+#include <QSettings>
 
 TasksWidget::TasksWidget(QWidget *parent) :
     QWidget(parent),
@@ -42,7 +43,8 @@ void TasksWidget::threadDone(ProcessingThread *thread)
 
 void TasksWidget::startNext()
 {
-    int maxT=QThread::idealThreadCount()-1;
+    QSettings settings(QSettings::UserScope, "jkrieger.de", "SlitScanGenerator");
+    int maxT=settings.value("numberOfParallelTasks", QThread::idealThreadCount()-1).toInt();
     if (maxT<0) maxT=1;
 
 

@@ -677,6 +677,8 @@
     <addaction name="separator"/>
     <addaction name="actProcessAll"/>
     <addaction name="separator"/>
+    <addaction name="actSettings"/>
+    <addaction name="separator"/>
     <addaction name="actQuit"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
@@ -764,6 +766,14 @@
     <string>Open &amp;Example Video</string>
    </property>
   </action>
+  <action name="actSettings">
+   <property name="text">
+    <string>&amp;Settings ...</string>
+   </property>
+   <property name="toolTip">
+    <string>Open Settings Dialog</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -786,11 +796,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>380</y>
+     <y>365</y>
     </hint>
     <hint type="destinationlabel">
      <x>616</x>
-     <y>406</y>
+     <y>391</y>
     </hint>
    </hints>
   </connection>
@@ -802,11 +812,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>380</y>
+     <y>365</y>
     </hint>
     <hint type="destinationlabel">
      <x>1031</x>
-     <y>406</y>
+     <y>391</y>
     </hint>
    </hints>
   </connection>
@@ -818,11 +828,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>380</y>
+     <y>365</y>
     </hint>
     <hint type="destinationlabel">
      <x>616</x>
-     <y>432</y>
+     <y>417</y>
     </hint>
    </hints>
   </connection>
@@ -834,11 +844,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>380</y>
+     <y>365</y>
     </hint>
     <hint type="destinationlabel">
      <x>1031</x>
-     <y>432</y>
+     <y>417</y>
     </hint>
    </hints>
   </connection>
@@ -850,11 +860,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>656</x>
-     <y>380</y>
+     <y>365</y>
     </hint>
     <hint type="destinationlabel">
-     <x>714</x>
-     <y>381</y>
+     <x>1031</x>
+     <y>368</y>
     </hint>
    </hints>
   </connection>

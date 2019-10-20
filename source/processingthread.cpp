@@ -12,6 +12,8 @@ ProcessingThread::ProcessingThread(ProcessingTask* item, QObject *parent) :
 }
 
 ProcessingThread::~ProcessingThread() {
+    canceled();
+    wait();
     if (m_item) {
         delete m_item;
         m_item=nullptr;

@@ -14,6 +14,7 @@
 #include <vector>
 #include "importdialog.h"
 #include "processingthread.h"
+#include "optionsdialog.h"
 #include "defines.h"
 
 #define USE_FILTERING
@@ -24,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
     lastX(-1),
     lastY(-1),
     m_mode(DisplayModes::unloaded),
-    m_settings(QSettings::UserScope, "jkrieger.de", "SlitScanGenerator")
+    m_settings()
 {
     initFFMPEG();
     ui->setupUi(this);
@@ -47,6 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     connect(ui->actTest, SIGNAL(triggered()), this, SLOT(test()));
+    connect(ui->actSettings, SIGNAL(triggered()), this, SLOT(showSettings()));
     connect(ui->actQuit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
     connect(ui->actProcessAll, SIGNAL(triggered()), this, SLOT(processAll()));
@@ -192,6 +194,13 @@ void MainWindow::showAbout()
   delete dlg;
 }
 
+void MainWindow::showSettings()
+{
+  OptionsDialog* dlg=new OptionsDialog(this);
+  dlg->exec();
+  delete dlg;
+}
+
 void MainWindow::test()
 {
     QString fn=QFileDialog::getOpenFileName(this, tr("Open Test Image ..."), m_settings.value("lastTestDir", "").toString());
@@ -240,7 +249,7 @@ void MainWindow::openVideo(const QString& filename) {
                auto progCB=std::bind([](QProgressDialog* progress, int frame, int maxi) -> bool {
                            if (frame%5==0) {
                                if (maxi>1) {
-                                   progress->setValue(frame);
+                                   progress->setValue(frame*5);
                                    progress->setMaximum(maxi+1);
                                    progress->setLabelText(tr("Reading frame %1/%2...").arg(frame).arg(maxi));
                                } else {

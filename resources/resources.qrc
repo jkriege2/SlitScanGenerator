@@ -15,4 +15,11 @@
         <file>logo_32x32.png</file>
         <file>logo_128x128.png</file>
     </qresource>
+    <qresource prefix="/">
+        <file>stylesheets/darkorange.qss</file>
+        <file>stylesheets/default.qss</file>
+        <file>stylesheets/darkorange/checkbox.png</file>
+        <file>stylesheets/darkorange/down_arrow.png</file>
+        <file>stylesheets/darkorange/handle.png</file>
+    </qresource>
 </RCC>
