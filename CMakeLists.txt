@@ -42,16 +42,14 @@ project(SlitScanGenerator)
 set(PROJECT_LONGNAME "SlitScanGenerator")
 set(PROJECT_VERSION "2019-10")
 string(TIMESTAMP PROJECT_BUILDYEAR "%Y")
-string(TIMESTAMP PROJECT_BUILDDATETIME "%Y-%m-%d %H:%M:%S")
+string(TIMESTAMP PROJECT_BUILDDATETIME "%Y-%m-%d")
 set(PROJECT_COPYRIGHT "Copyright (c) 2016-${PROJECT_BUILDYEAR} Jan Krieger jan@jkrieger.de")
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     # 64 bits
-    set(FFMPEG_PREFIX ${CMAKE_SOURCE_DIR}/ffmpeg/win64)
     set(PROJECT_BITNESS "64")
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     # 32 bits
-    set(FFMPEG_PREFIX ${CMAKE_SOURCE_DIR}/ffmpeg/win32)
     set(PROJECT_BITNESS "32")
 endif()
 

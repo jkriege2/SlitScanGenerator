@@ -83,26 +83,29 @@ Section Install
   # DLLs
   File "${DIST_DIR}\*.dll"
 
-  # Qt Libraries
-  File "${DIST_DIR}\qt.conf"
-
   # Qt Plugins
-  SetOutPath "$INSTDIR\plugins\platforms"
-  File "${DIST_DIR}\plugins\platforms\*.*"
-  SetOutPath "$INSTDIR\plugins\imageformats"
-  File "${DIST_DIR}\plugins\imageformats\*.*"
+  SetOutPath "$INSTDIR\iconengines"
+  File "${DIST_DIR}\iconengines\*.*"
+  SetOutPath "$INSTDIR\imageformats"
+  File "${DIST_DIR}\imageformats\*.*"
+  SetOutPath "$INSTDIR\platforms"
+  File "${DIST_DIR}\platforms\*.*"
+  SetOutPath "$INSTDIR\styles"
+  File "${DIST_DIR}\styles\*.*"
+  SetOutPath "$INSTDIR\translations"
+  File "${DIST_DIR}\translations\*.*"
 
   # FFMPEG	
-  SetOutPath "$INSTDIR\3rdparty\ffmpeg\licenses"
-  File "${DIST_DIR}\3rdparty\ffmpeg\licenses\*.*"
-  SetOutPath "$INSTDIR\3rdparty\ffmpeg\doc"
-  File "${DIST_DIR}\3rdparty\ffmpeg\doc\*.*"
   SetOutPath "$INSTDIR\3rdparty\ffmpeg"
   File "${DIST_DIR}\3rdparty\ffmpeg\*.*"
 
   # CImg
   SetOutPath "$INSTDIR\3rdparty\CImg"
   File "${DIST_DIR}\3rdparty\CImg\*.*"
+
+  # 3rdparty general
+  SetOutPath "$INSTDIR\3rdparty\"
+  File "${DIST_DIR}\3rdparty\*.*"
 
   # Examples
   SetOutPath "$INSTDIR\testmovie"
@@ -137,26 +140,28 @@ Section Uninstall
   # Delete all files in InstallDir
   Delete "$INSTDIR\*.*"
 
-  # Qt Plugins
-  Delete "$INSTDIR\plugins\imageformats\*.dll"
-  RMDir "$INSTDIR\plugins\imageformats"
-  Delete "$INSTDIR\plugins\platforms\*.dll"
-  RMDir "$INSTDIR\plugins\platforms"
-  RMDir "$INSTDIR\plugins"
+    # Qt Plugins
+    Delete "$INSTDIR\imageformats\*.*"
+    RMDir "$INSTDIR\imageformats"
+    Delete "$INSTDIR\platforms\*.*"
+    RMDir "$INSTDIR\platforms"
+    Delete "$INSTDIR\iconengines\*.*"
+    RMDir "$INSTDIR\iconengines"
+    Delete "$INSTDIR\styles\*.*"
+    RMDir "$INSTDIR\styles"
+    Delete "$INSTDIR\translations\*.*"
+    RMDir "$INSTDIR\translations"
 
-  # 3rdParty
-  Delete "$INSTDIR\3rdparty\ffmpeg\licenses\*.*"
-  RMDir "$INSTDIR\3rdparty\ffmpeg\licenses"
-  Delete "$INSTDIR\3rdparty\ffmpeg\doc\*.*"
-  RMDir "$INSTDIR\3rdparty\ffmpeg\doc"
-  Delete "$INSTDIR\3rdparty\ffmpeg\*.*"
-  RMDir "$INSTDIR\3rdparty\ffmpeg"
-  Delete "$INSTDIR\3rdparty\CImg\*.*"
-  RMDir "$INSTDIR\3rdparty\CImg"
-  RMDir "$INSTDIR\3rdparty"
+    # 3rdParty
+    Delete "$INSTDIR\3rdparty\ffmpeg\*.*"
+    RMDir "$INSTDIR\3rdparty\ffmpeg"
+    Delete "$INSTDIR\3rdparty\CImg\*.*"
+    RMDir "$INSTDIR\3rdparty\CImg"
+    Delete "$INSTDIR\3rdparty\*.*"
+    RMDir "$INSTDIR\3rdparty"
 
-  Delete "$INSTDIR\testmovie\*.*"
-  RMDir "$INSTDIR\testmovie"
+    Delete "$INSTDIR\testmovie\*.*"
+    RMDir "$INSTDIR\testmovie"
 
   # Menu folder
   !insertmacro MUI_STARTMENU_GETFOLDER Application $StartMenuFolder

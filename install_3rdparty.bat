@@ -1,0 +1,2 @@
+cd 3rdparty
+install_3rdparty.bat

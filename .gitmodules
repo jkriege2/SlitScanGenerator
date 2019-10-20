@@ -1,4 +1,3 @@
-[submodule "CImg"]
-	path = CImg
-	url = https://github.com/dtschump/CImg.git
-
+[submodule "3rdparty/CImg"]
+	path = 3rdparty/CImg
+	url = https://github.com/dtschump/CImg
