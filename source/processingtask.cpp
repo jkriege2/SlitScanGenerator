@@ -182,7 +182,7 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
             } else if (pi.mode==Mode::XZ) {
                 int z0=zs_vals[j];
                 if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
-                    line=extractXZ_atz(z, frame, pi.location_x);
+                    line=extractXZ_atz(z, frame, pi.location_y);
                     zs_vals[j]++;
                 } else if (pi.angleMode==AngleMode::AngleRoll) {
                     line=extractXZ_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
