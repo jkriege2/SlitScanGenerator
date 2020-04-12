@@ -72,6 +72,8 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
         j++;
     }
 
+    setall.sync();
+
     std::string err;
     vid=openFFMPEGVideo(filename.toStdString(), &err);
     if (vid && readFFMPEGFrame(frame, vid)) {
@@ -99,7 +101,7 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
                 zs_vals.push_back(0);
             } else if (pi.mode==Mode::XZ) {
                 if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
-                    line=extractXZ_atz(0, frame, pi.location_x);
+                    line=extractXZ_atz(0, frame, pi.location_y);
                 } else if (pi.angleMode==AngleMode::AngleRoll) {
                     line=extractXZ_atz_roll(0, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
