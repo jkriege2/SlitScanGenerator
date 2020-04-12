@@ -1,5 +1,5 @@
 # Project: SlitScanGenerator (https://github.com/jkriege2/SlitScanGenerator)
-# Copyright (c) 2016-2019, Jan Krieger <jan@jkrieger.de>
+# Copyright (c) 2016-2020, Jan Krieger <jan@jkrieger.de>
 #
 #
 # This program is free software: you can redistribute it and/or modify
@@ -40,7 +40,7 @@ message(STATUS "    install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 project(SlitScanGenerator)
 set(PROJECT_LONGNAME "SlitScanGenerator")
-set(PROJECT_VERSION "2019-10")
+set(PROJECT_VERSION "2020-04")
 string(TIMESTAMP PROJECT_BUILDYEAR "%Y")
 string(TIMESTAMP PROJECT_BUILDDATETIME "%Y-%m-%d")
 set(PROJECT_COPYRIGHT "Copyright (c) 2016-${PROJECT_BUILDYEAR} Jan Krieger jan@jkrieger.de")

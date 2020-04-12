@@ -9,18 +9,18 @@
 ProcessingTask::ProcessingTask():
     filename(),
     outputFrames(0),
-    vid(nullptr),
-    z(0),
-    m_saving(false),
-    m_savingFrame(0),
     stillCnt(0),
     stillDelta(60),
     stillStrip(true),
     stillSeparateFiles(false),
-    stills(0),
     normalize(false),
     normalizeX(-1),
-    normalizeY(-1)
+    normalizeY(-1),
+    vid(nullptr),
+    z(0),
+    m_saving(false),
+    m_savingFrame(0),
+    stills(0)
 {
 
 }
@@ -234,6 +234,7 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
                     QFileInfo fi(filename);
                     QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%3_still%2.png").arg(fi.baseName()).arg(z+1, 3, 10,QChar('0')).arg(j+1, 3, 10,QChar('0')));
                     QImage img=CImgToQImage(frame_s);
+                    if (QFile::exists(fn)) QFile::remove(fn);
                     img.save(fn);
                 }
                 if (stillStrip) {
@@ -276,10 +277,12 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
             QString fnini=result_inifilenames[m_savingFrame];
             message=QObject::tr("saved result %2: '%1' ...").arg(fn).arg(m_savingFrame+1);
             QImage img=CImgToQImage(results[m_savingFrame]);
+            if (QFile::exists(fn)) QFile::remove(fn);
             img.save(fn);
             if (filterNotch) {
                 applyFilterNotch(results[m_savingFrame], fiterNotchWavelength, fiterNotchWidth);
                 QImage img=CImgToQImage(results[m_savingFrame]);
+                if (QFile::exists(resultfilt_filenames[m_savingFrame])) QFile::remove(resultfilt_filenames[m_savingFrame]);
                 img.save(resultfilt_filenames[m_savingFrame]);
             }
             QSettings set(fnini, QSettings::IniFormat);
@@ -310,6 +313,7 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
             QImage imgs=CImgToQImage(stillStripImg[m_savingFrame]);
             QFileInfo fi(filename);
             QString fns=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2_stillstrip.png").arg(fi.baseName()).arg(m_savingFrame+1, 3, 10,QChar('0')));
+            if (QFile::exists(fns)) QFile::remove(fns);
             imgs.save(fns);
 
         }
