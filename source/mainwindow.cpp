@@ -395,9 +395,9 @@ void MainWindow::openVideo(const QString& filename) {
                QApplication::processEvents();
                QApplication::processEvents();
                auto progCB=std::bind([](QProgressDialog* progress, int frame, int maxi) -> bool {
-                           if (frame%5==0) {
+                           if (frame%5==0 || frame%7==0 || frame%3==0 || frame%4==0) {
                                if (maxi>1) {
-                                   progress->setValue(frame*5);
+                                   progress->setValue(frame);
                                    progress->setMaximum(maxi+1);
                                    progress->setLabelText(tr("Reading frame %1/%2...").arg(frame).arg(maxi));
                                } else {
