@@ -427,14 +427,14 @@ Erzeugungs-Zeitstempel: %3</translation>
     <message>
         <location filename="../source/mainwindow.cpp" line="145"/>
         <location filename="../source/mainwindow.cpp" line="307"/>
-        <location filename="../source/mainwindow.cpp" line="632"/>
+        <location filename="../source/mainwindow.cpp" line="636"/>
         <source>Save Configuration File ...</source>
         <translation>Konfigurationsdatei speichern ...</translation>
     </message>
     <message>
         <location filename="../source/mainwindow.cpp" line="145"/>
         <location filename="../source/mainwindow.cpp" line="307"/>
-        <location filename="../source/mainwindow.cpp" line="632"/>
+        <location filename="../source/mainwindow.cpp" line="636"/>
         <source>INI-File (*.ini)</source>
         <translation>INI-Datei (*.ini)</translation>
     </message>

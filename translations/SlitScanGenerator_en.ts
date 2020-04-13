@@ -409,14 +409,14 @@ build timestamp: %3</source>
     <message>
         <location filename="../source/mainwindow.cpp" line="145"/>
         <location filename="../source/mainwindow.cpp" line="307"/>
-        <location filename="../source/mainwindow.cpp" line="632"/>
+        <location filename="../source/mainwindow.cpp" line="636"/>
         <source>Save Configuration File ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../source/mainwindow.cpp" line="145"/>
         <location filename="../source/mainwindow.cpp" line="307"/>
-        <location filename="../source/mainwindow.cpp" line="632"/>
+        <location filename="../source/mainwindow.cpp" line="636"/>
         <source>INI-File (*.ini)</source>
         <translation type="unfinished"></translation>
     </message>

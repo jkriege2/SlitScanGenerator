@@ -564,16 +564,20 @@ void MainWindow::recalcAndRedisplaySamples()
 
 void MainWindow::ImageClicked(int x, int y)
 {
-    if (ui->tabWidget->currentWidget()==ui->tabNormalize && ui->chkNormalize->isChecked()) {
-        ui->spinNormalizeX->setValue(x*video_xyFactor);
-        ui->spinNormalizeY->setValue(y*video_xyFactor);
-        recalcAndRedisplaySamples();
-    } else if (ui->tabWidget->currentWidget()==ui->tabColor && ui->chkModifyWhitepoint->isChecked()) {
-        qDebug()<<m_video_xytscaled.width()<<m_video_xytscaled.height()<<m_video_xytscaled.depth()<<m_video_xytscaled.spectrum();
-        ui->spinWhitepointR->setValue(m_video_xytscaled.atXYZC(x,y,0,0,255));
-        ui->spinWhitepointG->setValue(m_video_xytscaled.atXYZC(x,y,0,1,255));
-        ui->spinWhitepointB->setValue(m_video_xytscaled.atXYZC(x,y,0,2,255));
-        recalcAndRedisplaySamples();
+    if (ui->tabWidget->currentWidget()==ui->tabNormalize) {
+        if (ui->chkNormalize->isChecked()) {
+            ui->spinNormalizeX->setValue(x*video_xyFactor);
+            ui->spinNormalizeY->setValue(y*video_xyFactor);
+            recalcAndRedisplaySamples();
+        }
+    } else if (ui->tabWidget->currentWidget()==ui->tabColor) {
+        if (ui->chkModifyWhitepoint->isChecked()) {
+            //qDebug()<<m_video_xytscaled.width()<<m_video_xytscaled.height()<<m_video_xytscaled.depth()<<m_video_xytscaled.spectrum();
+            ui->spinWhitepointR->setValue(m_video_xytscaled.atXYZC(x,y,0,0,255));
+            ui->spinWhitepointG->setValue(m_video_xytscaled.atXYZC(x,y,0,1,255));
+            ui->spinWhitepointB->setValue(m_video_xytscaled.atXYZC(x,y,0,2,255));
+            recalcAndRedisplaySamples();
+        }
     } else {
         recalcAndRedisplaySamples(x,y,ui->spinAngle->value(), ui->cmbAngle->currentIndex());
     }
