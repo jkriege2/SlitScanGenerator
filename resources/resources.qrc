@@ -14,12 +14,13 @@
         <file>pitch.png</file>
         <file>logo_32x32.png</file>
         <file>logo_128x128.png</file>
+        <file>wizard_file.png</file>
     </qresource>
     <qresource prefix="/">
-		<file>flags/de.png</file>
-		<file>flags/en.png</file>
-		<file>flags/fr.png</file>
-		<file>flags/es.png</file>
+        <file>flags/de.png</file>
+        <file>flags/en.png</file>
+        <file>flags/fr.png</file>
+        <file>flags/es.png</file>
         <file>stylesheets/darkorange.qss</file>
         <file>stylesheets/default.qss</file>
         <file>stylesheets/darkorange/checkbox.png</file>

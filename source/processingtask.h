@@ -59,6 +59,11 @@ struct ProcessingTask
         double fiterNotchWavelength;
         double fiterNotchWidth;
 
+        bool modifyWhite;
+        uint8_t whitepointR;
+        uint8_t whitepointG;
+        uint8_t whitepointB;
+
         void save(const QString& inifilename) const;
         void load(const QString& inifilename);
 
@@ -69,6 +74,7 @@ struct ProcessingTask
         static void normalizeZY(cimg_library::CImg<uint8_t> &img, int normalizeY);
         static void normalizeXZ(cimg_library::CImg<uint8_t> &img, int normalizeX);
         static void applyFilterNotch(cimg_library::CImg<uint8_t> &img, double center, double delta, bool testoutput=false);
+        static void applyWhitepointCorrection(cimg_library::CImg<uint8_t> &img, uint8_t red, uint8_t green, uint8_t blue, bool testoutput=false);
     private:
         QVector<cimg_library::CImg<uint8_t> > results;
         QVector<int> zs_vals;

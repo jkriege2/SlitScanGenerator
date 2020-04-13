@@ -75,6 +75,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actQuit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
     connect(ui->actProcessAll, SIGNAL(triggered()), this, SLOT(processAll()));
+    connect(ui->actionProcess_INI_File, SIGNAL(triggered()), this, SLOT(processINIFile()));
     connect(ui->actOpenVideo, SIGNAL(triggered()), this, SLOT(openVideo()));
     connect(ui->actOpenExampleVideo, SIGNAL(triggered()), this, SLOT(openExampleVideo()));
     connect(ui->actOpenINI, SIGNAL(triggered()), this, SLOT(loadINI()));
@@ -95,6 +96,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->cmbAngle, SIGNAL(currentIndexChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->spinFilterDelta, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->chkWavelength, SIGNAL(toggled(bool)), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->chkModifyWhitepoint, SIGNAL(toggled(bool)), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->spinWhitepointR, SIGNAL(valueChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->spinWhitepointG, SIGNAL(valueChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->spinWhitepointB, SIGNAL(valueChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
     setWidgetsEnabledForCurrentMode();
 
     ui->spinWavelength->setValue(m_settings.value("lastFilterWavelength", 5).toDouble());
@@ -178,6 +183,7 @@ void MainWindow::loadFromTask(const ProcessingTask &task)
 void MainWindow::saveToTask(ProcessingTask &task) const
 {
     task.filename=m_filename;
+    task.outputFrames=m_video_xytscaled.depth()*video_everyNthFrame;
     task.stillCnt=ui->spinStillCount->value();
     task.stillGap=ui->spinStillDelta->value();
     task.stillStrip=ui->chkStillStrip->isChecked();
@@ -449,12 +455,12 @@ void MainWindow::openExampleVideo()
 void MainWindow::recalcAndRedisplaySamples(int x, int y, double angle, int angleMode)
 {
     cimg_library::CImg<uint8_t>* video_input=&m_video_xytscaled;
-    if (ui->tabWidget->currentIndex()==3) {
+    if (ui->tabWidget->currentWidget()==ui->tabFiltering) {
         video_input=&m_video_some_frames;
     }
     //qDebug()<<"recalcCuts("<<x<<", "<<y<<")  "<<m_video_scaled.width()<<","<<m_video_scaled.height();
     if (x>=0 && x<video_input->width() && y>=0 && y<video_input->height()) {
-        if (ui->tabWidget->currentIndex()==3) {
+        if (ui->tabWidget->currentWidget()==ui->tabFiltering) {
             lastX=x/video_xyFactor;
             lastY=y/video_xyFactor;
         } else {
@@ -475,7 +481,7 @@ void MainWindow::recalcAndRedisplaySamples()
     double xyFactor=1;
     double invxyFactor=video_xyFactor;
     double angle=ui->spinAngle->value();
-    if (ui->tabWidget->currentIndex()==3) {
+    if (ui->tabWidget->currentWidget()==ui->tabFiltering) {
         video_input=&m_video_some_frames;
         xyFactor=video_xyFactor;
         invxyFactor=1;        
@@ -505,9 +511,14 @@ void MainWindow::recalcAndRedisplaySamples()
             ProcessingTask::normalizeXZ(cxz, ui->spinNormalizeX->value()/invxyFactor);
         }
 
-        if (ui->tabWidget->currentIndex()==3 && ui->chkWavelength->isChecked()) {
+        if (ui->tabWidget->currentWidget()==ui->tabFiltering && ui->chkWavelength->isChecked()) {
             ProcessingTask::applyFilterNotch(cyz, ui->spinWavelength->value(), ui->spinFilterDelta->value());
             ProcessingTask::applyFilterNotch(cxz, ui->spinWavelength->value(), ui->spinFilterDelta->value());
+        }
+
+        if (ui->chkModifyWhitepoint->isChecked()) {
+            ProcessingTask::applyWhitepointCorrection(cyz, ui->spinWhitepointR->value(), ui->spinWhitepointG->value(), ui->spinWhitepointB->value());
+            ProcessingTask::applyWhitepointCorrection(cxz, ui->spinWhitepointR->value(), ui->spinWhitepointG->value(), ui->spinWhitepointB->value());
         }
 
         QImage imgxz=CImgToQImage(cxz);
@@ -553,9 +564,15 @@ void MainWindow::recalcAndRedisplaySamples()
 
 void MainWindow::ImageClicked(int x, int y)
 {
-    if (ui->tabWidget->currentIndex()==2) {
+    if (ui->tabWidget->currentWidget()==ui->tabNormalize && ui->chkNormalize->isChecked()) {
         ui->spinNormalizeX->setValue(x*video_xyFactor);
         ui->spinNormalizeY->setValue(y*video_xyFactor);
+        recalcAndRedisplaySamples();
+    } else if (ui->tabWidget->currentWidget()==ui->tabColor && ui->chkModifyWhitepoint->isChecked()) {
+        qDebug()<<m_video_xytscaled.width()<<m_video_xytscaled.height()<<m_video_xytscaled.depth()<<m_video_xytscaled.spectrum();
+        ui->spinWhitepointR->setValue(m_video_xytscaled.atXYZC(x,y,0,0,255));
+        ui->spinWhitepointG->setValue(m_video_xytscaled.atXYZC(x,y,0,1,255));
+        ui->spinWhitepointB->setValue(m_video_xytscaled.atXYZC(x,y,0,2,255));
         recalcAndRedisplaySamples();
     } else {
         recalcAndRedisplaySamples(x,y,ui->spinAngle->value(), ui->cmbAngle->currentIndex());
@@ -609,36 +626,32 @@ void MainWindow::on_btnDeleteAll_clicked()
     m_procModel->clear();
 }
 
+
+void MainWindow::processINIFile()
+{
+    QString fn=QFileDialog::getOpenFileName(this, tr("Save Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
+    if (fn.size()>0) {
+        m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
+        ProcessingTask* task=new ProcessingTask();
+        task->load(fn);
+
+        ProcessingThread* thr=new ProcessingThread(task, this);
+        ui->widProcessing->push_back(thr);
+    }
+}
+
 void MainWindow::processAll()
 {
     if (m_filename.size()<=0) return;
     if (m_procModel->rowCount()<=0) return;
 
     ProcessingTask* task=new ProcessingTask();
-    task->filename=m_filename;
-    task->outputFrames=m_video_xytscaled.depth()*video_everyNthFrame;
-    task->pis=m_procModel->dataVector();
-
-    task->stillCnt=ui->spinStillCount->value();
-    task->stillDelta=ui->spinStillDelta->value();
-    task->stillStrip=ui->chkStillStrip->isChecked();
-    task->stillSeparateFiles=ui->chkStillDeparateFile->isChecked();
-    task->stillGap=ui->spinStillGap->value();
-    task->stillBorder=ui->spinStillBorder->value();
-    task->stillLineWidth=ui->spinStillLineWidth->value();
-
-    task->normalize=ui->chkNormalize->isChecked();
-    task->normalizeX=ui->spinNormalizeX->value();
-    task->normalizeY=ui->spinNormalizeY->value();
-
-    task->filterNotch=ui->chkWavelength->isChecked();
-    task->fiterNotchWavelength=ui->spinWavelength->value();
-    task->fiterNotchWidth=ui->spinFilterDelta->value();
+    saveToTask(*task);
 
     ProcessingThread* thr=new ProcessingThread(task, this);
     ui->widProcessing->push_back(thr);
-
 }
+
 
 void MainWindow::tableRowClicked(const QModelIndex &index)
 {

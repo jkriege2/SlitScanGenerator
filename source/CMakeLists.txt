@@ -21,13 +21,18 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/defines.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/defines.h)
 
 
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # collect all source files
 file(GLOB_RECURSE UI_FILES *.ui)
 file(GLOB_RECURSE CODE_FILES *.cpp)
 file(GLOB_RECURSE HEADER_FILES *.h)
 file(GLOB_RECURSE QRC_FILES ../resources/*.qrc)
-
+#qt_wrap_ui(${UI_FILES})
 
 # Windows application icon and version (i.e. generate windows resource files)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../resources/appversion.rc.cmake
@@ -84,6 +89,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
   ${FFMPEG_LIBRARIES}
 )
 add_dependencies(${CMAKE_PROJECT_NAME} SLITSCANGENERATOR_UPDATE_RANSLATIONS)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 

@@ -59,8 +59,6 @@ option(TRANS_KEEP_OBSOLETE "Add -noobsolete option to lupdate command to get rid
 
 
 # Global CMake options
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-# setup CMake-Macros for Qt
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)

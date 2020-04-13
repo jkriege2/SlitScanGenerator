@@ -15,58 +15,8 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="6" column="0" colspan="2">
-     <widget class="QGroupBox" name="grpProcessing">
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>75</height>
-       </size>
-      </property>
-      <property name="title">
-       <string>PROCESSING ...</string>
-      </property>
-      <property name="flat">
-       <bool>true</bool>
-      </property>
-      <layout class="QGridLayout" name="gridProcessing">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <item row="0" column="0">
-        <widget class="QScrollArea" name="scrollArea">
-         <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
-         </property>
-         <property name="widgetResizable">
-          <bool>true</bool>
-         </property>
-         <widget class="TasksWidget" name="widProcessing">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>1032</width>
-            <height>58</height>
-           </rect>
-          </property>
-         </widget>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="4" column="1">
-     <widget class="QScrollArea" name="scrollYZ">
+    <item row="5" column="0">
+     <widget class="QScrollArea" name="scrollXZ">
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
@@ -75,10 +25,95 @@
       </property>
      </widget>
     </item>
+    <item row="2" column="0" colspan="2">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QGroupBox" name="grpParams">
+        <property name="title">
+         <string>Parameters:</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_4" columnstretch="0,1,0,1">
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>properties:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="3">
+          <widget class="QLabel" name="labPreviewSettings">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>preview settings:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLabel" name="labProps">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>file:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1" colspan="3">
+          <widget class="QLabel" name="labFilename">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnProcessAll">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>130</width>
+          <height>55</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Process &amp;All</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../resources/resources.qrc">
+          <normaloff>:/icons/wizard2.png</normaloff>:/icons/wizard2.png</iconset>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonTextUnderIcon</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
     <item row="5" column="1">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="widProps">
        <attribute name="title">
@@ -116,7 +151,7 @@
                <string>roll</string>
               </property>
               <property name="icon">
-               <iconset>
+               <iconset resource="../resources/resources.qrc">
                 <normaloff>:/icons/roll.png</normaloff>:/icons/roll.png</iconset>
               </property>
              </item>
@@ -125,7 +160,7 @@
                <string>pitch</string>
               </property>
               <property name="icon">
-               <iconset>
+               <iconset resource="../resources/resources.qrc">
                 <normaloff>:/icons/pitch.png</normaloff>:/icons/pitch.png</iconset>
               </property>
              </item>
@@ -171,7 +206,7 @@
               <string>delete</string>
              </property>
              <property name="icon">
-              <iconset>
+              <iconset resource="../resources/resources.qrc">
                <normaloff>:/icons/list_remove.png</normaloff>:/icons/list_remove.png</iconset>
              </property>
             </widget>
@@ -234,7 +269,7 @@
            <string>add XZ</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../resources/resources.qrc">
             <normaloff>:/icons/list_add_right.png</normaloff>:/icons/list_add_right.png</iconset>
           </property>
          </widget>
@@ -261,14 +296,14 @@
            <string>add ZY</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../resources/resources.qrc">
             <normaloff>:/icons/list_add_down.png</normaloff>:/icons/list_add_down.png</iconset>
           </property>
          </widget>
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tab_2">
+      <widget class="QWidget" name="tabStills">
        <attribute name="title">
         <string>Stills</string>
        </attribute>
@@ -402,7 +437,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tab">
+      <widget class="QWidget" name="tabNormalize">
        <attribute name="title">
         <string>Normalization</string>
        </attribute>
@@ -456,7 +491,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tab_3">
+      <widget class="QWidget" name="tabFiltering">
        <attribute name="title">
         <string>Filtering</string>
        </attribute>
@@ -547,6 +582,137 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tabColor">
+       <attribute name="title">
+        <string>Color</string>
+       </attribute>
+       <layout class="QFormLayout" name="formLayout_5">
+        <item row="0" column="0">
+         <widget class="QCheckBox" name="chkModifyWhitepoint">
+          <property name="text">
+           <string>modify white point:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QWidget" name="widWhitepoint" native="true">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <layout class="QFormLayout" name="formLayout_4">
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string>wite point (R|G|B):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <item>
+              <widget class="QSpinBox" name="spinWhitepointR">
+               <property name="maximum">
+                <number>255</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spinWhitepointG">
+               <property name="maximum">
+                <number>255</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spinWhitepointB">
+               <property name="maximum">
+                <number>255</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="label_15">
+             <property name="text">
+              <string>&lt;b&gt;Click on the preview image to select a location, where neutral white is shown.&lt;/b&gt;&lt;br/&gt;The whitepoint will be sampled from there.</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item row="6" column="0" colspan="2">
+     <widget class="QGroupBox" name="grpProcessing">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>75</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>PROCESSING ...</string>
+      </property>
+      <property name="flat">
+       <bool>true</bool>
+      </property>
+      <layout class="QGridLayout" name="gridProcessing">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item row="0" column="0">
+        <widget class="QScrollArea" name="scrollArea">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="TasksWidget" name="widProcessing">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>1032</width>
+            <height>58</height>
+           </rect>
+          </property>
+         </widget>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
     <item row="4" column="0">
@@ -559,8 +725,8 @@
       </property>
      </widget>
     </item>
-    <item row="5" column="0">
-     <widget class="QScrollArea" name="scrollXZ">
+    <item row="4" column="1">
+     <widget class="QScrollArea" name="scrollYZ">
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
@@ -568,91 +734,6 @@
        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
       </property>
      </widget>
-    </item>
-    <item row="2" column="0" colspan="2">
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QGroupBox" name="grpParams">
-        <property name="title">
-         <string>Parameters:</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_4" columnstretch="0,1,0,1">
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>properties:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="3">
-          <widget class="QLabel" name="labPreviewSettings">
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
-          <widget class="QLabel" name="label_3">
-           <property name="text">
-            <string>preview settings:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QLabel" name="labProps">
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>file:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1" colspan="3">
-          <widget class="QLabel" name="labFilename">
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="btnProcessAll">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>130</width>
-          <height>55</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Process &amp;All</string>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>:/icons/wizard2.png</normaloff>:/icons/wizard2.png</iconset>
-        </property>
-        <property name="toolButtonStyle">
-         <enum>Qt::ToolButtonTextUnderIcon</enum>
-        </property>
-       </widget>
-      </item>
-     </layout>
     </item>
    </layout>
   </widget>
@@ -676,6 +757,7 @@
     <addaction name="actSaveINI"/>
     <addaction name="separator"/>
     <addaction name="actProcessAll"/>
+    <addaction name="actionProcess_INI_File"/>
     <addaction name="separator"/>
     <addaction name="actSettings"/>
     <addaction name="separator"/>
@@ -710,7 +792,7 @@
   </widget>
   <action name="actOpenVideo">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/folder_video.png</normaloff>:/icons/folder_video.png</iconset>
    </property>
    <property name="text">
@@ -719,7 +801,7 @@
   </action>
   <action name="actQuit">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/exit.png</normaloff>:/icons/exit.png</iconset>
    </property>
    <property name="text">
@@ -727,8 +809,11 @@
    </property>
   </action>
   <action name="actOpenINI">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/fileimport.png</normaloff>:/icons/fileimport.png</iconset>
    </property>
    <property name="text">
@@ -737,7 +822,7 @@
   </action>
   <action name="actSaveINI">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/fileexport.png</normaloff>:/icons/fileexport.png</iconset>
    </property>
    <property name="text">
@@ -746,7 +831,7 @@
   </action>
   <action name="actProcessAll">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/wizard2.png</normaloff>:/icons/wizard2.png</iconset>
    </property>
    <property name="text">
@@ -755,7 +840,7 @@
   </action>
   <action name="actAbout">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/info.png</normaloff>:/icons/info.png</iconset>
    </property>
    <property name="text">
@@ -780,6 +865,15 @@
     <string>Open Settings Dialog</string>
    </property>
   </action>
+  <action name="actionProcess_INI_File">
+   <property name="icon">
+    <iconset resource="../resources/resources.qrc">
+     <normaloff>:/icons/wizard_file.png</normaloff>:/icons/wizard_file.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pr&amp;ocess INI-File</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -790,7 +884,9 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../resources/resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>chkNormalize</sender>
@@ -800,11 +896,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>365</y>
+     <y>425</y>
     </hint>
     <hint type="destinationlabel">
      <x>616</x>
-     <y>391</y>
+     <y>451</y>
     </hint>
    </hints>
   </connection>
@@ -816,11 +912,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>365</y>
+     <y>425</y>
     </hint>
     <hint type="destinationlabel">
      <x>1031</x>
-     <y>391</y>
+     <y>451</y>
     </hint>
    </hints>
   </connection>
@@ -832,11 +928,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>365</y>
+     <y>425</y>
     </hint>
     <hint type="destinationlabel">
      <x>616</x>
-     <y>417</y>
+     <y>477</y>
     </hint>
    </hints>
   </connection>
@@ -848,11 +944,11 @@
    <hints>
     <hint type="sourcelabel">
      <x>1031</x>
-     <y>365</y>
+     <y>425</y>
     </hint>
     <hint type="destinationlabel">
      <x>1031</x>
-     <y>417</y>
+     <y>477</y>
     </hint>
    </hints>
   </connection>
@@ -864,11 +960,27 @@
    <hints>
     <hint type="sourcelabel">
      <x>656</x>
-     <y>365</y>
+     <y>425</y>
     </hint>
     <hint type="destinationlabel">
      <x>1031</x>
-     <y>368</y>
+     <y>428</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkModifyWhitepoint</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>widWhitepoint</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>655</x>
+     <y>493</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1031</x>
+     <y>522</y>
     </hint>
    </hints>
   </connection>

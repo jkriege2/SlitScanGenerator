@@ -1,3 +1,5 @@
+#ifndef GEO_TOOLS_H
+#define GEO_TOOLS_H
 #define _USE_MATH_DEFINES
 #include <cmath>
 
@@ -33,3 +35,5 @@ inline bool intersects(const line2& l1, const stretch2& l2, double& xi, double&y
 
 bool intersects_xrange(const line2& l, double x0, double x1, double y, double& xintersect);
 bool intersects_yrange(const line2& l, double x, double y0, double y1, double& yintersect);
+
+#endif // GEO_TOOLS_H

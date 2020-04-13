@@ -13,9 +13,19 @@ ProcessingTask::ProcessingTask():
     stillDelta(60),
     stillStrip(true),
     stillSeparateFiles(false),
+    stillGap(5),
+    stillBorder(5),
+    stillLineWidth(0.1),
     normalize(false),
     normalizeX(-1),
     normalizeY(-1),
+    filterNotch(false),
+    fiterNotchWavelength(15),
+    fiterNotchWidth(0.5),
+    modifyWhite(false),
+    whitepointR(255),
+    whitepointG(255),
+    whitepointB(255),
     vid(nullptr),
     z(0),
     m_saving(false),
@@ -61,6 +71,11 @@ void ProcessingTask::saveBase(QSettings &ini) const
     ini.setValue("filter/notch/enabled", filterNotch);
     ini.setValue("filter/notch/wavelength", fiterNotchWavelength);
     ini.setValue("filter/notch/delta", fiterNotchWidth);
+
+    ini.setValue("filter/whitepoint/enabled", modifyWhite);
+    ini.setValue("filter/whitepoint/red", whitepointR);
+    ini.setValue("filter/whitepoint/green", whitepointG);
+    ini.setValue("filter/whitepoint/blue", whitepointB);
 }
 
 
@@ -127,6 +142,11 @@ void ProcessingTask::load(const QString &inifilename)
     filterNotch=setall.value("filter/notch/enabled", filterNotch).toBool();
     fiterNotchWavelength=setall.value("filter/notch/wavelength", fiterNotchWavelength).toDouble();
     fiterNotchWidth=setall.value("filter/notch/delta", fiterNotchWidth).toDouble();
+
+    modifyWhite=setall.value("filter/whitepoint/enabled", modifyWhite).toBool();
+    whitepointR=setall.value("filter/whitepoint/red", whitepointR).toUInt();
+    whitepointG=setall.value("filter/whitepoint/green", whitepointG).toUInt();
+    whitepointB=setall.value("filter/whitepoint/blue", whitepointB).toUInt();
 
     pis.clear();
     for (int j=0; j<count; j++) {
@@ -357,11 +377,20 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
             QImage img=CImgToQImage(results[m_savingFrame]);
             if (QFile::exists(fn)) QFile::remove(fn);
             img.save(fn);
+            bool hasMod=false;
             if (filterNotch) {
                 applyFilterNotch(results[m_savingFrame], fiterNotchWavelength, fiterNotchWidth);
+                hasMod=true;
+            }
+            if (modifyWhite) {
+                applyWhitepointCorrection(results[m_savingFrame], whitepointR, whitepointG, whitepointB);
+                hasMod=true;
+            }
+            if (hasMod) {
                 QImage img=CImgToQImage(results[m_savingFrame]);
                 if (QFile::exists(resultfilt_filenames[m_savingFrame])) QFile::remove(resultfilt_filenames[m_savingFrame]);
                 img.save(resultfilt_filenames[m_savingFrame]);
+
             }
             QSettings set(fnini, QSettings::IniFormat);
             saveBase(set);
@@ -498,9 +527,32 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
         }
     }
     if (testoutput) {
-        sprintf(fn, "testoutput.bmp");
+        sprintf(fn, "testoutput_notchfilter.bmp");
         imgrgb.save_bmp(fn);
     }
 
+}
+
+void ProcessingTask::applyWhitepointCorrection(cimg_library::CImg<uint8_t> &img, uint8_t red, uint8_t green, uint8_t blue, bool testoutput)
+{
+    const double r=red;
+    const double g=green;
+    const double b=blue;
+    const double avgColor=(r+g+b)/3.0;
+    const double rFactor=avgColor/r;
+    const double gFactor=avgColor/g;
+    const double bFactor=avgColor/b;
+
+    cimg_forXYZ(img,x,y,z) {
+        img(x,y,z,0)=static_cast<uint8_t>(qBound<double>(0.0,static_cast<double>(img(x,y,z,0))*rFactor,255.0));
+        img(x,y,z,1)=static_cast<uint8_t>(qBound<double>(0.0,static_cast<double>(img(x,y,z,1))*gFactor,255.0));
+        img(x,y,z,2)=static_cast<uint8_t>(qBound<double>(0.0,static_cast<double>(img(x,y,z,2))*bFactor,255.0));
+    }
+
+    if (testoutput) {
+        char fn[1000];
+        sprintf(fn, "testoutput_whitepoint.bmp");
+        img.save_bmp(fn);
+    }
 }
 
