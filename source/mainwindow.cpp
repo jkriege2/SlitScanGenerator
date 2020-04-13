@@ -19,15 +19,39 @@
 
 #define USE_FILTERING
 
+
+void switchTranslator(QTranslator& translator, const QString& filename)
+{
+    // remove the old translator
+    qApp->removeTranslator(&translator);
+
+    // load the new translator
+    bool result = translator.load(filename);
+    qDebug("translator.load(%s) %s", filename.toLatin1().data(), result ? "true" : "false" );
+
+    if(!result) {
+        qWarning("*** Failed translator.load(\"%s\")", filename.toLatin1().data());
+        return;
+    }
+    qApp->installTranslator(&translator);
+}
+
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     lastX(-1),
     lastY(-1),
     m_mode(DisplayModes::unloaded),
-    m_settings()
+    m_settings(),
+    m_langGroup(nullptr)
 {
+    QDir appdir=QFileInfo(QApplication::instance()->applicationFilePath()).absoluteDir();
+    appdir.cd("translations");
+    m_langPath=appdir.absolutePath();
+
     initFFMPEG();
+
     ui->setupUi(this);
     ui->scrollXY->setWidget(labXY=new ImageViewer(this));
     ui->scrollXZ->setWidget(labXZ=new QLabel(this));
@@ -45,7 +69,6 @@ MainWindow::MainWindow(QWidget *parent) :
 #else
     ui->actTest->setVisible(false);
 #endif
-
 
     connect(ui->actTest, SIGNAL(triggered()), this, SLOT(test()));
     connect(ui->actSettings, SIGNAL(triggered()), this, SLOT(showSettings()));
@@ -90,7 +113,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->setTabEnabled(3, false);
 #endif
 
-    setWindowTitle(tr("%1 %2/%3bit").arg(PROJECT_LONGNAME).arg(PROJECT_VERSION).arg(sizeof(void*)*8));
+    setWindowTitle(tr("%1 %2 [%3bit]").arg(PROJECT_LONGNAME).arg(PROJECT_VERSION).arg(sizeof(void*)*8));
+
+    loadLanguages();
+    loadLanguage(m_settings.value("lastLanguage", "en").toString());
 }
 
 MainWindow::~MainWindow()
@@ -113,21 +139,10 @@ void MainWindow::saveINI()
 {
     QString fn=QFileDialog::getSaveFileName(this, tr("Save Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
     if (fn.size()>0) {
-        m_procModel->save(fn, m_filename);
-        QSettings setall(fn, QSettings::IniFormat);
-        setall.setValue("stills/count", ui->spinStillCount->value());
-        setall.setValue("stills/delta", ui->spinStillDelta->value());
-        setall.setValue("stills/strip", ui->chkStillStrip->isChecked());
-        setall.setValue("stills/separate_files", ui->chkStillDeparateFile->isChecked());
-        setall.setValue("stills/gap", ui->spinStillGap->value());
-        setall.setValue("stills/border", ui->spinStillBorder->value());
-        setall.setValue("stills/line_width", ui->spinStillLineWidth->value());
-        setall.setValue("normalize/enabled", ui->chkNormalize->isChecked());
-        setall.setValue("normalize/x", ui->spinNormalizeX->value());
-        setall.setValue("normalize/y", ui->spinNormalizeY->value());
-        setall.setValue("filter/notch/enabled", ui->chkWavelength->isChecked());
-        setall.setValue("filter/notch/wavelength", ui->spinWavelength->value());
-        setall.setValue("filter/notch/delta", ui->spinFilterDelta->value());
+        ProcessingTask task;
+        saveToTask(task);
+        task.save(m_filename);
+
         m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
     }
 }
@@ -135,23 +150,150 @@ void MainWindow::saveINI()
 void MainWindow::loadINI(const QString &fn, QString* vfn)
 {
     if (fn.size()>0) {
-        m_procModel->load(fn, vfn);
-
-        QSettings setall(fn, QSettings::IniFormat);
-        ui->spinStillCount->setValue(setall.value("stills/count", ui->spinStillCount->value()).toInt());
-        ui->spinStillDelta->setValue(setall.value("stills/delta", ui->spinStillDelta->value()).toInt());
-        ui->chkStillStrip->setChecked(setall.value("stills/strip", ui->chkStillStrip->isChecked()).toBool());
-        ui->chkStillDeparateFile->setChecked(setall.value("stills/separate_files", ui->chkStillDeparateFile->isChecked()).toBool());
-        ui->spinStillGap->setValue(setall.value("stills/gap", ui->spinStillGap->value()).toInt());
-        ui->spinStillBorder->setValue(setall.value("stills/border", ui->spinStillBorder->value()).toInt());
-        ui->spinStillLineWidth->setValue(setall.value("stills/line_width", ui->spinStillLineWidth->value()).toInt());
-        ui->chkNormalize->setChecked(setall.value("normalize/enabled", ui->chkNormalize->isChecked()).toBool());
-        ui->spinNormalizeX->setValue(setall.value("normalize/x", ui->spinNormalizeX->value()).toInt());
-        ui->spinNormalizeY->setValue(setall.value("normalize/y", ui->spinNormalizeY->value()).toInt());
-        ui->chkWavelength->setChecked(setall.value("filter/notch/enabled", ui->chkWavelength->isChecked()).toBool());
-        ui->spinWavelength->setValue(setall.value("filter/notch/wavelength", ui->spinWavelength->value()).toDouble());
-        ui->spinFilterDelta->setValue(setall.value("filter/notch/delta", ui->spinFilterDelta->value()).toDouble());
+        ProcessingTask task;
+        task.load(fn);
+        loadFromTask(task);
+        if (vfn) *vfn=task.filename;
     }
+}
+
+void MainWindow::loadFromTask(const ProcessingTask &task)
+{
+    ui->spinStillCount->setValue(task.stillCnt);
+    ui->spinStillDelta->setValue(task.stillGap);
+    ui->chkStillStrip->setChecked(task.stillStrip);
+    ui->chkStillDeparateFile->setChecked(task.stillSeparateFiles);
+    ui->spinStillGap->setValue(task.stillGap);
+    ui->spinStillBorder->setValue(task.stillBorder);
+    ui->spinStillLineWidth->setValue(task.stillLineWidth);
+    ui->chkNormalize->setChecked(task.normalize);
+    ui->spinNormalizeX->setValue(task.normalizeX);
+    ui->spinNormalizeY->setValue(task.normalizeY);
+    ui->chkWavelength->setChecked(task.filterNotch);
+    ui->spinWavelength->setValue(task.fiterNotchWavelength);
+    ui->spinFilterDelta->setValue(task.fiterNotchWidth);
+    m_procModel->load(task);
+}
+
+void MainWindow::saveToTask(ProcessingTask &task) const
+{
+    task.filename=m_filename;
+    task.stillCnt=ui->spinStillCount->value();
+    task.stillGap=ui->spinStillDelta->value();
+    task.stillStrip=ui->chkStillStrip->isChecked();
+    task.stillSeparateFiles=ui->chkStillDeparateFile->isChecked();
+    task.stillGap=ui->spinStillGap->value();
+    task.stillBorder=ui->spinStillBorder->value();
+    task.stillLineWidth=ui->spinStillLineWidth->value();
+    task.normalize=ui->chkNormalize->isChecked();
+    task.normalizeX=ui->spinNormalizeX->value();
+    task.normalizeY=ui->spinNormalizeY->value();
+    task.filterNotch=ui->chkWavelength->isChecked();
+    task.fiterNotchWavelength=ui->spinWavelength->value();
+    task.fiterNotchWidth=ui->spinFilterDelta->value();
+    m_procModel->save(task);
+}
+
+void MainWindow::loadLanguages()
+{
+    // format systems language
+    QString defaultLocale = QLocale::system().name(); // e.g. "de_DE"
+    defaultLocale.truncate(defaultLocale.lastIndexOf('_')); // e.g. "de"
+    QDir appdir(m_langPath);
+    // Create Language Menu to match qm translation files found
+    m_langGroup = new QActionGroup(ui->menu_Language);
+    m_langGroup->setExclusive(true);
+    connect(m_langGroup, SIGNAL (triggered(QAction *)), this, SLOT (slotLanguageChanged(QAction *)));
+    qDebug()<<appdir;
+
+    QStringList fileNames = appdir.entryList(QStringList("SlitScanGenerator*.qm"));
+    for (int i = 0; i < fileNames.size(); ++i) {
+        // get locale extracted by filename
+        QString locale;
+        locale = fileNames[i]; // "SlitScanGenerator_de.qm"
+
+        locale.truncate(locale.lastIndexOf('.')); // "SlitScanGenerator_de"
+        locale.remove(0, locale.indexOf('_') + 1); // "de"
+
+        QString lang = QLocale::languageToString(QLocale(locale).language());
+        QIcon ico(QString(":/flags/%1.png").arg(locale));
+
+        QAction *action = new QAction(ico, lang, this);
+        action->setCheckable(true);
+        // action->setData(resourceFileName);
+        action->setData(locale);
+
+        ui->menu_Language->addAction(action);
+        m_langGroup->addAction(action);
+
+        // set default translators and language checked
+        if (defaultLocale == locale)
+        {
+            action->setChecked(true);
+        }
+    } // for: end
+}
+
+// Called every time, when a menu entry of the language menu is called
+void MainWindow::slotLanguageChanged(QAction* action)
+{
+    if(0 == action) {
+        return;
+    }
+
+    // load the language dependant on the action content
+    loadLanguage(action->data().toString());
+}
+
+void MainWindow::loadLanguage(const QString& rLanguage)
+{
+    if(m_currLang == rLanguage) {
+        return;
+    }
+    m_currLang = rLanguage;
+    qDebug("loadLanguage %s", rLanguage.toLatin1().data());
+
+    QLocale locale = QLocale(m_currLang);
+    QLocale::setDefault(locale);
+    QString languageName = QLocale::languageToString(locale.language());
+
+    // m_translator contains the app's translations
+    QString resourceFileName = QString("%1/SlitScanGenerator_%2.qm").arg(m_langPath).arg(rLanguage);
+    switchTranslator(m_translator, resourceFileName);
+    switchTranslator(m_translatorQt, QString("qt_%1.qm").arg(rLanguage));
+
+    m_settings.setValue("lastLanguage", rLanguage);
+
+    for (auto act: m_langGroup->actions()) {
+        if (act->data().toString().toLatin1().toLower()==m_currLang.toLower()) {
+            act->setChecked(true);
+            break;
+        }
+    }
+}
+
+void MainWindow::changeEvent(QEvent* event)
+{
+    if(0 != event) {
+        switch(event->type()) {
+        // this event is send if a translator is loaded
+        case QEvent::LanguageChange:
+            // UI will not update unless you call retranslateUi
+            ui->retranslateUi(this);
+            break;
+
+            // this event is send, if the system, language changes
+        case QEvent::LocaleChange:
+        {
+            QString locale = QLocale::system().name();
+            locale.truncate(locale.lastIndexOf('_'));
+            loadLanguage(locale);
+        }
+        break;
+        default: break;
+        }
+    }
+    QMainWindow::changeEvent(event);
 }
 
 void MainWindow::loadINI()

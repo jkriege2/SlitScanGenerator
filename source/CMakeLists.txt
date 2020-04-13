@@ -16,19 +16,22 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
+# create files that contain software version etc.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/defines.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/defines.h)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../resources/appversion.rc.cmake
-              ${CMAKE_CURRENT_BINARY_DIR}/appversion.rc)
 
+
+# collect all source files
 file(GLOB_RECURSE UI_FILES *.ui)
 file(GLOB_RECURSE CODE_FILES *.cpp)
+file(GLOB_RECURSE HEADER_FILES *.h)
+file(GLOB_RECURSE QRC_FILES ../resources/*.qrc)
 
-qt5_wrap_ui(UI_HEADERS ${UI_FILES})
-qt5_add_resources(RESOURCE_FILES ../resources/resources.qrc)
 
-# Windows application icon
+# Windows application icon and version (i.e. generate windows resource files)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../resources/appversion.rc.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/appversion.rc)
 if (WIN32)
   set(WINDOWS_RES_FILE ${CMAKE_CURRENT_BINARY_DIR}/appversion.obj)
   if (MSVC)
@@ -43,6 +46,7 @@ if (WIN32)
     )
   endif()
 endif()
+
 
 # Configure FFMPEG
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -62,9 +66,16 @@ find_package(CIMG REQUIRED)
 include_directories(${CIMG_INCLUDE_DIR})
 
 
+
+
+
+# main executable
 add_executable(${CMAKE_PROJECT_NAME} WIN32
   ${UI_HEADERS}
+  ${UI_FILES}
   ${CODE_FILES}
+  ${HEADER_FILES}
+  ${QRC_FILES}
   ${RESOURCE_FILES}
   ${WINDOWS_RES_FILE}
 )
@@ -72,17 +83,18 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
   Qt5::Widgets
   ${FFMPEG_LIBRARIES}
 )
+add_dependencies(${CMAKE_PROJECT_NAME} SLITSCANGENERATOR_UPDATE_RANSLATIONS)
 
 
 
-
-#install target
+# install target
 if (UNIX)
     install(TARGETS ${CMAKE_PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
 elseif (WIN32)
   install(TARGETS ${CMAKE_PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX})
   install(FILES ${FFMPEG_BIN} DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif()
+
 
 # install system runtime lib
 if( CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS )

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include <QApplication>
 #include <QStringList>
+#include <QTranslator>
 #include "slitscangeneratorsettings.h"
 
 int main(int argc, char *argv[])
@@ -15,6 +16,19 @@ int main(int argc, char *argv[])
     QCoreApplication::setLibraryPaths(paths);
 
     SlitScanGeneratorSettings::loadCurrentStylesheet();
+
+    bool bTranslationLoaded = false;
+    QTranslator translator;
+    const char *aszTranslationDirs[] =
+        {
+            ".", "../translations", ":/translations", 0
+        };
+    for (const char **ppszDir = aszTranslationDirs; *ppszDir != 0; ++ ppszDir)
+    {
+        bTranslationLoaded = translator.load(QLocale::system(), "example-10", "_", *ppszDir);
+        if (bTranslationLoaded)
+            break;
+    }
 
     MainWindow w;
     //w.setStyleSheet(a.styleSheet());

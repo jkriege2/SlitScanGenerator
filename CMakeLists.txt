@@ -54,16 +54,21 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 endif()
 
 
+option(UPDATE_TRANSLATIONS "Call lupdate to update translation files from source." ON)
+option(TRANS_KEEP_OBSOLETE "Add -noobsolete option to lupdate command to get rid of old text entries" OFF)
 
 
 # Global CMake options
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# setup CMake-Macros for Qt
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Configure Qt
-find_package(Qt5Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Widgets LinguistTools)
 # Retrieve the absolute path to qmake and then use that path to find
 # the binaries
 get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
@@ -77,6 +82,7 @@ find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${_qt_bin_dir}")
 #set(TEST_LINK_LIBRARIES Qt5::Test)
 
 add_subdirectory(source)
+add_subdirectory(translations)
 
 
 # PREPARE install of MinGW system libraries

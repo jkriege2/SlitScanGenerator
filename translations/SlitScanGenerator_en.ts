@@ -307,7 +307,18 @@ build timestamp: %3</source>
     </message>
     <message>
         <location filename="../source/mainwindow.ui" line="644"/>
-        <source>ProcessAll</source>
+        <location filename="../source/mainwindow.ui" line="753"/>
+        <source>Process &amp;All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../source/mainwindow.ui" line="735"/>
+        <source>Open &amp;INI-file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../source/mainwindow.ui" line="744"/>
+        <source>Save INI-&amp;file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -321,145 +332,135 @@ build timestamp: %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="696"/>
+        <location filename="../source/mainwindow.ui" line="693"/>
+        <source>&amp;Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../source/mainwindow.ui" line="702"/>
         <source>toolBar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="711"/>
+        <location filename="../source/mainwindow.ui" line="717"/>
         <source>&amp;Open Video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="720"/>
+        <location filename="../source/mainwindow.ui" line="726"/>
         <source>&amp;Quit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="729"/>
-        <source>Open INI-file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../source/mainwindow.ui" line="738"/>
-        <source>Save INI-file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../source/mainwindow.ui" line="747"/>
-        <source>Process All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../source/mainwindow.ui" line="756"/>
+        <location filename="../source/mainwindow.ui" line="762"/>
         <source>&amp;About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="761"/>
+        <location filename="../source/mainwindow.ui" line="767"/>
         <source>Test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="766"/>
+        <location filename="../source/mainwindow.ui" line="772"/>
         <source>Open &amp;Example Video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="771"/>
+        <location filename="../source/mainwindow.ui" line="777"/>
         <source>&amp;Settings ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="774"/>
+        <location filename="../source/mainwindow.ui" line="780"/>
         <source>Open Settings Dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="93"/>
+        <location filename="../source/mainwindow.cpp" line="116"/>
         <source>%1 %2 [%3bit]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="114"/>
-        <location filename="../source/mainwindow.cpp" line="173"/>
+        <location filename="../source/mainwindow.cpp" line="140"/>
+        <location filename="../source/mainwindow.cpp" line="301"/>
         <source>Save Configuration File ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="114"/>
-        <location filename="../source/mainwindow.cpp" line="173"/>
+        <location filename="../source/mainwindow.cpp" line="140"/>
+        <location filename="../source/mainwindow.cpp" line="301"/>
         <source>INI-File (*.ini)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="179"/>
+        <location filename="../source/mainwindow.cpp" line="307"/>
         <source>Load Video File?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="179"/>
+        <location filename="../source/mainwindow.cpp" line="307"/>
         <source>The INI-file you loaded mentioned a video. Should this video be loaded?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="220"/>
+        <location filename="../source/mainwindow.cpp" line="348"/>
         <source>Open Test Image ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="234"/>
+        <location filename="../source/mainwindow.cpp" line="362"/>
         <source>Open Video File ...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="252"/>
+        <location filename="../source/mainwindow.cpp" line="380"/>
         <source>%1 frames, %2x%3 Pixels^2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="253"/>
+        <location filename="../source/mainwindow.cpp" line="381"/>
         <source>every %1-th frame, 1/%2x-scaling</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="255"/>
+        <location filename="../source/mainwindow.cpp" line="383"/>
         <source>Opening Video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="255"/>
+        <location filename="../source/mainwindow.cpp" line="383"/>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="256"/>
+        <location filename="../source/mainwindow.cpp" line="384"/>
         <source>opening file &apos;%1&apos;...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="268"/>
+        <location filename="../source/mainwindow.cpp" line="396"/>
         <source>Reading frame %1/%2...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="272"/>
+        <location filename="../source/mainwindow.cpp" line="400"/>
         <source>Reading frame %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="284"/>
-        <location filename="../source/mainwindow.cpp" line="298"/>
+        <location filename="../source/mainwindow.cpp" line="412"/>
+        <location filename="../source/mainwindow.cpp" line="426"/>
         <source>Error opening video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="292"/>
+        <location filename="../source/mainwindow.cpp" line="420"/>
         <source>Video opened</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="292"/>
+        <location filename="../source/mainwindow.cpp" line="420"/>
         <source>Video: %1
 frame size: %2x%3
  frames: %4
@@ -467,7 +468,7 @@ frame size: %2x%3
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="315"/>
+        <location filename="../source/mainwindow.cpp" line="443"/>
         <source>Open Example Video File ...</source>
         <translation type="unfinished"></translation>
     </message>

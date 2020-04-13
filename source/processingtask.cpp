@@ -25,6 +25,121 @@ ProcessingTask::ProcessingTask():
 
 }
 
+void ProcessingTask::save(const QString &inifilename) const
+{
+    QSettings setall(inifilename, QSettings::IniFormat);
+    saveBase(setall);
+    setall.setValue("count", pis.size());
+
+    int j=0;
+    for (ProcessingTask::ProcessingItem pi: pis) {
+        pi.save(setall, QString("item%1/").arg(j,3,10,QChar('0')));
+        j++;
+    }
+
+    setall.sync();
+}
+
+
+void ProcessingTask::saveBase(QSettings &ini) const
+{
+    if (ini.fileName().size()>0) ini.setValue("input_file", QFileInfo(ini.fileName()).absoluteDir().relativeFilePath(filename));
+    else ini.setValue("input_file", filename);
+
+    ini.setValue("stills/count", stillCnt);
+    ini.setValue("stills/delta", stillDelta);
+    ini.setValue("stills/strip", stillStrip);
+    ini.setValue("stills/separate_files", stillSeparateFiles);
+    ini.setValue("stills/gap", stillGap);
+    ini.setValue("stills/border", stillBorder);
+    ini.setValue("stills/line_width", stillLineWidth);
+
+    ini.setValue("normalize/enabled", normalize);
+    ini.setValue("normalize/x", normalizeX);
+    ini.setValue("normalize/y", normalizeY);
+
+    ini.setValue("filter/notch/enabled", filterNotch);
+    ini.setValue("filter/notch/wavelength", fiterNotchWavelength);
+    ini.setValue("filter/notch/delta", fiterNotchWidth);
+}
+
+
+ProcessingTask::ProcessingItem::ProcessingItem():
+    mode(ProcessingTask::Mode::XZ), location_x(-1), location_y(-1), angle(0), angleMode(AngleMode::AngleNone)
+{
+
+}
+
+int ProcessingTask::ProcessingItem::angleModeForCombo() const {
+    if (filteredAngleMode()==AngleMode::AnglePitch) return 1;
+    return 0;
+}
+
+ProcessingTask::AngleMode ProcessingTask::ProcessingItem::filteredAngleMode() const {
+    if (angle==0) return AngleMode::AngleNone;
+    else return angleMode;
+}
+
+void ProcessingTask::ProcessingItem::save(QSettings &ini, const QString &basename) const
+{
+    if (mode==Mode::ZY) {
+        ini.setValue(basename+"mode", "ZY");
+    }
+    if (mode==Mode::XZ) {
+        ini.setValue(basename+"mode", "XZ");
+    }
+    ini.setValue(basename+"location_x", location_x);
+    ini.setValue(basename+"location_y", location_y);
+    ini.setValue(basename+"angle_mode", static_cast<int>(angleMode));
+    ini.setValue(basename+"angle", angle);
+}
+
+
+void ProcessingTask::ProcessingItem::load(QSettings &ini, const QString &basename)
+{
+    if (ini.value(basename+"mode", "ZY").toString().toUpper().trimmed().left(2)=="ZY") mode=Mode::ZY;
+    else mode=Mode::XZ;
+    location_x=ini.value(basename+"location_x", location_x).toInt();
+    location_y=ini.value(basename+"location_y", location_y).toInt();
+    angleMode=static_cast<AngleMode>(ini.value(basename+"angle_mode", static_cast<int>(angleMode)).toInt());
+    angle=ini.value(basename+"angle", angle).toDouble();
+}
+
+void ProcessingTask::load(const QString &inifilename)
+{
+    QSettings setall(inifilename, QSettings::IniFormat);
+    int count=setall.value("count", 0).toInt();
+
+    filename=QFileInfo(inifilename).absoluteDir().absoluteFilePath(setall.value("input_file", filename).toString());
+
+    stillCnt=setall.value("stills/count", stillCnt).toInt();
+    stillDelta=setall.value("stills/delta", stillDelta).toInt();
+    stillStrip=setall.value("stills/strip", stillStrip).toBool();
+    stillSeparateFiles=setall.value("stills/separate_files", stillSeparateFiles).toBool();
+    stillGap=setall.value("stills/gap", stillGap).toDouble();
+    stillBorder=setall.value("stills/border", stillBorder).toDouble();
+    stillLineWidth=setall.value("stills/line_width", stillLineWidth).toDouble();
+
+    normalize=setall.value("normalize/enabled", normalize).toBool();
+    normalizeX=setall.value("normalize/x", normalizeX).toInt();
+    normalizeY=setall.value("normalize/y", normalizeY).toInt();
+
+    filterNotch=setall.value("filter/notch/enabled", filterNotch).toBool();
+    fiterNotchWavelength=setall.value("filter/notch/wavelength", fiterNotchWavelength).toDouble();
+    fiterNotchWidth=setall.value("filter/notch/delta", fiterNotchWidth).toDouble();
+
+    pis.clear();
+    for (int j=0; j<count; j++) {
+        ProcessingTask::ProcessingItem pi;
+        pi.load(setall, QString("item%1/").arg(j,3,10,QChar('0')));
+        pis.append(pi);
+    }
+}
+
+
+
+
+
 bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QString &error)
 {
     prog=0;
@@ -37,42 +152,7 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
 
     QFileInfo fi(filename);
     QString allini=fi.absoluteDir().absoluteFilePath(QString("%1.ini").arg(fi.baseName()));
-    QSettings setall(allini, QSettings::IniFormat);
-    setall.setValue("count", pis.size());
-    setall.setValue("input_file", filename);
-
-    setall.setValue("stills/count", stillCnt);
-    setall.setValue("stills/delta", stillDelta);
-    setall.setValue("stills/strip", stillStrip);
-    setall.setValue("stills/separate_files", stillSeparateFiles);
-    setall.setValue("stills/gap", stillGap);
-    setall.setValue("stills/border", stillBorder);
-    setall.setValue("stills/line_width", stillLineWidth);
-
-    setall.setValue("normalize/enabled", normalize);
-    setall.setValue("normalize/x", normalizeX);
-    setall.setValue("normalize/y", normalizeY);
-
-    setall.setValue("filter/notch/enabled", filterNotch);
-    setall.setValue("filter/notch/wavelength", fiterNotchWavelength);
-    setall.setValue("filter/notch/delta", fiterNotchWidth);
-
-    int j=0;
-    for (ProcessingTask::ProcessingItem pi: pis) {
-        if (pi.mode==Mode::ZY) {
-            setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "ZY");
-        }
-        if (pi.mode==Mode::XZ) {
-            setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "XZ");
-        }
-        setall.setValue(QString("item%1/location_x").arg(j,3,10,QChar('0')), pi.location_x);
-        setall.setValue(QString("item%1/location_y").arg(j,3,10,QChar('0')), pi.location_y);
-        setall.setValue(QString("item%1/angle_mode").arg(j,3,10,QChar('0')), static_cast<int>(pi.angleMode));
-        setall.setValue(QString("item%1/angle").arg(j,3,10,QChar('0')), pi.angle);
-        j++;
-    }
-
-    setall.sync();
+    save(allini);
 
     std::string err;
     vid=openFFMPEGVideo(filename.toStdString(), &err);
@@ -84,7 +164,6 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
         int j=0;
         for (ProcessingTask::ProcessingItem pi: pis) {
             cimg_library::CImg<uint8_t> line;
-            bool zok=true;
             int zout=0;
             int len=outputFrames;
             if (pi.mode==Mode::ZY) {
@@ -119,7 +198,6 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
             result_filenames.push_back(fn);
             resultfilt_filenames.push_back(fnfilt);
             result_inifilenames.push_back(fnini);
-            setall.setValue(QString("item%1/file").arg(j,3,10,QChar('0')), QFileInfo(allini).absoluteDir().relativeFilePath(QFileInfo(fn).absoluteFilePath()));
             if (stillStrip && stillCnt>0) {
                 stillStripImg.push_back(cimg_library::CImg<uint8_t>());
                 stillStripImg[j].resize(frame.width()+2*still_b, still_b+(frame.height()+still_g)*stillCnt-still_g+still_b, 1, 3);
@@ -286,29 +364,8 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
                 img.save(resultfilt_filenames[m_savingFrame]);
             }
             QSettings set(fnini, QSettings::IniFormat);
-            if (pi.mode==Mode::ZY) {
-                set.setValue("mode", "ZY");
-            }
-            if (pi.mode==Mode::XZ) {
-                set.setValue("mode", "XZ");
-            }
-            set.setValue("angle_mode", static_cast<int>(pi.angleMode));
-            set.setValue("angle", pi.angle);
-            set.setValue("location_x", pi.location_x);
-            set.setValue("location_y", pi.location_y);
-            set.setValue("stills/count", stillCnt);
-            set.setValue("stills/delta", stillDelta);
-            set.setValue("stills/strip", stillStrip);
-            set.setValue("stills/separate_files", stillSeparateFiles);
-            set.setValue("stills/gap", stillGap);
-            set.setValue("stills/border", stillBorder);
-            set.setValue("stills/line_width", stillLineWidth);
-            set.setValue("normalize/enabled", normalize);
-            set.setValue("normalize/x", normalizeX);
-            set.setValue("normalize/y", normalizeY);
-            set.setValue("filter/notch/enabled", filterNotch);
-            set.setValue("filter/notch/wavelength", fiterNotchWavelength);
-            set.setValue("filter/notch/delta", fiterNotchWidth);
+            saveBase(set);
+            pi.save(set, "");
 
             QImage imgs=CImgToQImage(stillStripImg[m_savingFrame]);
             QFileInfo fi(filename);
@@ -374,7 +431,7 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
     int offx=(img.width()-imgrgb.width())/2;
     int offy=(img.height()-imgrgb.height())/2;
 
-    unsigned char one[] = { 1 }, zero[] = { 0 };
+    //unsigned char one[] = { 1 }, zero[] = { 0 };
     cimg_library::CImg<float> mask(img.width(),img.height(),1,1,1);
     double kmin=1.0/double(center+delta);
     double kmax=1.0/double(center-delta);
@@ -383,7 +440,7 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
         const float kx=double(x-mask.width()/2)/double(mask.width());
         const float ky=double(y-mask.height()/2)/double(mask.height());
         const float kabs2=kx*kx+ky*ky;
-        const float kabs=sqrt(kabs2);
+        //const float kabs=sqrt(kabs2);
         mask(x,y)=1;
         if (kabs2>=kmin*kmin && kabs2<=kmax*kmax) mask(x,y)=0;
         //else if (kabs<kmin) mask(x,y)=exp(-(kabs-kmin)*(kabs-kmin)/(2.0*2.0*2.0));
@@ -446,3 +503,4 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
     }
 
 }
+

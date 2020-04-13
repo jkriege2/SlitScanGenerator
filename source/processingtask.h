@@ -2,6 +2,7 @@
 #define PROCESSINGTASK_H
 #include <QString>
 #include <vector>
+#include <QSettings>
 #include "ffmpeg_tools.h"
 #include "cimg_tools.h"
 
@@ -20,23 +21,20 @@ struct ProcessingTask
         };
 
         struct ProcessingItem {
-            inline ProcessingItem(): mode(ProcessingTask::Mode::XZ), location_x(-1), location_y(-1), angle(0), angleMode(AngleMode::AngleNone) {}
+        public:
+            ProcessingItem();
             Mode mode;
             int location_x;
             int location_y;
             double angle;
             AngleMode angleMode;
 
+            int angleModeForCombo() const;
 
-            int angleModeForCombo() const {
-                if (filteredAngleMode()==AngleMode::AnglePitch) return 1;
-                return 0;
-            }
+            AngleMode filteredAngleMode() const;
 
-            inline AngleMode filteredAngleMode() const {
-                if (angle==0) return AngleMode::AngleNone;
-                else return angleMode;
-            }
+            void save(QSettings& ini, const QString& basename) const;
+            void load(QSettings &ini, const QString &basename) ;
         };
 
         ProcessingTask();
@@ -61,6 +59,8 @@ struct ProcessingTask
         double fiterNotchWavelength;
         double fiterNotchWidth;
 
+        void save(const QString& inifilename) const;
+        void load(const QString& inifilename);
 
         bool processInit(int &prog, int &maxProg, QString &message, QString &error);
         bool processStep(int& prog, int& maxProg, QString &message);
@@ -82,6 +82,8 @@ struct ProcessingTask
         bool m_saving;
         int m_savingFrame;
         int stills;
+
+        void saveBase(QSettings& ini) const;
 
 };
 

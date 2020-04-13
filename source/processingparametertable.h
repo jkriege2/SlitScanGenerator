@@ -4,13 +4,9 @@
 #include <QAbstractTableModel>
 #include "processingtask.h"
 
-class ProcessingParameterTable : public QAbstractTableModel
-{
+class ProcessingParameterTable : public QAbstractTableModel {
         Q_OBJECT
-
     public:
-
-
         explicit ProcessingParameterTable(QObject *parent = 0);
 
         void clear();
@@ -37,8 +33,8 @@ class ProcessingParameterTable : public QAbstractTableModel
 
         inline const QVector<ProcessingTask::ProcessingItem>& dataVector() const { return m_data; }
     public slots:
-        void load(QString filename=QString(), QString *videoFile=nullptr);
-        void save(QString filename, QString videoFile) const;
+        void save(ProcessingTask &task) const;
+        void load(const ProcessingTask &task);
     private:
         QVector<ProcessingTask::ProcessingItem> m_data;
 };

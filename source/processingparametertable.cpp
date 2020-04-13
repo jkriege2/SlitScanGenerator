@@ -16,66 +16,27 @@ void ProcessingParameterTable::clear()
     endResetModel();
 }
 
-void ProcessingParameterTable::load(QString filename, QString* videoFile)
-{
+void ProcessingParameterTable::load(const ProcessingTask& task) {
     beginResetModel();
-    m_data.clear();
-    // QFileDialog::getOpenFileName(this, tr("Open Configuration File ..."), "", tr("INI-File (*.ini)"));
-    QSettings setall(filename, QSettings::IniFormat);
-    int cnt=setall.value("count", 0).toInt();
-    if (videoFile) {
-        *videoFile=setall.value("input_file", "").toString();
-        if (videoFile->size()>0) {
-            *videoFile=QFileInfo(filename).absoluteDir().absoluteFilePath(*videoFile);
-        }
-    }
-    for (int j=0; j<cnt; j++) {
-        ProcessingTask::ProcessingItem pi;
-        pi.location_x=setall.value(QString("item%1/location_x").arg(j,3,10,QChar('0')), 0).toInt();
-        pi.location_y=setall.value(QString("item%1/location_y").arg(j,3,10,QChar('0')), 0).toInt();
-        pi.angle=setall.value(QString("item%1/angle").arg(j,3,10,QChar('0')), 0).toDouble();
-        pi.angleMode=static_cast<ProcessingTask::AngleMode>(setall.value(QString("item%1/angle_mode").arg(j,3,10,QChar('0')), 0).toInt());
-        if (setall.value(QString("item%1/mode").arg(j,3,10,QChar('0')), "").toString()=="ZY") {
-            pi.mode=ProcessingTask::Mode::ZY;
-            m_data.push_back(pi);
-        } else if (setall.value(QString("item%1/mode").arg(j,3,10,QChar('0')), "").toString()=="XZ") {
-            pi.mode=ProcessingTask::Mode::XZ;
-            m_data.push_back(pi);
-        }
-    }
+    m_data=task.pis;
     endResetModel();
 }
 
-void ProcessingParameterTable::save(QString filename, QString videoFile) const
-{
-    // QFileDialog::getOpenFileName(this, tr("Open Configuration File ..."), "", tr("INI-File (*.ini)"));
-    QSettings setall(filename, QSettings::IniFormat);
-    setall.setValue("count", m_data.size());
-    if (videoFile.size()>0) setall.value("input_file", QFileInfo(filename).absoluteDir().relativeFilePath(videoFile));
 
-    for (int j=0; j<m_data.size(); j++) {
-        ProcessingTask::ProcessingItem pi=m_data[j];
-        setall.setValue(QString("item%1/location_x").arg(j,3,10,QChar('0')), pi.location_x);
-        setall.setValue(QString("item%1/location_y").arg(j,3,10,QChar('0')), pi.location_y);
-        setall.setValue(QString("item%1/angle").arg(j,3,10,QChar('0')), pi.angle);
-        setall.setValue(QString("item%1/angle_mode").arg(j,3,10,QChar('0')), static_cast<int>(pi.angleMode));
-        if (pi.mode==ProcessingTask::Mode::ZY) {
-            setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "ZY");
-        } else if (pi.mode==ProcessingTask::Mode::XZ) {
-            setall.setValue(QString("item%1/mode").arg(j,3,10,QChar('0')), "XZ");
-        }
-    }
+void ProcessingParameterTable::save(ProcessingTask& task) const {
+    task.pis=m_data;
 }
+
 
 QVariant ProcessingParameterTable::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (orientation==Qt::Horizontal) {
         if (role==Qt::DisplayRole) {
-            if (section==0) return tr("mode");
-            if (section==1) return tr("x");
-            if (section==2) return tr("y");
-            if (section==3) return tr("angle mode");
-            if (section==4) return tr("angle");
+            if (section==0) return tr("Mode");
+            if (section==1) return tr("X");
+            if (section==2) return tr("Y");
+            if (section==3) return tr("Angle Mode");
+            if (section==4) return tr("Angle");
         }
     } else {
         return section+1;
@@ -111,8 +72,8 @@ QVariant ProcessingParameterTable::data(const QModelIndex &index, int role) cons
     int y=m_data.value(index.row(), ProcessingTask::ProcessingItem()).location_y;
     if (role==Qt::DisplayRole || role==Qt::EditRole) {
         if (index.column()==0) {
-            if (mode==ProcessingTask::Mode::XZ) return "XZ";
-            if (mode==ProcessingTask::Mode::ZY) return "ZY";
+            if (mode==ProcessingTask::Mode::XZ) return tr("XZ");
+            if (mode==ProcessingTask::Mode::ZY) return tr("ZY");
         } else if (index.column()==1) {
             return x;
         } else if (index.column()==2) {
@@ -133,7 +94,7 @@ QVariant ProcessingParameterTable::data(const QModelIndex &index, int role) cons
                 else return angle;
             } else {
                 if (angleMode==ProcessingTask::AngleMode::AngleNone) return "---";
-                else return angle;
+                else return QString::number(angle, 'f', 1)+QLatin1Char('\xB0');
             }
         }
     }

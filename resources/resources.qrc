@@ -16,6 +16,10 @@
         <file>logo_128x128.png</file>
     </qresource>
     <qresource prefix="/">
+		<file>flags/de.png</file>
+		<file>flags/en.png</file>
+		<file>flags/fr.png</file>
+		<file>flags/es.png</file>
         <file>stylesheets/darkorange.qss</file>
         <file>stylesheets/default.qss</file>
         <file>stylesheets/darkorange/checkbox.png</file>
