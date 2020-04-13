@@ -9,7 +9,7 @@ You can find more example image here: https://jkrieger.de/photography/slitscan/i
 
 A detailed description of the different functions of this package can be found below:
 
-[TOC]
+
 
 
 
@@ -50,9 +50,11 @@ SlitScanGenerator processes videos (X-Y-T) in the following steps:
    1. a notch filter can be used to eliminate fast flickering of the images
    2. apply a white-point correction 
 3. save the output image:
-     [![rose](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_6003_stack001_thumb.jpg)](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_6003_stack001.jpg) 
+   
+   [![rose](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_6003_stack001_thumb.jpg)](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_6003_stack001.jpg) 
 4. generate the still image strip and save it:
-    [![DSC_6003_stack009_stillstrip](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_6003_stack009_stillstrip_tumb.jpg)](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_6003_stack009_stillstrip.jpg)
+   
+   [![DSC_6003_stack009_stillstrip](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_6003_stack009_stillstrip_tumb.jpg)](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/screenshots/DSC_6003_stack009_stillstrip.jpg)
 
 
 
