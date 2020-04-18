@@ -177,6 +177,10 @@ void MainWindow::loadFromTask(const ProcessingTask &task)
     ui->chkWavelength->setChecked(task.filterNotch);
     ui->spinWavelength->setValue(task.fiterNotchWavelength);
     ui->spinFilterDelta->setValue(task.fiterNotchWidth);
+    ui->chkModifyWhitepoint->setChecked(task.modifyWhite);
+    ui->spinWhitepointR->setValue(task.whitepointR);
+    ui->spinWhitepointG->setValue(task.whitepointG);
+    ui->spinWhitepointB->setValue(task.whitepointB);
     m_procModel->load(task);
 }
 
@@ -197,6 +201,10 @@ void MainWindow::saveToTask(ProcessingTask &task) const
     task.filterNotch=ui->chkWavelength->isChecked();
     task.fiterNotchWavelength=ui->spinWavelength->value();
     task.fiterNotchWidth=ui->spinFilterDelta->value();
+    task.modifyWhite=ui->chkModifyWhitepoint->isChecked();
+    task.whitepointR=ui->spinWhitepointR->value();
+    task.whitepointG=ui->spinWhitepointG->value();
+    task.whitepointB=ui->spinWhitepointB->value();
     m_procModel->save(task);
 }
 
