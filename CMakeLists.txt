@@ -40,7 +40,7 @@ message(STATUS "    install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 project(SlitScanGenerator)
 set(PROJECT_LONGNAME "SlitScanGenerator")
-set(PROJECT_VERSION "2020-04")
+set(PROJECT_VERSION "2020.04.19")
 string(TIMESTAMP PROJECT_BUILDYEAR "%Y")
 string(TIMESTAMP PROJECT_BUILDDATETIME "%Y-%m-%d")
 set(PROJECT_COPYRIGHT "Copyright (c) 2016-${PROJECT_BUILDYEAR} Jan Krieger jan@jkrieger.de")
