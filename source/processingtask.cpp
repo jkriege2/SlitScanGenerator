@@ -2,11 +2,10 @@
 #include "cimg_tools.h"
 #include <QFileInfo>
 #include <QFile>
-#include <QSettings>
 #include <QDir>
 #include <QDebug>
 
-ProcessingTask::ProcessingTask(std::shared_ptr<VideoReader> reader, std::shared_ptr<ImageWriter> writer):
+ProcessingTask::ProcessingTask(std::shared_ptr<VideoReader> reader, std::shared_ptr<ImageWriter> writer, std::shared_ptr<ConfigIO> configio):
     do_not_save_anyting(false),
     filename(),
     outputFrames(0),
@@ -33,6 +32,7 @@ ProcessingTask::ProcessingTask(std::shared_ptr<VideoReader> reader, std::shared_
     stills(0),
     m_reader(reader),
     m_writer(writer),
+    m_configio(configio),
     m_reporter(nullptr),
     m_prog(0)
 {
@@ -55,45 +55,46 @@ void ProcessingTask::process()
 
 void ProcessingTask::save(const QString &inifilename) const
 {
-    QSettings setall(inifilename, QSettings::IniFormat);
-    saveBase(setall);
-    setall.setValue("count", pis.size());
-
-    int j=0;
-    for (ProcessingTask::ProcessingItem pi: pis) {
-        pi.save(setall, QString("item%1/").arg(j,3,10,QChar('0')));
-        j++;
+    if (m_configio) {
+        m_configio->open(inifilename.toStdString());
+        saveBase(m_configio);
+        m_configio->setValue("count", pis.size());
+        int j=0;
+        for (ProcessingTask::ProcessingItem pi: pis) {
+            pi.save(m_configio, QString("item%1/").arg(j,3,10,QChar('0')).toStdString());
+            j++;
+        }
+        m_configio->close();
     }
-
-    setall.sync();
 }
 
 
-void ProcessingTask::saveBase(QSettings &ini) const
+void ProcessingTask::saveBase(std::shared_ptr<ConfigIO> ini) const
 {
-    if (ini.fileName().size()>0) ini.setValue("input_file", QFileInfo(ini.fileName()).absoluteDir().relativeFilePath(filename));
-    else ini.setValue("input_file", filename);
+    if (!ini) return;
+    if (ini->filename().size()>0) ini->setValue("input_file", QFileInfo(QString::fromStdString(ini->filename())).absoluteDir().relativeFilePath(filename).toStdString());
+    else ini->setValue("input_file", filename.toStdString());
 
-    ini.setValue("stills/count", stillCnt);
-    ini.setValue("stills/delta", stillDelta);
-    ini.setValue("stills/strip", stillStrip);
-    ini.setValue("stills/separate_files", stillSeparateFiles);
-    ini.setValue("stills/gap", stillGap);
-    ini.setValue("stills/border", stillBorder);
-    ini.setValue("stills/line_width", stillLineWidth);
+    ini->setValue("stills/count", stillCnt);
+    ini->setValue("stills/delta", stillDelta);
+    ini->setValue("stills/strip", stillStrip);
+    ini->setValue("stills/separate_files", stillSeparateFiles);
+    ini->setValue("stills/gap", stillGap);
+    ini->setValue("stills/border", stillBorder);
+    ini->setValue("stills/line_width", stillLineWidth);
 
-    ini.setValue("normalize/enabled", normalize);
-    ini.setValue("normalize/x", normalizeX);
-    ini.setValue("normalize/y", normalizeY);
+    ini->setValue("normalize/enabled", normalize);
+    ini->setValue("normalize/x", normalizeX);
+    ini->setValue("normalize/y", normalizeY);
 
-    ini.setValue("filter/notch/enabled", filterNotch);
-    ini.setValue("filter/notch/wavelength", fiterNotchWavelength);
-    ini.setValue("filter/notch/delta", fiterNotchWidth);
+    ini->setValue("filter/notch/enabled", filterNotch);
+    ini->setValue("filter/notch/wavelength", fiterNotchWavelength);
+    ini->setValue("filter/notch/delta", fiterNotchWidth);
 
-    ini.setValue("filter/whitepoint/enabled", modifyWhite);
-    ini.setValue("filter/whitepoint/red", whitepointR);
-    ini.setValue("filter/whitepoint/green", whitepointG);
-    ini.setValue("filter/whitepoint/blue", whitepointB);
+    ini->setValue("filter/whitepoint/enabled", modifyWhite);
+    ini->setValue("filter/whitepoint/red", whitepointR);
+    ini->setValue("filter/whitepoint/green", whitepointG);
+    ini->setValue("filter/whitepoint/blue", whitepointB);
 }
 
 
@@ -113,64 +114,69 @@ ProcessingTask::AngleMode ProcessingTask::ProcessingItem::filteredAngleMode() co
     else return angleMode;
 }
 
-void ProcessingTask::ProcessingItem::save(QSettings &ini, const QString &basename) const
+void ProcessingTask::ProcessingItem::save(std::shared_ptr<ConfigIO> ini, const std::string &basename) const
 {
     if (mode==Mode::ZY) {
-        ini.setValue(basename+"mode", "ZY");
+        ini->setValue(basename+"mode", "ZY");
     }
     if (mode==Mode::XZ) {
-        ini.setValue(basename+"mode", "XZ");
+        ini->setValue(basename+"mode", "XZ");
     }
-    ini.setValue(basename+"location_x", location_x);
-    ini.setValue(basename+"location_y", location_y);
-    ini.setValue(basename+"angle_mode", static_cast<int>(angleMode));
-    ini.setValue(basename+"angle", angle);
+    ini->setValue(basename+"location_x", location_x);
+    ini->setValue(basename+"location_y", location_y);
+    ini->setValue(basename+"angle_mode", static_cast<int>(angleMode));
+    ini->setValue(basename+"angle", angle);
 }
 
 
-void ProcessingTask::ProcessingItem::load(QSettings &ini, const QString &basename)
+void ProcessingTask::ProcessingItem::load(std::shared_ptr<ConfigIO> ini, const std::string &basename)
 {
-    if (ini.value(basename+"mode", "ZY").toString().toUpper().trimmed().left(2)=="ZY") mode=Mode::ZY;
+    if (QString::fromStdString(ini->value(basename+"mode", std::string("ZY"))).toUpper().trimmed().left(2)=="ZY") mode=Mode::ZY;
     else mode=Mode::XZ;
-    location_x=ini.value(basename+"location_x", location_x).toInt();
-    location_y=ini.value(basename+"location_y", location_y).toInt();
-    angleMode=static_cast<AngleMode>(ini.value(basename+"angle_mode", static_cast<int>(angleMode)).toInt());
-    angle=ini.value(basename+"angle", angle).toDouble();
+    location_x=ini->value(basename+"location_x", location_x);
+    location_y=ini->value(basename+"location_y", location_y);
+    angleMode=static_cast<AngleMode>(ini->value(basename+"angle_mode", static_cast<int>(angleMode)));
+    angle=ini->value(basename+"angle", angle);
 }
 
 void ProcessingTask::load(const QString &inifilename)
 {
-    QSettings setall(inifilename, QSettings::IniFormat);
-    int count=setall.value("count", 0).toInt();
+    if (m_configio) {
+        m_configio->open(inifilename.toStdString());
 
-    filename=QFileInfo(inifilename).absoluteDir().absoluteFilePath(setall.value("input_file", filename).toString());
+        int count=m_configio->value("count", 0);
 
-    stillCnt=setall.value("stills/count", stillCnt).toInt();
-    stillDelta=setall.value("stills/delta", stillDelta).toInt();
-    stillStrip=setall.value("stills/strip", stillStrip).toBool();
-    stillSeparateFiles=setall.value("stills/separate_files", stillSeparateFiles).toBool();
-    stillGap=setall.value("stills/gap", stillGap).toDouble();
-    stillBorder=setall.value("stills/border", stillBorder).toDouble();
-    stillLineWidth=setall.value("stills/line_width", stillLineWidth).toDouble();
+        filename=QFileInfo(inifilename).absoluteDir().absoluteFilePath(QString::fromStdString(m_configio->value("input_file", filename.toStdString())));
 
-    normalize=setall.value("normalize/enabled", normalize).toBool();
-    normalizeX=setall.value("normalize/x", normalizeX).toInt();
-    normalizeY=setall.value("normalize/y", normalizeY).toInt();
+        stillCnt=m_configio->value("stills/count", stillCnt);
+        stillDelta=m_configio->value("stills/delta", stillDelta);
+        stillStrip=m_configio->value("stills/strip", stillStrip);
+        stillSeparateFiles=m_configio->value("stills/separate_files", stillSeparateFiles);
+        stillGap=m_configio->value("stills/gap", stillGap);
+        stillBorder=m_configio->value("stills/border", stillBorder);
+        stillLineWidth=m_configio->value("stills/line_width", stillLineWidth);
 
-    filterNotch=setall.value("filter/notch/enabled", filterNotch).toBool();
-    fiterNotchWavelength=setall.value("filter/notch/wavelength", fiterNotchWavelength).toDouble();
-    fiterNotchWidth=setall.value("filter/notch/delta", fiterNotchWidth).toDouble();
+        normalize=m_configio->value("normalize/enabled", normalize);
+        normalizeX=m_configio->value("normalize/x", normalizeX);
+        normalizeY=m_configio->value("normalize/y", normalizeY);
 
-    modifyWhite=setall.value("filter/whitepoint/enabled", modifyWhite).toBool();
-    whitepointR=setall.value("filter/whitepoint/red", whitepointR).toUInt();
-    whitepointG=setall.value("filter/whitepoint/green", whitepointG).toUInt();
-    whitepointB=setall.value("filter/whitepoint/blue", whitepointB).toUInt();
+        filterNotch=m_configio->value("filter/notch/enabled", filterNotch);
+        fiterNotchWavelength=m_configio->value("filter/notch/wavelength", fiterNotchWavelength);
+        fiterNotchWidth=m_configio->value("filter/notch/delta", fiterNotchWidth);
 
-    pis.clear();
-    for (int j=0; j<count; j++) {
-        ProcessingTask::ProcessingItem pi;
-        pi.load(setall, QString("item%1/").arg(j,3,10,QChar('0')));
-        pis.append(pi);
+        modifyWhite=m_configio->value("filter/whitepoint/enabled", modifyWhite);
+        whitepointR=m_configio->value("filter/whitepoint/red", whitepointR);
+        whitepointG=m_configio->value("filter/whitepoint/green", whitepointG);
+        whitepointB=m_configio->value("filter/whitepoint/blue", whitepointB);
+
+        pis.clear();
+        for (int j=0; j<count; j++) {
+            ProcessingTask::ProcessingItem pi;
+            pi.load(m_configio, QString("item%1/").arg(j,3,10,QChar('0')).toStdString());
+            pis.append(pi);
+        }
+
+        m_configio->close();
     }
 }
 
@@ -425,9 +431,12 @@ bool ProcessingTask::processStep()
             }
 
             if (!do_not_save_anyting) {
-                QSettings set(results[m_savingFrame].inifilename, QSettings::IniFormat);
-                saveBase(set);
-                pi.save(set, "");
+                if (m_configio) {
+                    m_configio->open(results[m_savingFrame].inifilename.toStdString());
+                    saveBase(m_configio);
+                    pi.save(m_configio, "");
+                    m_configio->close();
+                }
             }
 
             QFileInfo fi(filename);

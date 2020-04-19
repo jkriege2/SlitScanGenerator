@@ -57,6 +57,9 @@ set(CODE_FILES
         imagewriter_cimg.cpp
         processingtaskreporter.cpp
         processingtaskreporter_dummy.cpp
+        configio.cpp
+        configio_ini.cpp
+        configio_dummy.cpp
     )
 set(HEADER_FILES
         videoreader.h
@@ -84,6 +87,9 @@ set(HEADER_FILES
         imagewriter_cimg.h
         processingtaskreporter.h
         processingtaskreporter_dummy.h
+        configio.h
+        configio_ini.h
+        configio_dummy.h
     )
 set(UI_FILES
         aboutbox.ui

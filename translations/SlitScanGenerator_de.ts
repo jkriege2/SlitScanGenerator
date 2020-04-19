@@ -420,66 +420,66 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation>Einstellungs-Dialog öffnen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="128"/>
+        <location filename="../source/mainwindow.cpp" line="130"/>
         <source>%1 %2 [%3bit]</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="152"/>
-        <location filename="../source/mainwindow.cpp" line="322"/>
-        <location filename="../source/mainwindow.cpp" line="674"/>
+        <location filename="../source/mainwindow.cpp" line="154"/>
+        <location filename="../source/mainwindow.cpp" line="324"/>
+        <location filename="../source/mainwindow.cpp" line="676"/>
         <source>Save Configuration File ...</source>
         <translation>Konfigurationsdatei speichern ...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="152"/>
-        <location filename="../source/mainwindow.cpp" line="322"/>
-        <location filename="../source/mainwindow.cpp" line="674"/>
+        <location filename="../source/mainwindow.cpp" line="154"/>
+        <location filename="../source/mainwindow.cpp" line="324"/>
+        <location filename="../source/mainwindow.cpp" line="676"/>
         <source>INI-File (*.ini)</source>
         <translation>INI-Datei (*.ini)</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="328"/>
+        <location filename="../source/mainwindow.cpp" line="330"/>
         <source>Load Video File?</source>
         <translation>Video-Datei laden?</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="328"/>
+        <location filename="../source/mainwindow.cpp" line="330"/>
         <source>The INI-file you loaded mentioned a video. Should this video be loaded?</source>
         <translation>Die gerade geladene INI-Datei verweist auf eine zugehörige Video-Datei. Soll dieses zugehörige Video geladen werden?</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="369"/>
+        <location filename="../source/mainwindow.cpp" line="371"/>
         <source>Open Test Image ...</source>
         <translation>Testbilder laden ...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="384"/>
+        <location filename="../source/mainwindow.cpp" line="386"/>
         <source>Open Video File ...</source>
         <translation>Video-Datei laden ...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="402"/>
+        <location filename="../source/mainwindow.cpp" line="404"/>
         <source>%1 frames, %2x%3 Pixels^2</source>
         <translation>%1 Bilder, %2x%3 Pixel²</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="403"/>
+        <location filename="../source/mainwindow.cpp" line="405"/>
         <source>every %1-th frame, 1/%2x-scaling</source>
         <translation>jedes %1-te Bild, 1/%2x-Skalierung</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="405"/>
+        <location filename="../source/mainwindow.cpp" line="407"/>
         <source>Opening Video</source>
         <translation>Öffne Video</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="405"/>
+        <location filename="../source/mainwindow.cpp" line="407"/>
         <source>Cancel</source>
         <translation>&amp;Abbrechen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="406"/>
+        <location filename="../source/mainwindow.cpp" line="408"/>
         <source>opening file &apos;%1&apos;...</source>
         <translation>Öffne Datei &apos;%1&apos;...</translation>
     </message>
@@ -492,18 +492,18 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation type="vanished">Lese Bild %1...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="417"/>
-        <location filename="../source/mainwindow.cpp" line="432"/>
+        <location filename="../source/mainwindow.cpp" line="419"/>
+        <location filename="../source/mainwindow.cpp" line="434"/>
         <source>Error opening video</source>
         <translation>Fehler beim Öffnen des Videos</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="426"/>
+        <location filename="../source/mainwindow.cpp" line="428"/>
         <source>Video opened</source>
         <translation>Video erfolgreich geladen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="426"/>
+        <location filename="../source/mainwindow.cpp" line="428"/>
         <source>Video: %1
 frame size: %2x%3
  frames: %4
@@ -514,7 +514,7 @@ frame size: %2x%3
  Farbkanäle: %5</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="448"/>
+        <location filename="../source/mainwindow.cpp" line="450"/>
         <source>Open Example Video File ...</source>
         <translation>Beispielvideo öffnen ...</translation>
     </message>

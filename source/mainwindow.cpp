@@ -23,6 +23,8 @@
 #include "qt_tools.h"
 #include "imagewriter_cimg.h"
 #include "imagewriter_png.h"
+#include "configio_dummy.h"
+#include "configio_ini.h"
 
 #define USE_FILTERING
 
@@ -151,7 +153,7 @@ void MainWindow::saveINI()
 {
     QString fn=QFileDialog::getSaveFileName(this, tr("Save Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
     if (fn.size()>0) {
-        ProcessingTask task(std::shared_ptr<VideoReader>(nullptr), std::shared_ptr<ImageWriter>(nullptr));
+        ProcessingTask task(std::shared_ptr<VideoReader>(nullptr), std::shared_ptr<ImageWriter>(nullptr), std::make_shared<ConfigIO_INI>());
         saveToTask(task);
         task.save(m_filename);
 
@@ -162,7 +164,7 @@ void MainWindow::saveINI()
 void MainWindow::loadINI(const QString &fn, QString* vfn)
 {
     if (fn.size()>0) {
-        ProcessingTask task(std::shared_ptr<VideoReader>(nullptr), std::shared_ptr<ImageWriter>(nullptr));
+        ProcessingTask task(std::shared_ptr<VideoReader>(nullptr), std::shared_ptr<ImageWriter>(nullptr), std::make_shared<ConfigIO_INI>());
         task.load(fn);
         loadFromTask(task);
         if (vfn) *vfn=task.filename;
@@ -523,7 +525,7 @@ void MainWindow::recalcAndRedisplaySamples()
         cimg_library::CImg<uint8_t> cxz;
         cimg_library::CImg<uint8_t> cyz;
 
-        ProcessingTask taskXZ(std::make_shared<VideoReader_CImg>(*video_input), std::make_shared<ImageWriter_CImg>(cxz, ImageWriter::FinalImage));
+        ProcessingTask taskXZ(std::make_shared<VideoReader_CImg>(*video_input), std::make_shared<ImageWriter_CImg>(cxz, ImageWriter::FinalImage), std::make_shared<ConfigIO_Dummy>());
         { // store current settings and modify the ProcessingItem to only cover the currently selected item
             saveToTask(taskXZ, 1.0/invxyFactor, 1.0/tFactor);
             taskXZ.pis.clear();
@@ -539,7 +541,7 @@ void MainWindow::recalcAndRedisplaySamples()
             taskXZ.do_not_save_anyting=true;
         }
 
-        ProcessingTask taskYZ(std::make_shared<VideoReader_CImg>(*video_input), std::make_shared<ImageWriter_CImg>(cyz, ImageWriter::FinalImage));
+        ProcessingTask taskYZ(std::make_shared<VideoReader_CImg>(*video_input), std::make_shared<ImageWriter_CImg>(cyz, ImageWriter::FinalImage), std::make_shared<ConfigIO_Dummy>());
         { // store current settings and modify the ProcessingItem to only cover the currently selected item
             saveToTask(taskYZ, 1.0/invxyFactor, 1.0/tFactor);
             taskYZ.pis.clear();
@@ -674,7 +676,7 @@ void MainWindow::processINIFile()
     QString fn=QFileDialog::getOpenFileName(this, tr("Save Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
     if (fn.size()>0) {
         m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
-        ProcessingTask* task=new ProcessingTask(std::make_shared<VideoReader_FFMPEG>(), std::make_shared<ImageWriter_PNG>());
+        ProcessingTask* task=new ProcessingTask(std::make_shared<VideoReader_FFMPEG>(), std::make_shared<ImageWriter_PNG>(), std::make_shared<ConfigIO_INI>());
         task->load(fn);
 
         ProcessingThread* thr=new ProcessingThread(task, this);
@@ -687,7 +689,7 @@ void MainWindow::processAll()
     if (m_filename.size()<=0) return;
     if (m_procModel->rowCount()<=0) return;
 
-    ProcessingTask* task=new ProcessingTask(std::make_shared<VideoReader_FFMPEG>(), std::make_shared<ImageWriter_PNG>());
+    ProcessingTask* task=new ProcessingTask(std::make_shared<VideoReader_FFMPEG>(), std::make_shared<ImageWriter_PNG>(), std::make_shared<ConfigIO_INI>());
     saveToTask(*task);
 
     ProcessingThread* thr=new ProcessingThread(task, this);

@@ -6,6 +6,7 @@
 #include <QSettings>
 #include "videoreader.h"
 #include "imagewriter.h"
+#include "configio.h"
 #include "processingtaskreporter.h"
 
 struct ProcessingTask
@@ -35,11 +36,11 @@ struct ProcessingTask
 
             AngleMode filteredAngleMode() const;
 
-            void save(QSettings& ini, const QString& basename) const;
-            void load(QSettings &ini, const QString &basename) ;
+            void save(std::shared_ptr<ConfigIO> ini, const std::string& basename) const;
+            void load(std::shared_ptr<ConfigIO> ini, const std::string &basename) ;
         };
 
-        ProcessingTask(std::shared_ptr<VideoReader> reader, std::shared_ptr<ImageWriter> writer);
+        ProcessingTask(std::shared_ptr<VideoReader> reader, std::shared_ptr<ImageWriter> writer, std::shared_ptr<ConfigIO> configio);
 
         ProcessingTask(ProcessingTask&&)=default;
         ProcessingTask& operator=(ProcessingTask&&)=default;
@@ -110,10 +111,11 @@ struct ProcessingTask
         int m_savingFrame;
         int stills;
 
-        void saveBase(QSettings& ini) const;
+        void saveBase(std::shared_ptr<ConfigIO> ini) const;
 
         std::shared_ptr<VideoReader> m_reader;
         std::shared_ptr<ImageWriter> m_writer;
+        std::shared_ptr<ConfigIO> m_configio;
         ProcessingTaskReporter* m_reporter;
         int m_prog;
 };
