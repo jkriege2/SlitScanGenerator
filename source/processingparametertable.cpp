@@ -23,8 +23,23 @@ void ProcessingParameterTable::load(const ProcessingTask& task) {
 }
 
 
-void ProcessingParameterTable::save(ProcessingTask& task) const {
+void ProcessingParameterTable::save(ProcessingTask& task, double xyScaling, double tScaling) const {
     task.pis=m_data;
+    for (auto& p: task.pis) {
+        p.location_x=p.location_x*xyScaling;
+        p.location_y=p.location_y*xyScaling;
+        switch (p.angleMode) {
+        case ProcessingTask::AngleMode::AnglePitch:
+            // pitch angle is corrected, so the (in x/y and t differently reduced) preview-dataset yields the same results as when processing the full dataset.
+            // this compensates for invxyFactor/tFactor!=1
+            p.angle=atan(tan(p.angle/180.0*M_PI)*xyScaling/tScaling)/M_PI*180.0;
+            break;
+        case ProcessingTask::AngleMode::AngleNone:
+        case ProcessingTask::AngleMode::AngleRoll:
+            // for simple roll-angles we do not have to correct, because the angle relates x and y, which are modified with the same factor!
+            break;
+        }
+    }
 }
 
 

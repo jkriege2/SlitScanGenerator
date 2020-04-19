@@ -4,12 +4,13 @@
 #include <QObject>
 #include <QVBoxLayout>
 #include <atomic>
+#include "processingtaskreporter.h"
 
 
 class ProcessingWidget; // forward
 class ProcessingTask;
 
-class ProcessingThread : public QThread
+class ProcessingThread : public QThread, public ProcessingTaskReporter
 {
         Q_OBJECT
     public:
@@ -18,6 +19,21 @@ class ProcessingThread : public QThread
         ~ProcessingThread();
         bool isDone() const;
         bool isWaiting() const;
+
+        /** \copydoc ProcessingTaskReporter::reportFrameProgress() */
+        virtual void reportFrameProgress(int currentFrame, int maxFrames, bool updateMessage=true) override;
+        /** \copydoc ProcessingTaskReporter::reportMessage() */
+        virtual void reportMessage(const std::string& message) override;
+        /** \copydoc ProcessingTaskReporter::reportMessageSavedResult() */
+        virtual void reportMessageSavedResult(const std::string& filename, int n) override;
+        /** \copydoc ProcessingTaskReporter::reportMessageOpeningVideo() */
+        virtual void reportMessageOpeningVideo() override;
+        /** \copydoc ProcessingTaskReporter::reportErrorMessage() */
+        virtual void reportErrorMessage(const std::string& message) override;
+        /** \copydoc ProcessingTaskReporter::reportCanceledByUser() */
+        virtual void reportCanceledByUser() override;
+        /** \copydoc ProcessingTaskReporter::reportProcessingFinished() */
+        virtual void reportProcessingFinished() override;
     signals:
 
         void threadDone(ProcessingThread* thread);
@@ -30,11 +46,10 @@ class ProcessingThread : public QThread
         void canceled();
     protected:
         virtual void run() override;
-        void setMessage(const QString& msg);
+        void reportDlgMessage(const QString& msg);
         void setRange(int minn, int maxx);
         void setValue(int val);
 
-        std::atomic<bool> m_canceled;
         std::atomic<bool> m_started;
         std::atomic<bool> m_done;
         ProcessingTask* m_item;

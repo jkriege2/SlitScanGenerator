@@ -33,7 +33,7 @@ class ProcessingParameterTable : public QAbstractTableModel {
 
         inline const QVector<ProcessingTask::ProcessingItem>& dataVector() const { return m_data; }
     public slots:
-        void save(ProcessingTask &task) const;
+        void save(ProcessingTask &task, double xyScaling=1.0, double tScaling=1.0) const;
         void load(const ProcessingTask &task);
     private:
         QVector<ProcessingTask::ProcessingItem> m_data;

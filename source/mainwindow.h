@@ -60,26 +60,33 @@ class MainWindow : public QMainWindow
             loaded
         };
 
-
-        int lastX;
-        int lastY;
-
+        /** \brief current x-center-position of XZ/YZ-cuts, in reduced frame coordinates */
+        int lastX_reducedCoords;
+        /** \brief current y-center-position of XZ/YZ-cuts, in reduced frame coordinates */
+        int lastY_reducedCoords;
+        /** \brief current display mode */
         DisplayModes m_mode;
 
         /** \brief internal video, xyt-scaled version */
         cimg_library::CImg<uint8_t> m_video_xytscaled;
         /** \brief internal video, xy-scaled version */
         cimg_library::CImg<uint8_t> m_video_some_frames;
+        /** \brief currently opened video */
         QString m_filename;
 
 
         /** \brief path to the ffmpeg utility */
         QString m_ffmpegPath;
 
+        /** \brief model for the ProcessingTask::ProcessingItem list */
         ProcessingParameterTable* m_procModel;
 
+        /** \brief reduction of video resolution in m_video_xytscaled in time-direction (only every this-th frame is contained in m_video_xytscaled) */
         int video_everyNthFrame;
+        /** \brief reduction factor of video resolution in m_video_xytscaled in x/y-direction (4 means, the width and height are divided by 4!) */
         double video_xyFactor;
+
+        /** \brief manages the application settings */
         SlitScanGeneratorSettings m_settings;
 
         /** contains the translations for this application */
@@ -91,13 +98,13 @@ class MainWindow : public QMainWindow
         QString m_currLang;
         /** \brief Path containing the translations (*.qm) */
         QString m_langPath;
-
+        /** \brief action group that allows to sleect a language for the GUI */
         QActionGroup* m_langGroup;
 
 
         void loadINI(const QString& filename, QString *vfn);
         void loadFromTask(const ProcessingTask& task);
-        void saveToTask(ProcessingTask& task) const;
+        void saveToTask(ProcessingTask& task, double xyScaling=1.0, double tScaling=1.0) const;
         /** \brief this event is called, when a new translator is loaded or the system language is changed */
         void changeEvent(QEvent *event) override;
     private:

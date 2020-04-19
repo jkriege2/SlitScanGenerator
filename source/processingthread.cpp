@@ -4,11 +4,11 @@
 
 ProcessingThread::ProcessingThread(ProcessingTask* item, QObject *parent) :
     QThread(parent),
-    m_item(item),
     m_started(false),
-    m_canceled(false),
-    m_done(false)
+    m_done(false),
+    m_item(item)
 {
+    item->setReporter(this);
 }
 
 ProcessingThread::~ProcessingThread() {
@@ -27,12 +27,56 @@ void ProcessingThread::threadStopped()
 
 void ProcessingThread::canceled()
 {
-    m_canceled=true;
+    setReporterWasCanceled();
 }
 
 bool ProcessingThread::isWaiting() const
 {
     return m_started.load();
+}
+
+void ProcessingThread::reportFrameProgress(int currentFrame, int maxFrames, bool updateMessage)
+{
+    setRange(0, maxFrames);
+    setValue(currentFrame+1);
+    if (updateMessage) reportDlgMessage(tr("Processing Frame %1/%2 ...").arg(currentFrame+1).arg(maxFrames));
+}
+
+void ProcessingThread::reportMessage(const std::string &message)
+{
+    reportDlgMessage(QString::fromStdString(message));
+}
+
+void ProcessingThread::reportMessageSavedResult(const std::string &filename, int n)
+{
+    reportDlgMessage(tr("Saved Result %2: '%1' ...").arg(QString::fromStdString(filename)).arg(n));
+}
+
+void ProcessingThread::reportMessageOpeningVideo()
+{
+    reportDlgMessage(tr("Opening Video ..."));
+
+}
+
+void ProcessingThread::reportErrorMessage(const std::string &message)
+{
+    reportDlgMessage("<font color=\"orange\"><b>"+tr("ERROR:")+"</b> <i>"+QString::fromStdString(message)+"</i></font>");
+    setRange(0, 100);
+    setValue(100);
+}
+
+void ProcessingThread::reportCanceledByUser()
+{
+    reportDlgMessage("<font color=\"orange\"><b>"+tr("CANCELED BY USER!!!")+"</b></font>");
+    setRange(0, 100);
+    setValue(100);
+}
+
+void ProcessingThread::reportProcessingFinished()
+{
+    reportDlgMessage("<font color=\"darkgreen\"><b>"+tr("FINISHED!!!")+"</b></font>");
+    setRange(0, 100);
+    setValue(100);
 }
 
 bool ProcessingThread::isDone() const
@@ -45,32 +89,14 @@ void ProcessingThread::run()
     if (!m_started.load()) {
         m_started=true;
         if (m_item) {
-            QString error;
-            QString msg;
-            int val=0;
-            int valmax=100;
-            if (m_item->processInit(val, valmax, msg, error)) {
-                setMessage(msg);
-                setRange(0, valmax);
-                setValue(val);
-                while (m_item->processStep(val, valmax, msg)) {
-                    setMessage(msg);
-                    setRange(0, valmax);
-                    setValue(val);
-                    if (m_canceled.load()) {
-                        setMessage(tr("<font color=\"orange\"><b>CANCELED BY USER!!!</b></font>"));
-                        setRange(0, 100);
-                        setValue(100);
+            if (m_item->processInit()) {
+                while (m_item->processStep()) {
+                    if (getReporterWasCanceled()) {
+                        reportCanceledByUser();
                         break;
                     }
                 }
-                setMessage(tr("FINISHED").arg(error));
-                setRange(0, 100);
-                setValue(100);
-            } else {
-                setMessage(tr("<font color=\"red\"><b>ERROR:</b> %1</font>").arg(error));
-                setRange(0, 100);
-                setValue(100);
+                reportProcessingFinished();
             }
             m_item->processFinalize();
         }
@@ -79,7 +105,7 @@ void ProcessingThread::run()
     threadStopped();
 }
 
-void ProcessingThread::setMessage(const QString &msg)
+void ProcessingThread::reportDlgMessage(const QString &msg)
 {
     emit wid_setMessage(msg);
 }

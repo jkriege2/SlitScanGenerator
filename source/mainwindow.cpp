@@ -16,6 +16,13 @@
 #include "processingthread.h"
 #include "optionsdialog.h"
 #include "defines.h"
+#include "videoreader_ffmpeg.h"
+#include "videoreader_cimg.h"
+#include "videopreviewreaderthread.h"
+#include "cpp_tools.h"
+#include "qt_tools.h"
+#include "imagewriter_cimg.h"
+#include "imagewriter_png.h"
 
 #define USE_FILTERING
 
@@ -40,8 +47,8 @@ void switchTranslator(QTranslator& translator, const QString& filename)
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    lastX(-1),
-    lastY(-1),
+    lastX_reducedCoords(-1),
+    lastY_reducedCoords(-1),
     m_mode(DisplayModes::unloaded),
     m_settings(),
     m_langGroup(nullptr)
@@ -144,7 +151,7 @@ void MainWindow::saveINI()
 {
     QString fn=QFileDialog::getSaveFileName(this, tr("Save Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
     if (fn.size()>0) {
-        ProcessingTask task;
+        ProcessingTask task(std::shared_ptr<VideoReader>(nullptr), std::shared_ptr<ImageWriter>(nullptr));
         saveToTask(task);
         task.save(m_filename);
 
@@ -155,7 +162,7 @@ void MainWindow::saveINI()
 void MainWindow::loadINI(const QString &fn, QString* vfn)
 {
     if (fn.size()>0) {
-        ProcessingTask task;
+        ProcessingTask task(std::shared_ptr<VideoReader>(nullptr), std::shared_ptr<ImageWriter>(nullptr));
         task.load(fn);
         loadFromTask(task);
         if (vfn) *vfn=task.filename;
@@ -184,7 +191,7 @@ void MainWindow::loadFromTask(const ProcessingTask &task)
     m_procModel->load(task);
 }
 
-void MainWindow::saveToTask(ProcessingTask &task) const
+void MainWindow::saveToTask(ProcessingTask &task, double xyScaling, double tScaling) const
 {
     task.filename=m_filename;
     task.outputFrames=m_video_xytscaled.depth()*video_everyNthFrame;
@@ -196,8 +203,8 @@ void MainWindow::saveToTask(ProcessingTask &task) const
     task.stillBorder=ui->spinStillBorder->value();
     task.stillLineWidth=ui->spinStillLineWidth->value();
     task.normalize=ui->chkNormalize->isChecked();
-    task.normalizeX=ui->spinNormalizeX->value();
-    task.normalizeY=ui->spinNormalizeY->value();
+    task.normalizeX=ui->spinNormalizeX->value()*xyScaling;
+    task.normalizeY=ui->spinNormalizeY->value()*xyScaling;
     task.filterNotch=ui->chkWavelength->isChecked();
     task.fiterNotchWavelength=ui->spinWavelength->value();
     task.fiterNotchWidth=ui->spinFilterDelta->value();
@@ -205,7 +212,7 @@ void MainWindow::saveToTask(ProcessingTask &task) const
     task.whitepointR=ui->spinWhitepointR->value();
     task.whitepointG=ui->spinWhitepointG->value();
     task.whitepointB=ui->spinWhitepointB->value();
-    m_procModel->save(task);
+    m_procModel->save(task, xyScaling, tScaling);
 }
 
 void MainWindow::loadLanguages()
@@ -371,6 +378,7 @@ void MainWindow::test()
 }
 
 void MainWindow::openVideo(const QString& filename) {
+    auto finallySetWidgets=finally(std::bind([](MainWindow* t) {t->setWidgetsEnabledForCurrentMode();}, this));
     QString fn=filename;
     if (fn.size()<=0) {
         fn=QFileDialog::getOpenFileName(this, tr("Open Video File ..."), m_settings.value("lastVideoDir", "").toString());
@@ -383,7 +391,7 @@ void MainWindow::openVideo(const QString& filename) {
         std::string error;
 
 
-        ImportDialog* dlg=new ImportDialog(this, &m_settings);
+        QSharedPointer<ImportDialog> dlg(new ImportDialog(this, &m_settings));
         if (dlg->openVideo(fn, ini)) {
            m_procModel->clear();
            if (QFile::exists(ini)) {
@@ -393,50 +401,34 @@ void MainWindow::openVideo(const QString& filename) {
                ui->labFilename->setText(fn);
                ui->labProps->setText(tr("%1 frames, %2x%3 Pixels^2").arg(dlg->getFrames()).arg(dlg->getWidth()).arg(dlg->getHeight()));
                ui->labPreviewSettings->setText(tr("every %1-th frame, 1/%2x-scaling").arg(dlg->getEveryNthFrame()).arg(dlg->getXYScaleFactor()));
-               QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+               QOverrideCursorGuard cursorGuard(Qt::WaitCursor);
                QProgressDialog progress(tr("Opening Video"), tr("Cancel"), 0, 2, this);
                progress.setLabelText(tr("opening file '%1'...").arg(fn));
                progress.setMinimumDuration(0);
-               QApplication::processEvents();
                progress.setWindowModality(Qt::WindowModal);
                progress.show();
                QApplication::processEvents();
-               QApplication::processEvents();
-               auto progCB=std::bind([](QProgressDialog* progress, int frame, int maxi) -> bool {
-                           if (frame%5==0 || frame%7==0 || frame%3==0 || frame%4==0) {
-                               if (maxi>1) {
-                                   progress->setValue(frame);
-                                   progress->setMaximum(maxi+1);
-                                   progress->setLabelText(tr("Reading frame %1/%2...").arg(frame).arg(maxi));
-                               } else {
-                                   progress->setValue(1);
-                                   progress->setMaximum(2);
-                                   progress->setLabelText(tr("Reading frame %1...").arg(frame));
-                               }
+               VideoPreviewReaderThread frameReader(m_video_xytscaled, fn.toStdString(), video_everyNthFrame=dlg->getEveryNthFrame(), video_xyFactor=dlg->getXYScaleFactor(), &error, -1, &progress, nullptr);
 
-                               QApplication::processEvents();
 
-                           }
-                           return progress->wasCanceled();
-                   }, &progress, std::placeholders::_1, std::placeholders::_2);
-               if ((!readFFMPEGAsImageStack(m_video_xytscaled, fn.toStdString(), video_everyNthFrame=dlg->getEveryNthFrame(), video_xyFactor=dlg->getXYScaleFactor(), &error, progCB))) {
+               if (!frameReader.exec()) {
 
                    progress.close();
-                   QApplication::restoreOverrideCursor();
                    QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
                    m_filename="";
                    m_mode=DisplayModes::unloaded;
                } else {
-                   if (dlg->getFramesHR()<=0 || readFFMPEGAsImageStack(m_video_some_frames, fn.toStdString(), 1, 1, &error, progCB, dlg->getFramesHR())) {
+                   VideoPreviewReaderThread frameReaderDetail(m_video_some_frames, fn.toStdString(), 1, 1, &error, dlg->getFramesHR(), &progress, nullptr);
+                   if (dlg->getFramesHR()<=0 || frameReaderDetail.exec()) {
                        progress.close();
-                       QApplication::restoreOverrideCursor();
                        recalcAndRedisplaySamples(m_video_xytscaled.width()/2, m_video_xytscaled.height()/2, 0, 0);
+                       cursorGuard.resetCursor();
                        QMessageBox::information(this, tr("Video opened"), tr("Video: %1\nframe size: %2x%3\n frames: %4\n color channels: %5").arg(fn).arg(m_video_xytscaled.width()).arg(m_video_xytscaled.height()).arg(m_video_xytscaled.depth()).arg(m_video_xytscaled.spectrum()));
                        m_filename=fn;
                        m_mode=DisplayModes::loaded;
                    } else {
                        progress.close();
-                       QApplication::restoreOverrideCursor();
+                       cursorGuard.resetCursor();
                        QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
                        m_filename="";
                        m_mode=DisplayModes::unloaded;
@@ -445,9 +437,8 @@ void MainWindow::openVideo(const QString& filename) {
            }
         }
 
-        delete dlg;
     }
-    setWidgetsEnabledForCurrentMode();
+
 }
 
 void MainWindow::openExampleVideo()
@@ -469,11 +460,11 @@ void MainWindow::recalcAndRedisplaySamples(int x, int y, double angle, int angle
     //qDebug()<<"recalcCuts("<<x<<", "<<y<<")  "<<m_video_scaled.width()<<","<<m_video_scaled.height();
     if (x>=0 && x<video_input->width() && y>=0 && y<video_input->height()) {
         if (ui->tabWidget->currentWidget()==ui->tabFiltering) {
-            lastX=x/video_xyFactor;
-            lastY=y/video_xyFactor;
+            lastX_reducedCoords=x/video_xyFactor;
+            lastY_reducedCoords=y/video_xyFactor;
         } else {
-            lastX=x;
-            lastY=y;
+            lastX_reducedCoords=x;
+            lastY_reducedCoords=y;
         }
 
     }
@@ -485,66 +476,105 @@ void MainWindow::recalcAndRedisplaySamples(int x, int y, double angle, int angle
 
 void MainWindow::recalcAndRedisplaySamples()
 {
+    QOverrideCursorGuard cursorGuard(Qt::WaitCursor);
     cimg_library::CImg<uint8_t>* video_input=&m_video_xytscaled;
+    const bool isFilteringPreview=ui->tabWidget->currentWidget()==ui->tabFiltering;
+    const double angle=ui->spinAngle->value();
+    ProcessingTask::AngleMode angleMode=ProcessingTask::AngleMode::AngleNone;
+    if (angle!=0) {
+        if (ui->cmbAngle->currentIndex()==0) {
+            angleMode=ProcessingTask::AngleMode::AngleRoll;
+        } else if (ui->cmbAngle->currentIndex()==1) {
+            angleMode=ProcessingTask::AngleMode::AnglePitch;
+        }
+    }
+    double angleCorrected=angle;
+
     double xyFactor=1;
     double invxyFactor=video_xyFactor;
-    double angle=ui->spinAngle->value();
-    if (ui->tabWidget->currentWidget()==ui->tabFiltering) {
+    double tFactor=video_everyNthFrame;
+    if (isFilteringPreview) {
         video_input=&m_video_some_frames;
         xyFactor=video_xyFactor;
-        invxyFactor=1;        
+        invxyFactor=1;
+        tFactor=1;
+    } else {
+        switch (angleMode) {
+        case ProcessingTask::AngleMode::AnglePitch:
+            // pitch angle is corrected, so the (in x/y and t differently reduced) preview-dataset yields the same results as when processing the full dataset.
+            // this compensates for invxyFactor/tFactor!=1
+            angleCorrected=atan(tan(angle/180.0*M_PI)*tFactor/invxyFactor)/M_PI*180.0;
+            break;
+        case ProcessingTask::AngleMode::AngleNone:
+        case ProcessingTask::AngleMode::AngleRoll:
+            // for simple roll-angles we do not have to correct, because the angle relates x and y, which are modified with the same factor!
+            break;
+        }
     }
 
-    //qDebug()<<"lastX="<<lastX<<", lastY="<<lastY<<", xyFactor="<<xyFactor<<", video_xyFactor="<<video_xyFactor<<", video_everyNthFrame="<<video_everyNthFrame<<", angle="<<angle;
 
-    if (lastX*xyFactor>=0 && lastX*xyFactor<video_input->width() && lastY*xyFactor>=0 && lastY*xyFactor<video_input->height()) {
+    qDebug()<< "isFilteringPreview="<<isFilteringPreview<<":   lastX="<<lastX_reducedCoords<<", lastY="<<lastY_reducedCoords<<", xyFactor="<<xyFactor<<", invxyFactor="<<invxyFactor<<", tFactor="<<tFactor<<", angle="<<angle<<", angleCorrected="<<angleCorrected;
+    qDebug()<< "video_input->width()="<<video_input->width()<<", video_input->height()="<<video_input->height()<<", video_input->depth()="<<video_input->depth()<<", video_input->spectrum()="<<video_input->spectrum();
+
+    if (lastX_reducedCoords*xyFactor>=0 && lastX_reducedCoords*xyFactor<video_input->width() && lastY_reducedCoords*xyFactor>=0 && lastY_reducedCoords*xyFactor<video_input->height()) {
 
 
         QImage img=CImgToQImage(*video_input, video_input->depth()/2);
         cimg_library::CImg<uint8_t> cxz;
         cimg_library::CImg<uint8_t> cyz;
-        if (angle==0) {
-            cxz=extractXZ(*video_input, lastY*xyFactor);
-            cyz=extractZY(*video_input, lastX*xyFactor);
-        } else if (ui->cmbAngle->currentIndex()==0) {
-            cxz=extractXZ_roll(*video_input, lastX*xyFactor, lastY*xyFactor, angle);
-            cyz=extractZY_roll(*video_input, lastX*xyFactor, lastY*xyFactor, angle);
-        } else {
-            cxz=extractXZ_pitch(*video_input, lastY, angle, video_xyFactor, video_everyNthFrame);
-            cyz=extractZY_pitch(*video_input, lastX, angle, video_xyFactor, video_everyNthFrame);
+
+        ProcessingTask taskXZ(std::make_shared<VideoReader_CImg>(*video_input), std::make_shared<ImageWriter_CImg>(cxz, ImageWriter::FinalImage));
+        { // store current settings and modify the ProcessingItem to only cover the currently selected item
+            saveToTask(taskXZ, 1.0/invxyFactor, 1.0/tFactor);
+            taskXZ.pis.clear();
+            ProcessingTask::ProcessingItem pi;
+            pi.mode=ProcessingTask::Mode::XZ;
+            pi.location_x=lastX_reducedCoords*xyFactor;
+            pi.location_y=lastY_reducedCoords*xyFactor;
+            pi.angle=angleCorrected;
+            pi.angleMode=angleMode;
+            taskXZ.pis.push_back(pi);
+            if (!isFilteringPreview) taskXZ.filterNotch=false;
+            if (isFilteringPreview) taskXZ.filterNotch=ui->chkWavelength->isChecked();
+            taskXZ.do_not_save_anyting=true;
         }
 
-        if (ui->chkNormalize->isChecked()) {
-            ProcessingTask::normalizeZY(cyz, ui->spinNormalizeY->value()/invxyFactor);
-            ProcessingTask::normalizeXZ(cxz, ui->spinNormalizeX->value()/invxyFactor);
+        ProcessingTask taskYZ(std::make_shared<VideoReader_CImg>(*video_input), std::make_shared<ImageWriter_CImg>(cyz, ImageWriter::FinalImage));
+        { // store current settings and modify the ProcessingItem to only cover the currently selected item
+            saveToTask(taskYZ, 1.0/invxyFactor, 1.0/tFactor);
+            taskYZ.pis.clear();
+            ProcessingTask::ProcessingItem pi;
+            pi.mode=ProcessingTask::Mode::ZY;
+            pi.location_x=lastX_reducedCoords*xyFactor;
+            pi.location_y=lastY_reducedCoords*xyFactor;
+            pi.angle=angleCorrected;
+            pi.angleMode=angleMode;
+            taskYZ.pis.push_back(pi);
+            if (!isFilteringPreview) taskYZ.filterNotch=false;
+            if (isFilteringPreview) taskXZ.filterNotch=ui->chkWavelength->isChecked();
+            taskYZ.do_not_save_anyting=true;
         }
 
-        if (ui->tabWidget->currentWidget()==ui->tabFiltering && ui->chkWavelength->isChecked()) {
-            ProcessingTask::applyFilterNotch(cyz, ui->spinWavelength->value(), ui->spinFilterDelta->value());
-            ProcessingTask::applyFilterNotch(cxz, ui->spinWavelength->value(), ui->spinFilterDelta->value());
-        }
+        taskXZ.process();
+        taskYZ.process();
 
-        if (ui->chkModifyWhitepoint->isChecked()) {
-            ProcessingTask::applyWhitepointCorrection(cyz, ui->spinWhitepointR->value(), ui->spinWhitepointG->value(), ui->spinWhitepointB->value());
-            ProcessingTask::applyWhitepointCorrection(cxz, ui->spinWhitepointR->value(), ui->spinWhitepointG->value(), ui->spinWhitepointB->value());
-        }
 
         QImage imgxz=CImgToQImage(cxz);
         QImage imgyz=CImgToQImage(cyz);
         {
             QPainter pnt(&img);
             pnt.setPen(QPen(QColor("red")));
-            if (ui->cmbAngle->currentIndex()==0) {
+            if (angleMode==ProcessingTask::AngleMode::AngleNone || angleMode==ProcessingTask::AngleMode::AngleRoll) {
                 pnt.save();
-                pnt.translate(lastX,lastY);
+                pnt.translate(lastX_reducedCoords,lastY_reducedCoords);
                 pnt.rotate(angle);
                 const int l=2*std::max(img.width(), img.height());
                 pnt.drawLine(-l,0,l,0);
                 pnt.drawLine(0,-l,0,l);
                 pnt.restore();
             } else {
-                pnt.drawLine(0, lastY*xyFactor,img.width(),lastY*xyFactor);
-                pnt.drawLine(lastX*xyFactor, 0,lastX*xyFactor, img.height());
+                pnt.drawLine(0, lastY_reducedCoords*xyFactor,img.width(),lastY_reducedCoords*xyFactor);
+                pnt.drawLine(lastX_reducedCoords*xyFactor, 0,lastX_reducedCoords*xyFactor, img.height());
             }
 
             if (ui->chkNormalize->isChecked()) {
@@ -586,18 +616,18 @@ void MainWindow::ImageClicked(int x, int y)
             ui->spinWhitepointB->setValue(m_video_xytscaled.atXYZC(x,y,0,2,255));
             recalcAndRedisplaySamples();
         }
-    } else {
+    } else /*if (ui->tabWidget->currentWidget()==ui->tabCuts)*/ {
         recalcAndRedisplaySamples(x,y,ui->spinAngle->value(), ui->cmbAngle->currentIndex());
     }
 }
 
 void MainWindow::on_btnAddXZ_clicked()
 {
-    if (lastY<0) return;
+    if (lastY_reducedCoords<0) return;
     ProcessingTask::ProcessingItem item;
     item.mode=ProcessingTask::Mode::XZ;
-    item.location_x=lastX*video_xyFactor;
-    item.location_y=lastY*video_xyFactor;
+    item.location_x=lastX_reducedCoords*video_xyFactor;
+    item.location_y=lastY_reducedCoords*video_xyFactor;
     item.angle=ui->spinAngle->value();
     item.angleMode=ProcessingTask::AngleMode::AngleNone;
     if (ui->cmbAngle->currentIndex()==0) item.angleMode=ProcessingTask::AngleMode::AngleRoll;
@@ -607,11 +637,11 @@ void MainWindow::on_btnAddXZ_clicked()
 
 void MainWindow::on_btnAddZY_clicked()
 {
-    if (lastX<0) return;
+    if (lastX_reducedCoords<0) return;
     ProcessingTask::ProcessingItem item;
     item.mode=ProcessingTask::Mode::ZY;
-    item.location_x=lastX*video_xyFactor;
-    item.location_y=lastY*video_xyFactor;
+    item.location_x=lastX_reducedCoords*video_xyFactor;
+    item.location_y=lastY_reducedCoords*video_xyFactor;
     item.angle=ui->spinAngle->value();
     item.angleMode=ProcessingTask::AngleMode::AngleNone;
     if (ui->cmbAngle->currentIndex()==0) item.angleMode=ProcessingTask::AngleMode::AngleRoll;
@@ -644,7 +674,7 @@ void MainWindow::processINIFile()
     QString fn=QFileDialog::getOpenFileName(this, tr("Save Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
     if (fn.size()>0) {
         m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
-        ProcessingTask* task=new ProcessingTask();
+        ProcessingTask* task=new ProcessingTask(std::make_shared<VideoReader_FFMPEG>(), std::make_shared<ImageWriter_PNG>());
         task->load(fn);
 
         ProcessingThread* thr=new ProcessingThread(task, this);
@@ -657,7 +687,7 @@ void MainWindow::processAll()
     if (m_filename.size()<=0) return;
     if (m_procModel->rowCount()<=0) return;
 
-    ProcessingTask* task=new ProcessingTask();
+    ProcessingTask* task=new ProcessingTask(std::make_shared<VideoReader_FFMPEG>(), std::make_shared<ImageWriter_PNG>());
     saveToTask(*task);
 
     ProcessingThread* thr=new ProcessingThread(task, this);

@@ -28,11 +28,73 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # collect all source files
-file(GLOB_RECURSE UI_FILES *.ui)
-file(GLOB_RECURSE CODE_FILES *.cpp)
-file(GLOB_RECURSE HEADER_FILES *.h)
-file(GLOB_RECURSE QRC_FILES ../resources/*.qrc)
 #qt_wrap_ui(${UI_FILES})
+
+set(CODE_FILES
+        videoreader.cpp
+        aboutbox.cpp
+        cimg_tools.cpp
+        ffmpeg_tools.cpp
+        geo_tools.cpp
+        imageviewer.cpp
+        importdialog.cpp
+        mainwindow.cpp
+        optionsdialog.cpp
+        processingparametertable.cpp
+        processingtask.cpp
+        processingthread.cpp
+        processingwidget.cpp
+        slitscangeneratorsettings.cpp
+        taskswidget.cpp
+        videoreader_ffmpeg.cpp
+        videoreader_cimg.cpp
+        main.cpp
+        videopreviewreaderthread.cpp
+        cpp_tools.cpp
+        qt_tools.cpp
+        imagewriter.cpp
+        imagewriter_png.cpp
+        imagewriter_cimg.cpp
+        processingtaskreporter.cpp
+        processingtaskreporter_dummy.cpp
+    )
+set(HEADER_FILES
+        videoreader.h
+        aboutbox.h
+        cimg_tools.h
+        ffmpeg_tools.h
+        geo_tools.h
+        imageviewer.h
+        importdialog.h
+        mainwindow.h
+        optionsdialog.h
+        processingparametertable.h
+        processingtask.h
+        processingthread.h
+        processingwidget.h
+        slitscangeneratorsettings.h
+        taskswidget.h
+        videoreader_ffmpeg.h
+        videoreader_cimg.h
+        videopreviewreaderthread.h
+        cpp_tools.h
+        qt_tools.h
+        imagewriter.h
+        imagewriter_png.h
+        imagewriter_cimg.h
+        processingtaskreporter.h
+        processingtaskreporter_dummy.h
+    )
+set(UI_FILES
+        aboutbox.ui
+        importdialog.ui
+        mainwindow.ui
+        optionsdialog.ui
+        processingwidget.ui
+    )
+set(QRC_FILES
+        ../resources/resources.qrc
+   )
 
 # Windows application icon and version (i.e. generate windows resource files)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../resources/appversion.rc.cmake

@@ -113,9 +113,9 @@
     <item row="5" column="1">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>4</number>
+       <number>0</number>
       </property>
-      <widget class="QWidget" name="widProps">
+      <widget class="QWidget" name="tabCuts">
        <attribute name="title">
         <string>ZY/XZ-cuts</string>
        </attribute>

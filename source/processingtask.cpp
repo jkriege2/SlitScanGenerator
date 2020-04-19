@@ -6,7 +6,8 @@
 #include <QDir>
 #include <QDebug>
 
-ProcessingTask::ProcessingTask():
+ProcessingTask::ProcessingTask(std::shared_ptr<VideoReader> reader, std::shared_ptr<ImageWriter> writer):
+    do_not_save_anyting(false),
     filename(),
     outputFrames(0),
     stillCnt(0),
@@ -26,13 +27,30 @@ ProcessingTask::ProcessingTask():
     whitepointR(255),
     whitepointG(255),
     whitepointB(255),
-    vid(nullptr),
     z(0),
     m_saving(false),
     m_savingFrame(0),
-    stills(0)
+    stills(0),
+    m_reader(reader),
+    m_writer(writer),
+    m_reporter(nullptr),
+    m_prog(0)
 {
 
+}
+
+void ProcessingTask::setReporter(ProcessingTaskReporter *reporter)
+{
+    m_reporter=reporter;
+}
+
+void ProcessingTask::process()
+{
+    if (processInit()) {
+        while (processStep()) {
+        }
+    }
+    processFinalize();
 }
 
 void ProcessingTask::save(const QString &inifilename) const
@@ -160,27 +178,26 @@ void ProcessingTask::load(const QString &inifilename)
 
 
 
-bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QString &error)
+bool ProcessingTask::processInit()
 {
-    prog=0;
-    maxProg=100;
-    message=QObject::tr("loading video ...");
-    error="";
+    if (!m_reader) {
+        if (m_reporter) m_reporter->reportErrorMessage("no reader provided!");
+        return false;
+    }
+    if (m_reporter) m_reporter->reportMessageOpeningVideo();
     z=0;
     m_saving=false;
     m_savingFrame=0;
+    m_prog=1;
 
     QFileInfo fi(filename);
     QString allini=fi.absoluteDir().absoluteFilePath(QString("%1.ini").arg(fi.baseName()));
-    save(allini);
+    if (!do_not_save_anyting) save(allini);
 
-    std::string err;
-    vid=openFFMPEGVideo(filename.toStdString(), &err);
-    if (vid && readFFMPEGFrame(frame, vid)) {
+    if (m_reader->open(filename.toStdString()) && m_reader->readNext(frame)) {
         int still_b=stillBorder/100.0*frame.width();
         int still_g=stillGap/100.0*frame.height();
-        maxProg=pis.size()+2+getFrameCount(vid);
-        prog=1;
+        if (m_reporter) m_reporter->reportFrameProgress(1, pis.size()+2+m_reader->getFrameCount());
         int j=0;
         for (ProcessingTask::ProcessingItem pi: pis) {
             cimg_library::CImg<uint8_t> line;
@@ -194,10 +211,12 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
                     line=extractZY_atz_pitch(0, outputFrames, frame, pi.location_x, pi.angle, zout, &len);
                 }
-                results.push_back(cimg_library::CImg<uint8_t>());
-                results[j].assign(len, line.width(), 1, 3);
+                results.push_back(ResultData());
+                results[j].img.assign(len, line.width(), 1, 3);
+                results[j].maxX=1;
+                results[j].maxY=line.width();
+                results[j].zs_val=0;
                 //qDebug()<<"output size: "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
-                zs_vals.push_back(0);
             } else if (pi.mode==Mode::XZ) {
                 if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
                     line=extractXZ_atz(0, frame, pi.location_y);
@@ -206,18 +225,20 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
                     line=extractXZ_atz_pitch(0, outputFrames, frame, pi.location_y, pi.angle, zout, &len);
                 }
-                results.push_back(cimg_library::CImg<uint8_t>());
-                results[j].assign(line.width(), len, 1, 3);
+                results.push_back(ResultData());
+                results[j].img.assign(line.width(), len, 1, 3);
+                results[j].maxX=line.width();
+                results[j].maxY=1;
+                results[j].zs_val=0;
                 //qDebug()<<"output size: "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
-                zs_vals.push_back(0);
             }
             QFileInfo fi(filename);
             QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.png").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
             QString fnfilt=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2_filtered.png").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
             QString fnini=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.ini").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
-            result_filenames.push_back(fn);
-            resultfilt_filenames.push_back(fnfilt);
-            result_inifilenames.push_back(fnini);
+            results[j].filename=fn;
+            results[j].filt_filename=fnfilt;
+            results[j].inifilename=fnini;
             if (stillStrip && stillCnt>0) {
                 stillStripImg.push_back(cimg_library::CImg<uint8_t>());
                 stillStripImg[j].resize(frame.width()+2*still_b, still_b+(frame.height()+still_g)*stillCnt-still_g+still_b, 1, 3);
@@ -227,19 +248,25 @@ bool ProcessingTask::processInit(int &prog, int &maxProg, QString &message, QStr
 
         return true;
     } else {
-        error=err.c_str();
+        if (m_reader->hadError()) {
+            if (m_reporter) m_reporter->reportErrorMessage(m_reader->getLastError());
+        } else {
+            if (m_reporter) m_reporter->reportErrorMessage("unknown opening reading video '"+filename.toStdString()+"'!");
+        }
         return false;
     }
 }
 
-bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
+bool ProcessingTask::processStep()
 {
-
-    prog++;
-    maxProg=pis.size()+2+getFrameCount(vid);
+    if (!m_reader) {
+        if (m_reporter) m_reporter->reportErrorMessage("no reader provided!");
+        return false;
+    }
+    m_prog++;
     if (!m_saving) {
         // process old frame
-        message=QObject::tr("processing frame %1/%2 ...").arg(z+1).arg(outputFrames);
+        if (m_reporter) m_reporter->reportFrameProgress(z+1, outputFrames);
         int still_b=stillBorder/100.0*frame.width();
         int still_g=stillGap/100.0*frame.height();
         int stilllw=std::max<int>(1,stillLineWidth/100.0*frame.width());
@@ -249,45 +276,46 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
 
             cimg_library::CImg<uint8_t> line;
             if (pi.mode==Mode::ZY) {
-                int z0=zs_vals[j];
+                int z0=results[j].zs_val;
                 if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
                     line=extractZY_atz(z, frame, pi.location_x);
-                    zs_vals[j]++;
+                    results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AngleRoll) {
                     line=extractZY_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
-                    zs_vals[j]++;
+                    results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
-                    line=extractZY_atz_pitch(z, outputFrames, frame, pi.location_x, pi.angle, zs_vals[j]);
-                    //qDebug()<<"extractZY_atz_pitch: z="<<z<<", zs_vals[j]="<<zs_vals[j]<<", line.height="<<line.height();
+                    line=extractZY_atz_pitch(z, outputFrames, frame, pi.location_x, pi.angle, results[j].zs_val);
+                    //qDebug()<<"extractZY_atz_pitch: z="<<z<<", results[j].zs_val="<<results[j].zs_val<<", line.height="<<line.height();
                 }
                 /*if (z0+line.height()-1>=results[j].width()) {
                     // resize of necessary
                     //qDebug()<<"resize "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum()<<"  -> "<<z0+line.height()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
                     results[j].resize(z0+line.height(), results[j].height(), results[j].depth(), results[j].spectrum());
                 }*/
-                if (zs_vals[j]>z0) {
+                if (results[j].zs_val>z0) {
                     for (int x=0; x<line.height(); x++) {
-                        if (z0+x<results[j].width()) {
+                        if (z0+x<results[j].img.width()) {
+                            results[j].maxX=qMax(z0+x, results[j].maxX);
                             for (int y=0; y<line.width(); y++)
                             {
-                                results[j](z0+x, y, 0,0)=line(y, x, 0, 0);
-                                results[j](z0+x, y, 0,1)=line(y, x, 0, 1);
-                                results[j](z0+x, y, 0,2)=line(y, x, 0, 2);
+                                results[j].img(z0+x, y, 0,0)=line(y, x, 0, 0);
+                                results[j].img(z0+x, y, 0,1)=line(y, x, 0, 1);
+                                results[j].img(z0+x, y, 0,2)=line(y, x, 0, 2);
                             }
                         }
                     }
                 }
             } else if (pi.mode==Mode::XZ) {
-                int z0=zs_vals[j];
+                int z0=results[j].zs_val;
                 if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
                     line=extractXZ_atz(z, frame, pi.location_y);
-                    zs_vals[j]++;
+                    results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AngleRoll) {
                     line=extractXZ_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
-                    zs_vals[j]++;
+                    results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
-                    line=extractXZ_atz_pitch(z, outputFrames, frame, pi.location_y, pi.angle, zs_vals[j]);
-                    //qDebug()<<"extractXZ_atz_pitch: z="<<z<<", zs_vals[j]="<<zs_vals[j]<<", line.height="<<line.height();
+                    line=extractXZ_atz_pitch(z, outputFrames, frame, pi.location_y, pi.angle, results[j].zs_val);
+                    //qDebug()<<"extractXZ_atz_pitch: z="<<z<<", results[j].zs_val="<<results[j].zs_val<<", line.height="<<line.height();
                 }
                 /*if (z0+line.height()-1>=results[j].height()) {
                     // resize of necessary
@@ -295,14 +323,15 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
                     results[j].resize(results[j].width(), z0+line.height(), results[j].depth(), results[j].spectrum());
 
                 }*/
-                if (zs_vals[j]>z0) {
+                if (results[j].zs_val>z0) {
                     for (int y=0; y<line.height(); y++) {
-                        if (z0+y<results[j].height()) {
+                        results[j].maxY=qMax(z0+y, results[j].maxY);
+                        if (z0+y<results[j].img.height()) {
                             for (int x=0; x<line.width(); x++)
                             {
-                                results[j](x, z0+y, 0,0)=line(x, y, 0, 0);
-                                results[j](x, z0+y, 0,1)=line(x, y, 0, 1);
-                                results[j](x, z0+y, 0,2)=line(x, y, 0, 2);
+                                results[j].img(x, z0+y, 0,0)=line(x, y, 0, 0);
+                                results[j].img(x, z0+y, 0,1)=line(x, y, 0, 1);
+                                results[j].img(x, z0+y, 0,2)=line(x, y, 0, 2);
                             }
                         }
                     }
@@ -315,13 +344,13 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
             if (stills<stillCnt && z%stillDelta==0) {
                 auto frame_s=frame;
                 const unsigned char color[] = { 255,0,0 };
-                if (pi. filteredAngleMode()==AngleMode::AngleNone && pi.mode==Mode::ZY && z<results[j].width()) {
+                if (pi. filteredAngleMode()==AngleMode::AngleNone && pi.mode==Mode::ZY && z<results[j].img.width()) {
                     if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
                         for (int x=pi.location_x-stilllw/2; x<pi.location_x-stilllw/2+stilllw; x++) {
                             frame_s.draw_line(x,0,x,frame.height(), color);
                         }
                     }
-                } else if (pi. filteredAngleMode()==AngleMode::AngleNone && pi.mode==Mode::XZ && z<results[j].height()) {
+                } else if (pi. filteredAngleMode()==AngleMode::AngleNone && pi.mode==Mode::XZ && z<results[j].img.height()) {
                     if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
                         for (int y=pi.location_y-stilllw/2; y<pi.location_y-stilllw/2+stilllw; y++) {
                             frame_s.draw_line(0,y,frame.width(),y, color);
@@ -331,9 +360,7 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
                 if (stillSeparateFiles) {
                     QFileInfo fi(filename);
                     QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%3_still%2.png").arg(fi.baseName()).arg(z+1, 3, 10,QChar('0')).arg(j+1, 3, 10,QChar('0')));
-                    QImage img=CImgToQImage(frame_s);
-                    if (QFile::exists(fn)) QFile::remove(fn);
-                    img.save(fn);
+                    if (m_writer) m_writer->saveImage(fn.toStdString(), ImageWriter::StillImage, frame_s);
                 }
                 if (stillStrip) {
                     cimg_forXY(frame,x,y) {
@@ -349,8 +376,8 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
         }
 
         // load next frame (if available)
-        message=QObject::tr("processing frame %1/%2 ...").arg(z+1).arg(outputFrames);
-        bool res=readFFMPEGFrame(frame, vid);
+        if (m_reporter) m_reporter->reportFrameProgress(z+1, outputFrames);
+        bool res=m_reader->readNext(frame);
         z++;
         if (!res) {
             m_saving=true;
@@ -361,46 +388,51 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
         // 2 Step: saving frames
         if (static_cast<int>(m_savingFrame)<results.size()) {
             const ProcessingTask::ProcessingItem& pi=pis[m_savingFrame];
+
+
+            if (m_reporter) m_reporter->reportMessageSavedResult(results[m_savingFrame].filename.toStdString(), m_savingFrame+1);
+            qDebug()<<"img "<<m_savingFrame<<" ("<<results[m_savingFrame].img.width()<<"x"<<results[m_savingFrame].img.height()<<"x"<<results[m_savingFrame].img.depth()<<"x"<<results[m_savingFrame].img.spectrum()<<"): maxX="<<results[m_savingFrame].maxX<<", maxY="<<results[m_savingFrame].maxY;
+            auto unfilteredImage=results[m_savingFrame].img.get_crop(0,0,qMin(results[m_savingFrame].img.width()-1,results[m_savingFrame].maxX),qMin(results[m_savingFrame].img.height()-1,results[m_savingFrame].maxY));
+            auto filteredImage=unfilteredImage;
+
+            bool hasMod=false;
             // normalize image if necessary
             if (normalize) {
-                if (pi.mode==Mode::ZY && normalizeY>=0 && normalizeY<results[m_savingFrame].height()) {
-                    normalizeZY(results[m_savingFrame], normalizeY);
+                if (pi.mode==Mode::ZY && normalizeY>=0 && normalizeY<filteredImage.height()) {
+                    qDebug()<<"normalizeZY: normalizeY="<<normalizeY<<" ("<<filteredImage.width()<<"x"<<filteredImage.height()<<"x"<<filteredImage.depth()<<"x"<<filteredImage.spectrum()<<")";
+                    normalizeZY(filteredImage, normalizeY);
+                    hasMod=true;
                 }
-                if (pi.mode==Mode::XZ && normalizeX>=0 && normalizeX<results[m_savingFrame].width()) {
-                    normalizeXZ(results[m_savingFrame], normalizeX);
+                if (pi.mode==Mode::XZ && normalizeX>=0 && normalizeX<filteredImage.width()) {
+                    qDebug()<<"normalizeXZ: normalizeX="<<normalizeX<<" ("<<filteredImage.width()<<"x"<<filteredImage.height()<<"x"<<filteredImage.depth()<<"x"<<filteredImage.spectrum()<<")";
+                    normalizeXZ(filteredImage, normalizeX);
+                    hasMod=true;
                 }
             }
-
-            QString fn=result_filenames[m_savingFrame];
-            QString fnini=result_inifilenames[m_savingFrame];
-            message=QObject::tr("saved result %2: '%1' ...").arg(fn).arg(m_savingFrame+1);
-            QImage img=CImgToQImage(results[m_savingFrame]);
-            if (QFile::exists(fn)) QFile::remove(fn);
-            img.save(fn);
-            bool hasMod=false;
             if (filterNotch) {
-                applyFilterNotch(results[m_savingFrame], fiterNotchWavelength, fiterNotchWidth);
+                applyFilterNotch(filteredImage, fiterNotchWavelength, fiterNotchWidth);
                 hasMod=true;
             }
             if (modifyWhite) {
-                applyWhitepointCorrection(results[m_savingFrame], whitepointR, whitepointG, whitepointB);
+                applyWhitepointCorrection(filteredImage, whitepointR, whitepointG, whitepointB);
                 hasMod=true;
             }
             if (hasMod) {
-                QImage img=CImgToQImage(results[m_savingFrame]);
-                if (QFile::exists(resultfilt_filenames[m_savingFrame])) QFile::remove(resultfilt_filenames[m_savingFrame]);
-                img.save(resultfilt_filenames[m_savingFrame]);
-
+                if (m_writer) results[m_savingFrame].filename=QString::fromStdString(m_writer->saveImage(results[m_savingFrame].filename.toStdString(), ImageWriter::IntermediateImage, unfilteredImage));
+                if (m_writer) results[m_savingFrame].filt_filename=QString::fromStdString(m_writer->saveImage(results[m_savingFrame].filt_filename.toStdString(), ImageWriter::FinalImage, filteredImage));
+            } else {
+                if (m_writer) results[m_savingFrame].filename=QString::fromStdString(m_writer->saveImage(results[m_savingFrame].filename.toStdString(), ImageWriter::FinalImage, unfilteredImage));
             }
-            QSettings set(fnini, QSettings::IniFormat);
-            saveBase(set);
-            pi.save(set, "");
 
-            QImage imgs=CImgToQImage(stillStripImg[m_savingFrame]);
+            if (!do_not_save_anyting) {
+                QSettings set(results[m_savingFrame].inifilename, QSettings::IniFormat);
+                saveBase(set);
+                pi.save(set, "");
+            }
+
             QFileInfo fi(filename);
             QString fns=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2_stillstrip.png").arg(fi.baseName()).arg(m_savingFrame+1, 3, 10,QChar('0')));
-            if (QFile::exists(fns)) QFile::remove(fns);
-            imgs.save(fns);
+            if (m_writer) m_writer->saveImage(fns.toStdString(), ImageWriter::StillStrip, stillStripImg[m_savingFrame]);
 
         }
 
@@ -411,7 +443,7 @@ bool ProcessingTask::processStep(int &prog, int &maxProg, QString &message)
 
 void ProcessingTask::processFinalize()
 {
-    closeFFMPEGVideo(vid);
+    if (m_reader) m_reader->close();
 }
 
 void ProcessingTask::normalizeZY(cimg_library::CImg<uint8_t> &img, int normalizeY)
@@ -556,3 +588,10 @@ void ProcessingTask::applyWhitepointCorrection(cimg_library::CImg<uint8_t> &img,
     }
 }
 
+
+
+ProcessingTask::ResultData::ResultData():
+    maxX(0), maxY(0), zs_val(0)
+{
+
+}

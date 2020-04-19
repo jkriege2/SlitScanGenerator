@@ -6,7 +6,7 @@
     <message>
         <location filename="../source/aboutbox.ui" line="14"/>
         <source>About ...</source>
-        <translation>Über ..</translation>
+        <translation>Über ...</translation>
     </message>
     <message>
         <location filename="../source/aboutbox.ui" line="77"/>
@@ -420,92 +420,90 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation>Einstellungs-Dialog öffnen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="121"/>
+        <location filename="../source/mainwindow.cpp" line="128"/>
         <source>%1 %2 [%3bit]</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="145"/>
-        <location filename="../source/mainwindow.cpp" line="315"/>
-        <location filename="../source/mainwindow.cpp" line="644"/>
+        <location filename="../source/mainwindow.cpp" line="152"/>
+        <location filename="../source/mainwindow.cpp" line="322"/>
+        <location filename="../source/mainwindow.cpp" line="674"/>
         <source>Save Configuration File ...</source>
         <translation>Konfigurationsdatei speichern ...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="145"/>
-        <location filename="../source/mainwindow.cpp" line="315"/>
-        <location filename="../source/mainwindow.cpp" line="644"/>
+        <location filename="../source/mainwindow.cpp" line="152"/>
+        <location filename="../source/mainwindow.cpp" line="322"/>
+        <location filename="../source/mainwindow.cpp" line="674"/>
         <source>INI-File (*.ini)</source>
         <translation>INI-Datei (*.ini)</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="321"/>
+        <location filename="../source/mainwindow.cpp" line="328"/>
         <source>Load Video File?</source>
         <translation>Video-Datei laden?</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="321"/>
+        <location filename="../source/mainwindow.cpp" line="328"/>
         <source>The INI-file you loaded mentioned a video. Should this video be loaded?</source>
         <translation>Die gerade geladene INI-Datei verweist auf eine zugehörige Video-Datei. Soll dieses zugehörige Video geladen werden?</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="362"/>
+        <location filename="../source/mainwindow.cpp" line="369"/>
         <source>Open Test Image ...</source>
         <translation>Testbilder laden ...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="376"/>
+        <location filename="../source/mainwindow.cpp" line="384"/>
         <source>Open Video File ...</source>
         <translation>Video-Datei laden ...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="394"/>
+        <location filename="../source/mainwindow.cpp" line="402"/>
         <source>%1 frames, %2x%3 Pixels^2</source>
         <translation>%1 Bilder, %2x%3 Pixel²</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="395"/>
+        <location filename="../source/mainwindow.cpp" line="403"/>
         <source>every %1-th frame, 1/%2x-scaling</source>
         <translation>jedes %1-te Bild, 1/%2x-Skalierung</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="397"/>
+        <location filename="../source/mainwindow.cpp" line="405"/>
         <source>Opening Video</source>
         <translation>Öffne Video</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="397"/>
+        <location filename="../source/mainwindow.cpp" line="405"/>
         <source>Cancel</source>
         <translation>&amp;Abbrechen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="398"/>
+        <location filename="../source/mainwindow.cpp" line="406"/>
         <source>opening file &apos;%1&apos;...</source>
         <translation>Öffne Datei &apos;%1&apos;...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="410"/>
         <source>Reading frame %1/%2...</source>
-        <translation>Lese Bild %1/%2...</translation>
+        <translation type="vanished">Lese Bild %1/%2...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="414"/>
         <source>Reading frame %1...</source>
-        <translation>Lese Bild %1...</translation>
+        <translation type="vanished">Lese Bild %1...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="426"/>
-        <location filename="../source/mainwindow.cpp" line="440"/>
+        <location filename="../source/mainwindow.cpp" line="417"/>
+        <location filename="../source/mainwindow.cpp" line="432"/>
         <source>Error opening video</source>
         <translation>Fehler beim Öffnen des Videos</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="434"/>
+        <location filename="../source/mainwindow.cpp" line="426"/>
         <source>Video opened</source>
         <translation>Video erfolgreich geladen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="434"/>
+        <location filename="../source/mainwindow.cpp" line="426"/>
         <source>Video: %1
 frame size: %2x%3
  frames: %4
@@ -516,7 +514,7 @@ frame size: %2x%3
  Farbkanäle: %5</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="457"/>
+        <location filename="../source/mainwindow.cpp" line="448"/>
         <source>Open Example Video File ...</source>
         <translation>Beispielvideo öffnen ...</translation>
     </message>
@@ -567,47 +565,47 @@ frame size: %2x%3
 <context>
     <name>ProcessingParameterTable</name>
     <message>
-        <location filename="../source/processingparametertable.cpp" line="35"/>
+        <location filename="../source/processingparametertable.cpp" line="50"/>
         <source>Mode</source>
         <translation>Modus</translation>
     </message>
     <message>
-        <location filename="../source/processingparametertable.cpp" line="36"/>
+        <location filename="../source/processingparametertable.cpp" line="51"/>
         <source>X</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/processingparametertable.cpp" line="37"/>
+        <location filename="../source/processingparametertable.cpp" line="52"/>
         <source>Y</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/processingparametertable.cpp" line="38"/>
+        <location filename="../source/processingparametertable.cpp" line="53"/>
         <source>Angle Mode</source>
         <translation>Winkelmodus</translation>
     </message>
     <message>
-        <location filename="../source/processingparametertable.cpp" line="39"/>
+        <location filename="../source/processingparametertable.cpp" line="54"/>
         <source>Angle</source>
         <translation>Winkel</translation>
     </message>
     <message>
-        <location filename="../source/processingparametertable.cpp" line="75"/>
+        <location filename="../source/processingparametertable.cpp" line="90"/>
         <source>XZ</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/processingparametertable.cpp" line="76"/>
+        <location filename="../source/processingparametertable.cpp" line="91"/>
         <source>ZY</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/processingparametertable.cpp" line="88"/>
+        <location filename="../source/processingparametertable.cpp" line="103"/>
         <source>roll</source>
         <translation>Drehung</translation>
     </message>
     <message>
-        <location filename="../source/processingparametertable.cpp" line="89"/>
+        <location filename="../source/processingparametertable.cpp" line="104"/>
         <source>pitch</source>
         <translation>Kippung</translation>
     </message>
@@ -615,19 +613,46 @@ frame size: %2x%3
 <context>
     <name>ProcessingThread</name>
     <message>
-        <location filename="../source/processingthread.cpp" line="61"/>
         <source>&lt;font color=&quot;orange&quot;&gt;&lt;b&gt;CANCELED BY USER!!!&lt;/b&gt;&lt;/font&gt;</source>
-        <translation>&lt;font color=&quot;orange&quot;&gt;&lt;b&gt;DURCH BENUTZER ABGEBROCHEN!!!&lt;/b&gt;&lt;/font&gt;</translation>
+        <translation type="vanished">&lt;font color=&quot;orange&quot;&gt;&lt;b&gt;DURCH BENUTZER ABGEBROCHEN!!!&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="../source/processingthread.cpp" line="67"/>
         <source>FINISHED</source>
-        <translation>BEENDET</translation>
+        <translation type="vanished">BEENDET</translation>
     </message>
     <message>
-        <location filename="../source/processingthread.cpp" line="71"/>
         <source>&lt;font color=&quot;red&quot;&gt;&lt;b&gt;ERROR:&lt;/b&gt; %1&lt;/font&gt;</source>
-        <translation>&lt;font color=&quot;red&quot;&gt;&lt;b&gt;FEHLER:&lt;/b&gt; %1&lt;/font&gt;</translation>
+        <translation type="vanished">&lt;font color=&quot;red&quot;&gt;&lt;b&gt;FEHLER:&lt;/b&gt; %1&lt;/font&gt;</translation>
+    </message>
+    <message>
+        <location filename="../source/processingthread.cpp" line="42"/>
+        <source>Processing Frame %1/%2 ...</source>
+        <translation>Verarbeite Teilbild %1/%2 ...</translation>
+    </message>
+    <message>
+        <location filename="../source/processingthread.cpp" line="52"/>
+        <source>Saved Result %2: &apos;%1&apos; ...</source>
+        <translation>Speichere Ergebnis %2: &apos;%1&apos; ...</translation>
+    </message>
+    <message>
+        <location filename="../source/processingthread.cpp" line="57"/>
+        <source>Opening Video ...</source>
+        <translation>Öffne Video ...</translation>
+    </message>
+    <message>
+        <location filename="../source/processingthread.cpp" line="63"/>
+        <source>ERROR:</source>
+        <translation>FEHLER:</translation>
+    </message>
+    <message>
+        <location filename="../source/processingthread.cpp" line="70"/>
+        <source>CANCELED BY USER!!!</source>
+        <translation>ABBRUCH DURCH BENUTZER!!!</translation>
+    </message>
+    <message>
+        <location filename="../source/processingthread.cpp" line="77"/>
+        <source>FINISHED!!!</source>
+        <translation>BEENDET!!!</translation>
     </message>
 </context>
 <context>
@@ -651,20 +676,26 @@ frame size: %2x%3
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../source/processingtask.cpp" line="167"/>
         <source>loading video ...</source>
-        <translation>lade Video ...</translation>
+        <translation type="vanished">lade Video ...</translation>
     </message>
     <message>
-        <location filename="../source/processingtask.cpp" line="242"/>
-        <location filename="../source/processingtask.cpp" line="352"/>
         <source>processing frame %1/%2 ...</source>
-        <translation>Verarbeite Teilbild %1/%2 ...</translation>
+        <translation type="vanished">Verarbeite Teilbild %1/%2 ...</translation>
     </message>
     <message>
-        <location filename="../source/processingtask.cpp" line="376"/>
         <source>saved result %2: &apos;%1&apos; ...</source>
-        <translation>Speichere Ergebnis %2: &apos;%1&apos; ...</translation>
+        <translation type="vanished">Speichere Ergebnis %2: &apos;%1&apos; ...</translation>
+    </message>
+    <message>
+        <location filename="../source/videopreviewreaderthread.cpp" line="40"/>
+        <source>Reading frame %1/%2...</source>
+        <translation>Lese Bild %1/%2...</translation>
+    </message>
+    <message>
+        <location filename="../source/videopreviewreaderthread.cpp" line="44"/>
+        <source>Reading frame %1...</source>
+        <translation>Lese Bild %1...</translation>
     </message>
 </context>
 </TS>
