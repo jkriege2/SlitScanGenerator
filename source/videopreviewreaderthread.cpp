@@ -23,7 +23,7 @@ bool VideoPreviewReaderThread::exec()
 void VideoPreviewReaderThread::run()
 {
     auto progCB=std::bind(std::mem_fn(&VideoPreviewReaderThread::updateProgress), this, std::placeholders::_1, std::placeholders::_2);
-    m_result=readFFMPEGAsImageStack(m_video, m_filename, m_everyNthFrame, m_xyscale, m_error, progCB);
+    m_result=readFFMPEGAsImageStack(m_video, m_filename, m_everyNthFrame, m_xyscale, m_error, progCB, m_maxFrame);
 }
 
 void VideoPreviewReaderThread::setCanceled()
