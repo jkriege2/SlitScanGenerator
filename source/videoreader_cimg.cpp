@@ -38,9 +38,9 @@ bool VideoReader_CImg::readNext(cimg_library::CImg<uint8_t> &frame)
         }
 
         // copy image
-        cimg_forXYC( frame, x, y, c )
+        cimg_forC( frame, c )
         {
-            frame( x, y, 0, c )=m_video_stack( x, y, m_index, c );
+            frame.get_shared_channel(c)=m_video_stack.get_shared_slice(m_index, c );
         }
 
         // advance frame pointer

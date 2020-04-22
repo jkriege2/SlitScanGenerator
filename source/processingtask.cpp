@@ -1,5 +1,6 @@
 #include "processingtask.h"
 #include "cimg_tools.h"
+#include "cpp_tools.h"
 #include <QFileInfo>
 #include <QFile>
 #include <QDir>
@@ -186,6 +187,7 @@ void ProcessingTask::load(const QString &inifilename)
 
 bool ProcessingTask::processInit()
 {
+    TIME_BLOCK_SW(timer, "processInit()");
     if (!m_reader) {
         if (m_reporter) m_reporter->reportErrorMessage("no reader provided!");
         return false;
@@ -265,6 +267,7 @@ bool ProcessingTask::processInit()
 
 bool ProcessingTask::processStep()
 {
+    TIME_BLOCK_SW(timer, "processStep()");
     if (!m_reader) {
         if (m_reporter) m_reporter->reportErrorMessage("no reader provided!");
         return false;
@@ -284,12 +287,15 @@ bool ProcessingTask::processStep()
             if (pi.mode==Mode::ZY) {
                 int z0=results[j].zs_val;
                 if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
+                    TIME_BLOCK_SW(timer, "extractZY_atz()");
                     line=extractZY_atz(z, frame, pi.location_x);
                     results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AngleRoll) {
+                    TIME_BLOCK_SW(timer, "extractZY_atz_roll()");
                     line=extractZY_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
                     results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
+                    TIME_BLOCK_SW(timer, "extractZY_atz_pitch()");
                     line=extractZY_atz_pitch(z, outputFrames, frame, pi.location_x, pi.angle, results[j].zs_val);
                     //qDebug()<<"extractZY_atz_pitch: z="<<z<<", results[j].zs_val="<<results[j].zs_val<<", line.height="<<line.height();
                 }
@@ -299,6 +305,7 @@ bool ProcessingTask::processStep()
                     results[j].resize(z0+line.height(), results[j].height(), results[j].depth(), results[j].spectrum());
                 }*/
                 if (results[j].zs_val>z0) {
+                    TIME_BLOCK_SW(timer, "StoreLine")
                     for (int x=0; x<line.height(); x++) {
                         if (z0+x<results[j].img.width()) {
                             results[j].maxX=qMax(z0+x, results[j].maxX);
@@ -314,12 +321,15 @@ bool ProcessingTask::processStep()
             } else if (pi.mode==Mode::XZ) {
                 int z0=results[j].zs_val;
                 if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
+                    TIME_BLOCK_SW(timer, "extractXZ_atz()");
                     line=extractXZ_atz(z, frame, pi.location_y);
                     results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AngleRoll) {
+                    TIME_BLOCK_SW(timer, "extractXZ_atz_roll()");
                     line=extractXZ_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
                     results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
+                    TIME_BLOCK_SW(timer, "extractXZ_atz_pitch()");
                     line=extractXZ_atz_pitch(z, outputFrames, frame, pi.location_y, pi.angle, results[j].zs_val);
                     //qDebug()<<"extractXZ_atz_pitch: z="<<z<<", results[j].zs_val="<<results[j].zs_val<<", line.height="<<line.height();
                 }
@@ -330,6 +340,7 @@ bool ProcessingTask::processStep()
 
                 }*/
                 if (results[j].zs_val>z0) {
+                    TIME_BLOCK_SW(timer, "StoreLine()");
                     for (int y=0; y<line.height(); y++) {
                         results[j].maxY=qMax(z0+y, results[j].maxY);
                         if (z0+y<results[j].img.height()) {
@@ -383,7 +394,12 @@ bool ProcessingTask::processStep()
 
         // load next frame (if available)
         if (m_reporter) m_reporter->reportFrameProgress(z+1, outputFrames);
-        bool res=m_reader->readNext(frame);
+        bool res;
+        {
+            TIME_BLOCK_SW(timer, "readNext()");
+
+            res=m_reader->readNext(frame);
+        }
         z++;
         if (!res) {
             m_saving=true;
@@ -393,6 +409,8 @@ bool ProcessingTask::processStep()
     } else {
         // 2 Step: saving frames
         if (static_cast<int>(m_savingFrame)<results.size()) {
+            TIME_BLOCK_SW(timer, "SaveResults()");
+
             const ProcessingTask::ProcessingItem& pi=pis[m_savingFrame];
 
 
@@ -452,11 +470,13 @@ bool ProcessingTask::processStep()
 
 void ProcessingTask::processFinalize()
 {
+    TIME_BLOCK_SW(timer, "processFinalize()");
     if (m_reader) m_reader->close();
 }
 
 void ProcessingTask::normalizeZY(cimg_library::CImg<uint8_t> &img, int normalizeY)
 {
+    TIME_BLOCK_SW(timer, "normalizeZY()");
     if (normalizeY>=0 && normalizeY<img.height()) {
         cimg_library::CImg<uint8_t> img_in=img;
         //qDebug()<<"img="<<img.width()<<"x"<<img.height()<<"x"<<img.depth()<<"x"<<img.spectrum();
@@ -475,6 +495,7 @@ void ProcessingTask::normalizeZY(cimg_library::CImg<uint8_t> &img, int normalize
 
 void ProcessingTask::normalizeXZ(cimg_library::CImg<uint8_t> &img, int normalizeX)
 {
+    TIME_BLOCK_SW(timer, "normalizeXZ()");
     if (normalizeX>=0 && normalizeX<img.width()) {
         cimg_library::CImg<uint8_t> img_in=img;
         cimg_forC(img,c) {
@@ -491,6 +512,7 @@ void ProcessingTask::normalizeXZ(cimg_library::CImg<uint8_t> &img, int normalize
 
 void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, double center, double delta, bool testoutput)
 {
+    TIME_BLOCK_SW(timer, "applyFilterNotch()");
 
     char fn[1000];
     int nx=ceil(log(imgrgb.width())/log(2));
@@ -576,6 +598,7 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
 
 void ProcessingTask::applyWhitepointCorrection(cimg_library::CImg<uint8_t> &img, uint8_t red, uint8_t green, uint8_t blue, bool testoutput)
 {
+    TIME_BLOCK_SW(timer, "applyWhitepointCorrection()");
     const double r=red;
     const double g=green;
     const double b=blue;

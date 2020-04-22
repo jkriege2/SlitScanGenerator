@@ -56,6 +56,7 @@ endif()
 
 option(UPDATE_TRANSLATIONS "Call lupdate to update translation files from source." ON)
 option(TRANS_KEEP_OBSOLETE "Add -noobsolete option to lupdate command to get rid of old text entries" OFF)
+option(ANALYZE_TIMING "if activate, additional code is compiled in, which outputs timing info on the console (sets macro ANALYZE_TIMING)" OFF)
 
 
 # Global CMake options
@@ -73,6 +74,10 @@ get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
 get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
 find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
 find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${_qt_bin_dir}")
+
+if (ANALYZE_TIMING)
+    add_definitions(-DANALYZE_TIMING)
+endif(ANALYZE_TIMING)
 
 
 # Testing configuration

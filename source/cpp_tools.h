@@ -1,7 +1,10 @@
 #ifndef CPP_TOOLS_H
 #define CPP_TOOLS_H
 
+#include <string>
+#include <chrono>
 #include <memory>
+#include <atomic>
 
 template <class F>
 class final_act
@@ -41,5 +44,27 @@ inline final_act<F> finally(F&& f) noexcept
 {
     return final_act<F>(std::forward<F>(f));
 }
+
+
+
+class BlockTimer {
+public:
+    BlockTimer(const std::string& message);
+    ~BlockTimer();
+private:
+    std::chrono::high_resolution_clock::time_point m_tstart;
+    std::string m_message;
+    static std::atomic<int> m_indent;
+};
+
+#define TIME_BLOCK(objname, message) BlockTimer objname(message);
+#define TIME_BLOCK_A(objname) BlockTimer objname(std::string(__FUNCTION__));
+#ifdef ANALYZE_TIMING
+    #define TIME_BLOCK_SW(objname, message) BlockTimer objname(message);
+    #define TIME_BLOCK_A_SW(objname) BlockTimer objname(std::string(__FUNCTION__));
+#else
+#define TIME_BLOCK_SW(objname, message)
+#define TIME_BLOCK_A_SW(objname)
+#endif
 
 #endif // CPP_TOOLS_H

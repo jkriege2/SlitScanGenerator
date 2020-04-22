@@ -478,6 +478,7 @@ void MainWindow::recalcAndRedisplaySamples(int x, int y, double angle, int angle
 
 void MainWindow::recalcAndRedisplaySamples()
 {
+    TIME_BLOCK_SW(timer,"recalcAndRedisplaySamples()");
     QOverrideCursorGuard cursorGuard(Qt::WaitCursor);
     cimg_library::CImg<uint8_t>* video_input=&m_video_xytscaled;
     const bool isFilteringPreview=ui->tabWidget->currentWidget()==ui->tabFiltering;
@@ -519,7 +520,7 @@ void MainWindow::recalcAndRedisplaySamples()
     qDebug()<< "video_input->width()="<<video_input->width()<<", video_input->height()="<<video_input->height()<<", video_input->depth()="<<video_input->depth()<<", video_input->spectrum()="<<video_input->spectrum();
 
     if (lastX_reducedCoords*xyFactor>=0 && lastX_reducedCoords*xyFactor<video_input->width() && lastY_reducedCoords*xyFactor>=0 && lastY_reducedCoords*xyFactor<video_input->height()) {
-
+        TIME_BLOCK_SW(timer, "recalcAndRedisplaySamples:doRecalc()");
 
         QImage img=CImgToQImage(*video_input, video_input->depth()/2);
         cimg_library::CImg<uint8_t> cxz;
@@ -557,48 +558,70 @@ void MainWindow::recalcAndRedisplaySamples()
             taskYZ.do_not_save_anyting=true;
         }
 
-        taskXZ.process();
-        taskYZ.process();
-
-
-        QImage imgxz=CImgToQImage(cxz);
-        QImage imgyz=CImgToQImage(cyz);
         {
-            QPainter pnt(&img);
-            pnt.setPen(QPen(QColor("red")));
-            if (angleMode==ProcessingTask::AngleMode::AngleNone || angleMode==ProcessingTask::AngleMode::AngleRoll) {
-                pnt.save();
-                pnt.translate(lastX_reducedCoords,lastY_reducedCoords);
-                pnt.rotate(angle);
-                const int l=2*std::max(img.width(), img.height());
-                pnt.drawLine(-l,0,l,0);
-                pnt.drawLine(0,-l,0,l);
-                pnt.restore();
-            } else {
-                pnt.drawLine(0, lastY_reducedCoords*xyFactor,img.width(),lastY_reducedCoords*xyFactor);
-                pnt.drawLine(lastX_reducedCoords*xyFactor, 0,lastX_reducedCoords*xyFactor, img.height());
-            }
+            TIME_BLOCK_SW(timer, "taskXZ.process()");
+            taskXZ.process();
+        }
+        {
+            TIME_BLOCK_SW(timer, "taskYZ.process()");
+            taskYZ.process();
+        }
 
+
+
+        QImage imgxz;
+        {
+            TIME_BLOCK_SW(timer, "CImgToQImage(cxz)");
+            imgxz=CImgToQImage(cxz);
+        }
+
+        QImage imgyz;
+        {
+            TIME_BLOCK_SW(timer, "CImgToQImage(cyz)");
+            imgyz=CImgToQImage(cyz);
+        }
+        {
+            TIME_BLOCK_SW(timer3, "paint lines")
+            {
+
+                QPainter pnt(&img);
+                pnt.setPen(QPen(QColor("red")));
+                if (angleMode==ProcessingTask::AngleMode::AngleNone || angleMode==ProcessingTask::AngleMode::AngleRoll) {
+                    pnt.save();
+                    pnt.translate(lastX_reducedCoords,lastY_reducedCoords);
+                    pnt.rotate(angle);
+                    const int l=2*std::max(img.width(), img.height());
+                    pnt.drawLine(-l,0,l,0);
+                    pnt.drawLine(0,-l,0,l);
+                    pnt.restore();
+                } else {
+                    pnt.drawLine(0, lastY_reducedCoords*xyFactor,img.width(),lastY_reducedCoords*xyFactor);
+                    pnt.drawLine(lastX_reducedCoords*xyFactor, 0,lastX_reducedCoords*xyFactor, img.height());
+                }
+
+                if (ui->chkNormalize->isChecked()) {
+                    pnt.setPen(QPen(QColor("blue")));
+                    pnt.drawRect(QRect(ui->spinNormalizeX->value()/invxyFactor-1, ui->spinNormalizeY->value()/invxyFactor-1,3,3));
+                }
+            }
             if (ui->chkNormalize->isChecked()) {
+                QPainter pnt(&imgxz);
                 pnt.setPen(QPen(QColor("blue")));
-                pnt.drawRect(QRect(ui->spinNormalizeX->value()/invxyFactor-1, ui->spinNormalizeY->value()/invxyFactor-1,3,3));
+                pnt.drawLine(ui->spinNormalizeX->value()/invxyFactor, 0,ui->spinNormalizeX->value()/invxyFactor, imgxz.height());
+            }
+            if (ui->chkNormalize->isChecked()) {
+                QPainter pnt(&imgyz);
+                pnt.setPen(QPen(QColor("blue")));
+                pnt.drawLine(0,ui->spinNormalizeY->value()/invxyFactor, imgyz.width(),ui->spinNormalizeY->value()/invxyFactor);
             }
         }
-        if (ui->chkNormalize->isChecked()) {
-            QPainter pnt(&imgxz);
-            pnt.setPen(QPen(QColor("blue")));
-            pnt.drawLine(ui->spinNormalizeX->value()/invxyFactor, 0,ui->spinNormalizeX->value()/invxyFactor, imgxz.height());
-        }
-        if (ui->chkNormalize->isChecked()) {
-            QPainter pnt(&imgyz);
-            pnt.setPen(QPen(QColor("blue")));
-            pnt.drawLine(0,ui->spinNormalizeY->value()/invxyFactor, imgyz.width(),ui->spinNormalizeY->value()/invxyFactor);
-        }
 
-
-        labXY->setPixmap(QPixmap::fromImage(img));
-        labXZ->setPixmap(QPixmap::fromImage(imgxz));
-        labYZ->setPixmap(QPixmap::fromImage(imgyz));
+        {
+            TIME_BLOCK_SW(timer, "update GUI")
+            labXY->setPixmap(QPixmap::fromImage(img));
+            labXZ->setPixmap(QPixmap::fromImage(imgxz));
+            labYZ->setPixmap(QPixmap::fromImage(imgyz));
+        }
     }
 }
 
