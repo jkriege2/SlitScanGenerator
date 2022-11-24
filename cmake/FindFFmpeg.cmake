@@ -93,7 +93,7 @@ macro(find_component _component _pkgconfig _library _header)
         ${PC_LIB${_component}_LIBRARY_DIRS}
     )
 
-#message(STATUS "${_component}_LIBRARIES = ${${_component}_LIBRARIES}")
+message(STATUS "${_component}_LIBRARIES = ${${_component}_LIBRARIES}")
 
     file(GLOB ${_component}_BIN
         ${${_component}_INCLUDE_DIRS}/../bin/${_library}*.dll

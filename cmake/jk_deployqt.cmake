@@ -31,4 +31,4 @@ function(jk_deployqt TARGET_NAME)
             COMMENT "Running windeployqt ... "
         )
     endif(WIN32)
-endfunction(jkqtplotter_deployqt)
+endfunction(jk_deployqt)
