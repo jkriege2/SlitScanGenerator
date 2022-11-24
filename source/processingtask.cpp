@@ -59,7 +59,7 @@ void ProcessingTask::save(const QString &inifilename) const
     if (m_configio) {
         m_configio->open(inifilename.toStdString());
         saveBase(m_configio);
-        m_configio->setValue("count", pis.size());
+        m_configio->setValue("count", static_cast<size_t>(pis.size()));
         int j=0;
         for (ProcessingTask::ProcessingItem pi: pis) {
             pi.save(m_configio, QString("item%1/").arg(j,3,10,QChar('0')).toStdString());

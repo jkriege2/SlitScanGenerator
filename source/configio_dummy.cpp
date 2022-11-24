@@ -55,6 +55,11 @@ void ConfigIO_Dummy::setValue(const std::string & /*key*/, unsigned int /*value*
 
 }
 
+void ConfigIO_Dummy::setValue(const std::string &key, size_t value)
+{
+
+}
+
 void ConfigIO_Dummy::setValue(const std::string & /*key*/, int /*value*/)
 {
 

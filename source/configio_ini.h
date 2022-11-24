@@ -39,6 +39,8 @@ public:
     /** \copydoc ConfigValue::setValue() */
     virtual void setValue(const std::string& key, unsigned int value) override;
     /** \copydoc ConfigValue::setValue() */
+    virtual void setValue(const std::string& key, size_t value) override;
+    /** \copydoc ConfigValue::setValue() */
     virtual void setValue(const std::string& key, int value) override;
     /** \copydoc ConfigValue::setValue() */
     virtual void setValue(const std::string& key, const std::string &value) override;

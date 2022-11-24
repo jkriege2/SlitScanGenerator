@@ -10,7 +10,7 @@ ImageViewer::ImageViewer(QWidget *parent) : QLabel(parent)
 void ImageViewer::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
-        emit mouseClicked(event->x(), event->y());
+        emit mouseClicked(event->position().x(), event->position().y());
     }
     QLabel::mousePressEvent(event);
 }
@@ -18,8 +18,8 @@ void ImageViewer::mousePressEvent(QMouseEvent *event)
 void ImageViewer::mouseMoveEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
-        emit mouseClicked(event->x(), event->y());
+        emit mouseClicked(event->position().x(), event->position().y());
     }
-    emit mouseMoved(event->x(), event->y());
+    emit mouseMoved(event->position().x(), event->position().y());
     QLabel::mouseMoveEvent(event);
 }

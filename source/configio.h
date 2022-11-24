@@ -34,6 +34,8 @@ public:
     virtual void setValue(const std::string& key, double value)=0;
     /** \brief write a unsigned int value */
     virtual void setValue(const std::string& key, unsigned int value)=0;
+    /** \brief write a unsigned int value */
+    virtual void setValue(const std::string& key, size_t value)=0;
     /** \brief write a int value */
     virtual void setValue(const std::string& key, int value)=0;
     /** \brief write a std::string value */

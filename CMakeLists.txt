@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.20)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # append path to local cmake modules
@@ -40,7 +40,7 @@ message(STATUS "    install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 project(SlitScanGenerator)
 set(PROJECT_LONGNAME "SlitScanGenerator")
-set(PROJECT_VERSION "2020.04.21")
+set(PROJECT_VERSION "2022.11.22")
 string(TIMESTAMP PROJECT_BUILDYEAR "%Y")
 string(TIMESTAMP PROJECT_BUILDDATETIME "%Y-%m-%d")
 set(PROJECT_COPYRIGHT "Copyright (c) 2016-${PROJECT_BUILDYEAR} Jan Krieger jan@jkrieger.de")
@@ -67,10 +67,11 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Configure Qt
-find_package(Qt5 COMPONENTS Widgets LinguistTools)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets  LinguistTools REQUIRED)
 # Retrieve the absolute path to qmake and then use that path to find
 # the binaries
-get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
+get_target_property(_qmake_executable Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
 get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
 find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
 find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${_qt_bin_dir}")
@@ -82,7 +83,7 @@ endif(ANALYZE_TIMING)
 
 # Testing configuration
 #enable_testing()
-#set(TEST_LINK_LIBRARIES Qt5::Test)
+#set(TEST_LINK_LIBRARIES Qt${QT_VERSION_MAJOR}::Test)
 
 add_subdirectory(source)
 add_subdirectory(translations)

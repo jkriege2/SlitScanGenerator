@@ -153,7 +153,7 @@ add_executable(${CMAKE_PROJECT_NAME} WIN32
   ${WINDOWS_RES_FILE}
 )
 target_link_libraries(${CMAKE_PROJECT_NAME}
-  Qt5::Widgets
+  Qt${QT_VERSION_MAJOR}::Widgets
   ${FFMPEG_LIBRARIES}
 )
 add_dependencies(${CMAKE_PROJECT_NAME} SLITSCANGENERATOR_UPDATE_RANSLATIONS)
@@ -176,21 +176,6 @@ if( CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS )
     install( PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION ${CMAKE_INSTALL_PREFIX} COMPONENT System )
 endif( CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS )
 
-#use windeploy
-if (WIN32)
-    set(WINDEPLOYQTOPTION "--release")
-    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(WINDEPLOYQTOPTION "--debug")
-    endif()
-    get_filename_component(CMAKE_CXX_COMPILER_BINPATH ${CMAKE_CXX_COMPILER} DIRECTORY )
-    #message(STATUS "${CMAKE_CXX_COMPILER_BINPATH}")
-    add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E
-            env PATH="${CMAKE_CXX_COMPILER_BINPATH}\;${_qt_bin_dir}" "${WINDEPLOYQT_EXECUTABLE}"
-                --dir ${CMAKE_INSTALL_PREFIX}
-                --compiler-runtime
-                ${WINDEPLOYQTOPTION}
-                \"$<TARGET_FILE:${CMAKE_PROJECT_NAME}>\"
-        COMMENT "Running windeployqt... "
-    )
-endif(WIN32)
+
+include(jk_deployqt)
+jk_deployqt(${CMAKE_PROJECT_NAME})

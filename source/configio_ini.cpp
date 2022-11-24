@@ -78,6 +78,11 @@ void ConfigIO_INI::setValue(const std::string &key, unsigned int value)
     if (m_set) m_set->setValue(QString::fromStdString(key), value);
 }
 
+void ConfigIO_INI::setValue(const std::string &key, size_t value)
+{
+    if (m_set) m_set->setValue(QString::fromStdString(key), value);
+}
+
 void ConfigIO_INI::setValue(const std::string &key, int value)
 {
     if (m_set) m_set->setValue(QString::fromStdString(key), value);
