@@ -14,36 +14,23 @@
    <string>About ...</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,1">
-   <item row="3" column="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="2" column="2">
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+   <item row="4" column="2">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>This software generates SlitScan photography images from videos, i.e. XT/YT-slices.</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="0" rowspan="8">
-    <widget class="QLabel" name="label_3">
+   <item row="7" column="2">
+    <widget class="QLabel" name="labelText">
      <property name="text">
-      <string/>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;It is licensed under the terms of the &lt;/span&gt;&lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;&lt;span style=&quot; font-weight:600; text-decoration: underline; color:#0000ff;&quot;&gt;GPL 3.0&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;, or above.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The source code if this application is available from:&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/jkriege2/SlitScanGenerator&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://github.com/jkriege2/SlitScanGenerator&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;http://jkrieger.de/photography/slitscan/index.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;http://jkrieger.de/photography/slitscan/index.html&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;It uses these libraries for its GUI, image processing and reading videos:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
-     <property name="pixmap">
-      <pixmap resource="../resources/resources.qrc">:/icons/logo_128x128.png</pixmap>
+     <property name="openExternalLinks">
+      <bool>true</bool>
      </property>
-     <property name="alignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+     <property name="textInteractionFlags">
+      <set>Qt::TextBrowserInteraction</set>
      </property>
     </widget>
    </item>
@@ -57,19 +44,31 @@
      </property>
     </widget>
    </item>
-   <item row="8" column="0" colspan="3">
-    <widget class="Line" name="line_2">
+   <item row="2" column="2">
+    <widget class="Line" name="line">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
     </widget>
+   </item>
+   <item row="3" column="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item row="0" column="2">
     <widget class="QLabel" name="label_2">
      <property name="font">
       <font>
        <pointsize>28</pointsize>
-       <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>
@@ -81,33 +80,10 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="2">
-    <widget class="QLabel" name="label_4">
+   <item row="5" column="2">
+    <widget class="QLabel" name="labCopyright">
      <property name="text">
-      <string>This software generates SlitScan photography images from videos, i.e. XT/YT-slices.</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="2">
-    <widget class="QLabel" name="labelText">
-     <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;It is licensed under the terms of the &lt;/span&gt;&lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;&lt;span style=&quot; font-weight:600; text-decoration: underline; color:#0000ff;&quot;&gt;GPL 3.0&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;, or above.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The source code if this application is available from:&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/jkriege2/SlitScanGenerator&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://github.com/jkriege2/SlitScanGenerator&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;http://jkrieger.de/photography/slitscan/index.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;http://jkrieger.de/photography/slitscan/index.html&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;It uses these libraries for its GUI, image processing and reading videos:&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;Qt (&lt;a href=&quot;https://www.qt.io/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://www.qt.io/&lt;/span&gt;&lt;/a&gt;) -- CImg (&lt;a href=&quot;http://cimg.eu/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;http://cimg.eu/&lt;/span&gt;&lt;/a&gt;) -- FFMPEG (&lt;a href=&quot;https://ffmpeg.org/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://ffmpeg.org/&lt;/span&gt;&lt;/a&gt;)&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="openExternalLinks">
-      <bool>true</bool>
-     </property>
-     <property name="textInteractionFlags">
-      <set>Qt::TextBrowserInteraction</set>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="0" colspan="3">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Close</set>
+      <string/>
      </property>
     </widget>
    </item>
@@ -127,10 +103,40 @@
      </property>
     </spacer>
    </item>
-   <item row="5" column="2">
-    <widget class="QLabel" name="labCopyright">
+   <item row="0" column="0" rowspan="8">
+    <widget class="QLabel" name="label_3">
      <property name="text">
       <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="../resources/resources.qrc">:/icons/logo_128x128.png</pixmap>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0" colspan="3">
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0" colspan="3">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Close</set>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="2">
+    <widget class="QLabel" name="labLibVersions">
+     <property name="text">
+      <string>&lt;center&gt;Qt (https://www.qt.io/) -- CImg (http://cimg.eu/) -- FFMPEG (https://ffmpeg.org/)&lt;/center&gt;</string>
      </property>
     </widget>
    </item>

@@ -9,30 +9,40 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/aboutbox.ui" line="77"/>
+        <location filename="../source/aboutbox.ui" line="27"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;It is licensed under the terms of the &lt;/span&gt;&lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;&lt;span style=&quot; font-weight:600; text-decoration: underline; color:#0000ff;&quot;&gt;GPL 3.0&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;, or above.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The source code if this application is available from:&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/jkriege2/SlitScanGenerator&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://github.com/jkriege2/SlitScanGenerator&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;http://jkrieger.de/photography/slitscan/index.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;http://jkrieger.de/photography/slitscan/index.html&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;It uses these libraries for its GUI, image processing and reading videos:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../source/aboutbox.ui" line="76"/>
         <source>SlitScanGenerator</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/aboutbox.ui" line="87"/>
+        <location filename="../source/aboutbox.ui" line="139"/>
+        <source>&lt;center&gt;Qt (https://www.qt.io/) -- CImg (http://cimg.eu/) -- FFMPEG (https://ffmpeg.org/)&lt;/center&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../source/aboutbox.ui" line="20"/>
         <source>This software generates SlitScan photography images from videos, i.e. XT/YT-slices.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/aboutbox.ui" line="94"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;It is licensed under the terms of the &lt;/span&gt;&lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;&lt;span style=&quot; font-weight:600; text-decoration: underline; color:#0000ff;&quot;&gt;GPL 3.0&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;, or above.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;The source code if this application is available from:&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/jkriege2/SlitScanGenerator&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://github.com/jkriege2/SlitScanGenerator&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;http://jkrieger.de/photography/slitscan/index.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;http://jkrieger.de/photography/slitscan/index.html&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;It uses these libraries for its GUI, image processing and reading videos:&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;Qt (&lt;a href=&quot;https://www.qt.io/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://www.qt.io/&lt;/span&gt;&lt;/a&gt;) -- CImg (&lt;a href=&quot;http://cimg.eu/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;http://cimg.eu/&lt;/span&gt;&lt;/a&gt;) -- FFMPEG (&lt;a href=&quot;https://ffmpeg.org/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://ffmpeg.org/&lt;/span&gt;&lt;/a&gt;)&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="../source/aboutbox.cpp" line="12"/>
+        <location filename="../source/aboutbox.cpp" line="27"/>
         <source>%2, %1-bits, %4
 build timestamp: %3</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/aboutbox.cpp" line="13"/>
+        <location filename="../source/aboutbox.cpp" line="28"/>
         <source>%1</source>
         <translation></translation>
+    </message>
+    <message>
+        <location filename="../source/aboutbox.cpp" line="29"/>
+        <source>&lt;center&gt;Qt %1 (&lt;a href=&quot;https://www.qt.io/&quot;&gt;https://www.qt.io/&lt;/a&gt;) &lt;br&gt; CImg %2 (&lt;a href=&quot;http://cimg.eu/&quot;&gt;http://cimg.eu/&lt;/a&gt;) &lt;br&gt; FFMPEG (%3, %4, %5, %6) (&lt;a href=&quot;https://ffmpeg.org/&quot;&gt;https://ffmpeg.org/&lt;/a&gt;)&lt;/center&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
