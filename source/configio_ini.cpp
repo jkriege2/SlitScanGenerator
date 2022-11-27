@@ -63,6 +63,12 @@ std::string ConfigIO_INI::value(const std::string &key, const std::string &defau
     return  m_set->value(QString::fromStdString(key), QString::fromStdString(defaultValue)).toString().toStdString();
 }
 
+std::string ConfigIO_INI::value(const std::string &key, const char *defaultValue) const
+{
+    if (!m_set) return defaultValue;
+    return  m_set->value(QString::fromStdString(key), QString(defaultValue)).toString().toStdString();
+}
+
 void ConfigIO_INI::setValue(const std::string &key, bool value)
 {
     if (m_set) m_set->setValue(QString::fromStdString(key), value);
@@ -91,4 +97,9 @@ void ConfigIO_INI::setValue(const std::string &key, int value)
 void ConfigIO_INI::setValue(const std::string &key, const std::string& value)
 {
     if (m_set) m_set->setValue(QString::fromStdString(key), QString::fromStdString(value));
+}
+
+void ConfigIO_INI::setValue(const std::string &key, const char *value)
+{
+    if (m_set) m_set->setValue(QString::fromStdString(key), QString(value));
 }

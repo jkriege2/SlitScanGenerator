@@ -24,6 +24,8 @@ public:
     virtual int value(const std::string& key, int defaultValue) const override;
     /** \copydoc ConfigValue::value() */
     virtual std::string value(const std::string&, const std::string& defaultValue) const override;
+    /** \copydoc ConfigValue::value() */
+    virtual std::string value(const std::string&, const char* defaultValue) const override;
 
     /** \copydoc ConfigValue::setValue() */
     virtual void setValue(const std::string& key, bool value) override;
@@ -37,6 +39,8 @@ public:
     virtual void setValue(const std::string& key, int value) override;
     /** \copydoc ConfigValue::setValue() */
     virtual void setValue(const std::string& key, const std::string &value) override;
+    /** \copydoc ConfigValue::setValue() */
+    virtual void setValue(const std::string& key, const char* value) override;
 
 };
 

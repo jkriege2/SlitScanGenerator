@@ -40,6 +40,11 @@ std::string ConfigIO_Dummy::value(const std::string & /*key*/, const std::string
     return defaultValue;
 }
 
+std::string ConfigIO_Dummy::value(const std::string &, const char *defaultValue) const
+{
+    return defaultValue;
+}
+
 void ConfigIO_Dummy::setValue(const std::string & /*key*/, bool /*value*/)
 {
 
@@ -66,6 +71,11 @@ void ConfigIO_Dummy::setValue(const std::string & /*key*/, int /*value*/)
 }
 
 void ConfigIO_Dummy::setValue(const std::string & /*key*/, const std::string &/*value*/)
+{
+
+}
+
+void ConfigIO_Dummy::setValue(const std::string &key, const char *value)
 {
 
 }

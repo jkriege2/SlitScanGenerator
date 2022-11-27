@@ -27,6 +27,8 @@ public:
     virtual int value(const std::string& key, int defaultValue) const=0;
     /** \brief read a std::string value */
     virtual std::string value(const std::string& key, const std::string &defaultValue) const=0;
+    /** \brief read a std::string value */
+    virtual std::string value(const std::string& key, const char* defaultValue) const=0;
 
     /** \brief write a bool value */
     virtual void setValue(const std::string& key, bool value)=0;
@@ -40,6 +42,8 @@ public:
     virtual void setValue(const std::string& key, int value)=0;
     /** \brief write a std::string value */
     virtual void setValue(const std::string& key, const std::string &value)=0;
+    /** \brief write a std::string value */
+    virtual void setValue(const std::string& key, const char *value)=0;
 };
 
 #endif // ConfigIO_H
