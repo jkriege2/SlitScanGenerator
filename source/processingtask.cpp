@@ -203,6 +203,7 @@ bool ProcessingTask::processInit()
     if (!do_not_save_anyting) save(allini);
 
     if (m_reader->open(filename.toStdString()) && m_reader->readNext(frame)) {
+        if (outputFrames<=0) outputFrames=m_reader->getFrameCount();
         int still_b=stillBorder/100.0*frame.width();
         int still_g=stillGap/100.0*frame.height();
         if (m_reporter) m_reporter->reportFrameProgress(1, pis.size()+2+m_reader->getFrameCount());
