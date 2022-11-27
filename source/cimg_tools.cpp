@@ -99,7 +99,7 @@ cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_lib
         int zimg=0;
         int oldzout=zout;
         while ((zs=static_cast<int>(std::round(zstart+static_cast<double>(zout)/double(length)*(zend-zstart))))==z) {
-            int ys=static_cast<int>(std::round(ystart+static_cast<double>(zout)/double(length)*(yend-ystart)));
+            const float ys=ystart+static_cast<double>(zout)/double(length)*(yend-ystart);
             if (ys>=0&&ys<img_src.height()) {
                 zimg++;
             }
@@ -112,14 +112,14 @@ cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_lib
         zimg=0;
         zout=oldzout;
         while ((zs=static_cast<int>(std::round(zstart+static_cast<double>(zout)/double(length)*(zend-zstart))))==z) {
-            int ys=static_cast<int>(std::round(ystart+static_cast<double>(zout)/double(length)*(yend-ystart)));
+            const float ys=ystart+static_cast<double>(zout)/double(length)*(yend-ystart);
             //qDebug()<<"z="<<z<<"<<"", zout="<<zout<<", ys="<<ys<<"["<<img_src.height()<<"], zs="<<zs<<"["<<depth<<"]";
             if (ys>=0&&ys<img_src.height()) {//&&zs>=0&&zs<depth) {
 
                 for (int x=0; x<img_src.width(); x++) {
-                    img(x,zimg,0,0)=img_src(x,ys,0,0);
-                    img(x,zimg,0,1)=img_src(x,ys,0,1);
-                    img(x,zimg,0,2)=img_src(x,ys,0,2);
+                    img(x,zimg,0,0)=img_src.linear_atXY(x,ys,0,0);
+                    img(x,zimg,0,1)=img_src.linear_atXY(x,ys,0,1);
+                    img(x,zimg,0,2)=img_src.linear_atXY(x,ys,0,2);
                 }
                 zimg++;
             }
@@ -164,7 +164,7 @@ cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_lib
         int zimg=0;
         int oldzout=zout;
         while ((zs=static_cast<int>(std::round(zstart+static_cast<double>(zout)/double(length)*(zend-zstart))))==z) {
-            int xs=static_cast<int>(std::round(xstart+static_cast<double>(zout)/double(length)*(xend-xstart)));
+            const float xs=xstart+static_cast<double>(zout)/double(length)*(xend-xstart);
             if (xs>=0&&xs<img_src.width()) {
                 zimg++;
             }
@@ -177,14 +177,14 @@ cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_lib
         zimg=0;
         zout=oldzout;
         while ((zs=static_cast<int>(std::round(zstart+static_cast<double>(zout)/double(length)*(zend-zstart))))==z) {
-            int xs=static_cast<int>(std::round(xstart+static_cast<double>(zout)/double(length)*(xend-xstart)));
+            const float xs=xstart+static_cast<double>(zout)/double(length)*(xend-xstart);
 
             //qDebug()<<"xs="<<xs<<"["<<img_src.width()<<"], z="<<z<<"["<<length<<"], zs="<<zs<<"["<<depth<<"]";
             if (xs>=0&&xs<img_src.width()) {//&&zs>=0&&zs<depth) {
                 for (int y=0; y<img_src.height(); y++) {
-                    img(y,zimg,0,0)=img_src(xs,y,0,0);
-                    img(y,zimg,0,1)=img_src(xs,y,0,1);
-                    img(y,zimg,0,2)=img_src(xs,y,0,2);
+                    img(y,zimg,0,0)=img_src.linear_atXY(xs,y,0,0);
+                    img(y,zimg,0,1)=img_src.linear_atXY(xs,y,0,1);
+                    img(y,zimg,0,2)=img_src.linear_atXY(xs,y,0,2);
                 }
                 zimg++;
             }
@@ -227,8 +227,9 @@ cimg_library::CImg<uint8_t> extractXZ_atz_roll(int z, int depth, const cimg_libr
         }*/
 
         if (points.size()>=2) {
-            QPointF p1=*(points.begin());
-            QPointF p2=*(points.begin());
+            const auto ps=points.values();
+            QPointF p1=ps.first();
+            QPointF p2=ps.last();
             //if (QPointF::dotProduct(p1, QPointF(0,0))>QPointF::dotProduct(p2, QPointF(0,0))) qSwap(p1,p2);
             if (p1.x()>p2.x()) qSwap(p1,p2);
 
