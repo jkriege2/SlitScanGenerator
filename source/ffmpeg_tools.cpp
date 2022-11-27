@@ -339,6 +339,7 @@ bool readFFMPEGFrame(cimg_library::CImg<uint8_t>& frame, FFMPEGVideo *video)
 {
     if (!video) return false;
     bool done=false;
+    if (!video->pPacket) video->pPacket = av_packet_alloc();
     while (!done && (av_read_frame(video->pFormatCtx, video->pPacket)>=0)) {
         // Is this a packet from the video stream?
         if(video->pPacket->stream_index==video->videoStream) {
