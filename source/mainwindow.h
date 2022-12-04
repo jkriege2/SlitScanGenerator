@@ -28,7 +28,7 @@ class MainWindow : public QMainWindow
     protected slots:
         void saveINI();
         void loadINI();
-        void openVideo(const QString &filename=QString());
+        void openVideo(const QString &filename=QString(), const QString& ini_in=QString());
         void openExampleVideo();
         void recalcAndRedisplaySamples(int x, int y, double angle, int angleMode);
         void recalcAndRedisplaySamples();

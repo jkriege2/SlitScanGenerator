@@ -92,7 +92,6 @@
         <property name="font">
          <font>
           <pointsize>10</pointsize>
-          <weight>75</weight>
           <bold>true</bold>
          </font>
         </property>
@@ -299,6 +298,39 @@
            <iconset resource="../resources/resources.qrc">
             <normaloff>:/icons/list_add_down.png</normaloff>:/icons/list_add_down.png</iconset>
           </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabProcessingOptions">
+       <attribute name="title">
+        <string>Proc. Options</string>
+       </attribute>
+       <layout class="QFormLayout" name="formLayout_6">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_17">
+          <property name="text">
+           <string>Interpolation Method:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="cmbInterpolation">
+          <item>
+           <property name="text">
+            <string>Nearest Neighbor (lowest quality)</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Linear</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Cubic (highest quality)</string>
+           </property>
+          </item>
          </widget>
         </item>
        </layout>
@@ -663,6 +695,56 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tabOutput">
+       <attribute name="title">
+        <string>Output</string>
+       </attribute>
+       <layout class="QFormLayout" name="formLayout_7">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_18">
+          <property name="text">
+           <string>output basename:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="edtOutputBasename"/>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLabel" name="label_19">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>empty = video filename</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_20">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
     <item row="6" column="0" colspan="2">
@@ -705,8 +787,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>1032</width>
-            <height>58</height>
+            <width>1034</width>
+            <height>52</height>
            </rect>
           </property>
          </widget>
@@ -743,7 +825,7 @@
      <x>0</x>
      <y>0</y>
      <width>1054</width>
-     <height>21</height>
+     <height>17</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_Datei">

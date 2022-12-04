@@ -62,7 +62,7 @@ cimg_library::CImg<uint8_t> extractZY_atz(int z, const cimg_library::CImg<uint8_
 
 
 
-cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int y, double angle, int& zout, int* lenout)
+cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int y, double angle, const interpolatingAtXYFunctor &atFunc, int& zout, int* lenout)
 {
     if (approx0(angle)) {
         if (lenout) *lenout=depth;
@@ -117,9 +117,9 @@ cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_lib
             if (ys>=0&&ys<img_src.height()) {//&&zs>=0&&zs<depth) {
 
                 for (int x=0; x<img_src.width(); x++) {
-                    img(x,zimg,0,0)=img_src.linear_atXY(x,ys,0,0);
-                    img(x,zimg,0,1)=img_src.linear_atXY(x,ys,0,1);
-                    img(x,zimg,0,2)=img_src.linear_atXY(x,ys,0,2);
+                    img(x,zimg,0,0)=atFunc(img_src,x,ys,0,0);
+                    img(x,zimg,0,1)=atFunc(img_src,x,ys,0,1);
+                    img(x,zimg,0,2)=atFunc(img_src,x,ys,0,2);
                 }
                 zimg++;
             }
@@ -130,7 +130,7 @@ cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_lib
     }
 }
 
-cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, double angle, int& zout, int* lenout)
+cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, double angle, const interpolatingAtXYFunctor &atFunc, int& zout, int* lenout)
 {
     if (approx0(angle)) {
         if (lenout) *lenout=depth;
@@ -182,9 +182,9 @@ cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_lib
             //qDebug()<<"xs="<<xs<<"["<<img_src.width()<<"], z="<<z<<"["<<length<<"], zs="<<zs<<"["<<depth<<"]";
             if (xs>=0&&xs<img_src.width()) {//&&zs>=0&&zs<depth) {
                 for (int y=0; y<img_src.height(); y++) {
-                    img(y,zimg,0,0)=img_src.linear_atXY(xs,y,0,0);
-                    img(y,zimg,0,1)=img_src.linear_atXY(xs,y,0,1);
-                    img(y,zimg,0,2)=img_src.linear_atXY(xs,y,0,2);
+                    img(y,zimg,0,0)=atFunc(img_src,xs,y,0,0);
+                    img(y,zimg,0,1)=atFunc(img_src,xs,y,0,1);
+                    img(y,zimg,0,2)=atFunc(img_src,xs,y,0,2);
                 }
                 zimg++;
             }
@@ -201,7 +201,7 @@ cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_lib
 
 
 
-cimg_library::CImg<uint8_t> extractXZ_atz_roll(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, int y, double angle)
+cimg_library::CImg<uint8_t> extractXZ_atz_roll(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, int y, double angle, const interpolatingAtXYFunctor &atFunc)
 {
     if (approx0(angle)) return extractXZ_atz(z, img_src, y);
     else {
@@ -246,9 +246,9 @@ cimg_library::CImg<uint8_t> extractXZ_atz_roll(int z, int depth, const cimg_libr
                 float ys=static_cast<double>(p1.y())+static_cast<double>(l)*(p2.y()-p1.y())/static_cast<double>(length);
                 //if (z==0) //qDebug()<<"xs="<<xs<<", ys="<<ys;
                 if (xs>=0 && xs<img_src.width() && ys>0 && ys<img_src.height()) {
-                    img(l,0,0,0)=img_src.linear_atXY(xs,ys,0,0);
-                    img(l,0,0,1)=img_src.linear_atXY(xs,ys,0,1);
-                    img(l,0,0,2)=img_src.linear_atXY(xs,ys,0,2);
+                    img(l,0,0,0)=atFunc(img_src,xs,ys,0,0);
+                    img(l,0,0,1)=atFunc(img_src,xs,ys,0,1);
+                    img(l,0,0,2)=atFunc(img_src,xs,ys,0,2);
                 }
             }
             //qDebug()<<"img_out: "<<img.width()<<"x"<<img.height()<<"x"<<img.depth()<<"x"<<img.spectrum();
@@ -259,8 +259,8 @@ cimg_library::CImg<uint8_t> extractXZ_atz_roll(int z, int depth, const cimg_libr
     }
 }
 
-cimg_library::CImg<uint8_t> extractZY_atz_roll(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, int y, double angle)
+cimg_library::CImg<uint8_t> extractZY_atz_roll(int z, int depth, const cimg_library::CImg<uint8_t> &img_src, int x, int y, double angle, const interpolatingAtXYFunctor &atFunc)
 {
     if (approx0(angle)) return extractZY_atz(z, img_src, x);
-    else return extractXZ_atz_roll(z, depth, img_src, x, y, angle-90.0);
+    else return extractXZ_atz_roll(z, depth, img_src, x, y, angle-90.0, atFunc);
 }

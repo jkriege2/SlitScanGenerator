@@ -6,10 +6,51 @@
 #include <QDir>
 #include <QDebug>
 
+QString ProcessingTask::InterpolationMethod2String(InterpolationMethod m)
+{
+    switch(m) {
+    case ProcessingTask::InterpolationMethod::NearestNeighbor: return "nearest_neighbor";
+    case ProcessingTask::InterpolationMethod::Linear: return "linear";
+    case ProcessingTask::InterpolationMethod::Cubic: return "cubic";
+    }
+    return "nearest_neighbor";
+}
+
+ProcessingTask::InterpolationMethod ProcessingTask::String2InterpolationMethod(const QString &m)
+{
+    const QString mm=m.trimmed().toLower().simplified();
+    if (mm=="lin" || mm=="linear") return ProcessingTask::InterpolationMethod::Linear;
+    if (mm=="cubic" || mm=="cubig") return ProcessingTask::InterpolationMethod::Cubic;
+    return ProcessingTask::InterpolationMethod::NearestNeighbor;
+}
+
+interpolatingAtXYFunctor ProcessingTask::InterpolationMethod2XYFunctor(InterpolationMethod m)
+{
+    switch(m) {
+    case ProcessingTask::InterpolationMethod::Linear:
+        return [](const cimg_library::CImg<uint8_t>& img, const float fx, const float fy, const int z, const int c)->float {
+                    return img.linear_atXY(fx,fy,z,c);
+                };
+
+    case ProcessingTask::InterpolationMethod::Cubic:
+        return [](const cimg_library::CImg<uint8_t>& img, const float fx, const float fy, const int z, const int c)->float {
+                    return img.cubic_atXY(fx,fy,z,c);
+                };
+    case ProcessingTask::InterpolationMethod::NearestNeighbor: break;
+
+    }
+
+    return [](const cimg_library::CImg<uint8_t>& img, const float fx, const float fy, const int z, const int c)->float {
+                return img.atXY(static_cast<int>(fx),static_cast<int>(fy),z,c);
+            };
+}
+
 ProcessingTask::ProcessingTask(std::shared_ptr<VideoReader> reader, std::shared_ptr<ImageWriter> writer, std::shared_ptr<ConfigIO> configio):
     do_not_save_anyting(false),
     filename(),
+    outputBasename(),
     outputFrames(0),
+    interpolationMethod(InterpolationMethod::Cubic),
     stillCnt(0),
     stillDelta(60),
     stillStrip(true),
@@ -75,7 +116,9 @@ void ProcessingTask::saveBase(std::shared_ptr<ConfigIO> ini) const
     if (!ini) return;
     if (ini->filename().size()>0) ini->setValue("input_file", QFileInfo(QString::fromStdString(ini->filename())).absoluteDir().relativeFilePath(filename).toStdString());
     else ini->setValue("input_file", filename.toStdString());
+    ini->setValue("processing_options/output_basename",outputBasename.toStdString());
 
+    ini->setValue("processing_options/interpolation_method", InterpolationMethod2String(interpolationMethod).toStdString());
     ini->setValue("stills/count", stillCnt);
     ini->setValue("stills/delta", stillDelta);
     ini->setValue("stills/strip", stillStrip);
@@ -149,6 +192,10 @@ void ProcessingTask::load(const QString &inifilename)
 
         filename=QFileInfo(inifilename).absoluteDir().absoluteFilePath(QString::fromStdString(m_configio->value("input_file", filename.toStdString())));
 
+        outputBasename=QString::fromStdString(m_configio->value("processing_options/output_basename",outputBasename.toStdString()));
+
+        interpolationMethod=String2InterpolationMethod(QString::fromStdString(m_configio->value("processing_options/interpolation_method", InterpolationMethod2String(InterpolationMethod::NearestNeighbor).toStdString())));
+
         stillCnt=m_configio->value("stills/count", stillCnt);
         stillDelta=m_configio->value("stills/delta", stillDelta);
         stillStrip=m_configio->value("stills/strip", stillStrip);
@@ -198,8 +245,9 @@ bool ProcessingTask::processInit()
     m_savingFrame=0;
     m_prog=1;
 
-    QFileInfo fi(filename);
-    QString allini=fi.absoluteDir().absoluteFilePath(QString("%1.ini").arg(fi.baseName()));
+    const QFileInfo fi(filename);
+    if (outputBasename.isEmpty()) outputBasename=fi.baseName();
+    const QString allini=fi.absoluteDir().absoluteFilePath(QString("%1.ini").arg(outputBasename));
     if (!do_not_save_anyting) save(allini);
 
     if (m_reader->open(filename.toStdString()) && m_reader->readNext(frame)) {
@@ -216,9 +264,9 @@ bool ProcessingTask::processInit()
                 if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
                     line=extractZY_atz(0, frame, pi.location_x);
                 } else if (pi.angleMode==AngleMode::AngleRoll) {
-                    line=extractZY_atz_roll(0, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
+                    line=extractZY_atz_roll(0, outputFrames, frame, pi.location_x, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod));
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
-                    line=extractZY_atz_pitch(0, outputFrames, frame, pi.location_x, pi.angle, zout, &len);
+                    line=extractZY_atz_pitch(0, outputFrames, frame, pi.location_x, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), zout, &len);
                 }
                 results.push_back(ResultData());
                 results[j].img.assign(len, line.width(), 1, 3);
@@ -230,9 +278,9 @@ bool ProcessingTask::processInit()
                 if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
                     line=extractXZ_atz(0, frame, pi.location_y);
                 } else if (pi.angleMode==AngleMode::AngleRoll) {
-                    line=extractXZ_atz_roll(0, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
+                    line=extractXZ_atz_roll(0, outputFrames, frame, pi.location_x, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod));
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
-                    line=extractXZ_atz_pitch(0, outputFrames, frame, pi.location_y, pi.angle, zout, &len);
+                    line=extractXZ_atz_pitch(0, outputFrames, frame, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), zout, &len);
                 }
                 results.push_back(ResultData());
                 results[j].img.assign(line.width(), len, 1, 3);
@@ -241,10 +289,9 @@ bool ProcessingTask::processInit()
                 results[j].zs_val=0;
                 //qDebug()<<"output size: "<<results[j].width()<<"x"<<results[j].height()<<"x"<<results[j].depth()<<"x"<<results[j].spectrum();
             }
-            QFileInfo fi(filename);
-            QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.png").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
-            QString fnfilt=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2_filtered.png").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
-            QString fnini=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.ini").arg(fi.baseName()).arg(j+1, 3, 10,QChar('0')));
+            const QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.png").arg(outputBasename).arg(j+1, 3, 10,QChar('0')));
+            const QString fnfilt=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2_filtered.png").arg(outputBasename).arg(j+1, 3, 10,QChar('0')));
+            const QString fnini=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2.ini").arg(outputBasename).arg(j+1, 3, 10,QChar('0')));
             results[j].filename=fn;
             results[j].filt_filename=fnfilt;
             results[j].inifilename=fnini;
@@ -293,11 +340,11 @@ bool ProcessingTask::processStep()
                     results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AngleRoll) {
                     TIME_BLOCK_SW(timer, "extractZY_atz_roll()");
-                    line=extractZY_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
+                    line=extractZY_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod));
                     results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
                     TIME_BLOCK_SW(timer, "extractZY_atz_pitch()");
-                    line=extractZY_atz_pitch(z, outputFrames, frame, pi.location_x, pi.angle, results[j].zs_val);
+                    line=extractZY_atz_pitch(z, outputFrames, frame, pi.location_x, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), results[j].zs_val);
                     //qDebug()<<"extractZY_atz_pitch: z="<<z<<", results[j].zs_val="<<results[j].zs_val<<", line.height="<<line.height();
                 }
                 /*if (z0+line.height()-1>=results[j].width()) {
@@ -327,11 +374,11 @@ bool ProcessingTask::processStep()
                     results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AngleRoll) {
                     TIME_BLOCK_SW(timer, "extractXZ_atz_roll()");
-                    line=extractXZ_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle);
+                    line=extractXZ_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod));
                     results[j].zs_val++;
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
                     TIME_BLOCK_SW(timer, "extractXZ_atz_pitch()");
-                    line=extractXZ_atz_pitch(z, outputFrames, frame, pi.location_y, pi.angle, results[j].zs_val);
+                    line=extractXZ_atz_pitch(z, outputFrames, frame, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), results[j].zs_val);
                     //qDebug()<<"extractXZ_atz_pitch: z="<<z<<", results[j].zs_val="<<results[j].zs_val<<", line.height="<<line.height();
                 }
                 /*if (z0+line.height()-1>=results[j].height()) {
@@ -376,8 +423,8 @@ bool ProcessingTask::processStep()
                     }
                 }
                 if (stillSeparateFiles) {
-                    QFileInfo fi(filename);
-                    QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%3_still%2.png").arg(fi.baseName()).arg(z+1, 3, 10,QChar('0')).arg(j+1, 3, 10,QChar('0')));
+                    const QFileInfo fi(filename);
+                    const QString fn=fi.absoluteDir().absoluteFilePath(QString("%1_stack%3_still%2.png").arg(outputBasename).arg(z+1, 3, 10,QChar('0')).arg(j+1, 3, 10,QChar('0')));
                     if (m_writer) m_writer->saveImage(fn.toStdString(), ImageWriter::StillImage, frame_s);
                 }
                 if (stillStrip) {
@@ -457,9 +504,8 @@ bool ProcessingTask::processStep()
                     m_configio->close();
                 }
             }
-
-            QFileInfo fi(filename);
-            QString fns=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2_stillstrip.png").arg(fi.baseName()).arg(m_savingFrame+1, 3, 10,QChar('0')));
+            const QFileInfo fi(filename);
+            const QString fns=fi.absoluteDir().absoluteFilePath(QString("%1_stack%2_stillstrip.png").arg(outputBasename).arg(m_savingFrame+1, 3, 10,QChar('0')));
             if (m_writer) m_writer->saveImage(fns.toStdString(), ImageWriter::StillStrip, stillStripImg[m_savingFrame]);
 
         }

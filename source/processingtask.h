@@ -8,6 +8,7 @@
 #include "imagewriter.h"
 #include "configio.h"
 #include "processingtaskreporter.h"
+#include "cimg_tools.h"
 
 struct ProcessingTask
 {
@@ -22,6 +23,17 @@ struct ProcessingTask
             AngleRoll=1,
             AnglePitch=2,
         };
+
+        enum class InterpolationMethod {
+            NearestNeighbor=0,
+            Linear=1,
+            Cubic=2
+        };
+
+        static QString InterpolationMethod2String(InterpolationMethod m);
+        static InterpolationMethod String2InterpolationMethod(const QString& m);
+        interpolatingAtXYFunctor InterpolationMethod2XYFunctor(InterpolationMethod m);
+
 
         struct ProcessingItem {
         public:
@@ -57,8 +69,11 @@ struct ProcessingTask
         bool do_not_save_anyting;
 
         QString filename;
+        QString outputBasename;
         int outputFrames;
         QVector<ProcessingTask::ProcessingItem> pis;
+
+        InterpolationMethod interpolationMethod;
 
         int stillCnt;
         int stillDelta;

@@ -103,12 +103,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->spinWavelength, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->spinAngle, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->cmbAngle, SIGNAL(currentIndexChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->cmbInterpolation, SIGNAL(currentIndexChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->spinFilterDelta, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->chkWavelength, SIGNAL(toggled(bool)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->chkModifyWhitepoint, SIGNAL(toggled(bool)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->spinWhitepointR, SIGNAL(valueChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->spinWhitepointG, SIGNAL(valueChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
     connect(ui->spinWhitepointB, SIGNAL(valueChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->edtOutputBasename, SIGNAL(editingFinished()), this, SLOT(recalcAndRedisplaySamples()));
     setWidgetsEnabledForCurrentMode();
 
     ui->spinWavelength->setValue(m_settings.value("lastFilterWavelength", 5).toDouble());
@@ -120,8 +122,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->spinStillDelta->setValue(m_settings.value("lastStillDelta", 60).toInt());
     ui->spinAngle->setValue(m_settings.value("lastAngle", 0).toDouble());
     ui->cmbAngle->setCurrentIndex(m_settings.value("lastAngleMode", 0).toInt());
+    ui->cmbInterpolation->setCurrentIndex(m_settings.value("lastInterpolation", 2).toInt());
     ui->chkStillStrip->setChecked(m_settings.value("lastStillStrip", true).toBool());
     ui->chkStillDeparateFile->setChecked(m_settings.value("lastStillSeparateFiles", false).toBool());
+    ui->edtOutputBasename->setText("");
 #ifndef USE_FILTERING
     ui->chkWavelength->setChecked(false);
     ui->tabWidget->setTabEnabled(3, false);
@@ -146,6 +150,7 @@ MainWindow::~MainWindow()
     m_settings.setValue("lastStillLineWidth", ui->spinStillLineWidth->value());
     m_settings.setValue("lastAngle", ui->spinAngle->value());
     m_settings.setValue("lastAngleMode", ui->cmbAngle->currentIndex());
+    m_settings.setValue("lastInterpolation", ui->cmbInterpolation->currentIndex());
     delete ui;
 }
 
@@ -155,7 +160,7 @@ void MainWindow::saveINI()
     if (fn.size()>0) {
         ProcessingTask task(std::shared_ptr<VideoReader>(nullptr), std::shared_ptr<ImageWriter>(nullptr), std::make_shared<ConfigIO_INI>());
         saveToTask(task);
-        task.save(m_filename);
+        task.save(fn);
 
         m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
     }
@@ -190,6 +195,8 @@ void MainWindow::loadFromTask(const ProcessingTask &task)
     ui->spinWhitepointR->setValue(task.whitepointR);
     ui->spinWhitepointG->setValue(task.whitepointG);
     ui->spinWhitepointB->setValue(task.whitepointB);
+    ui->cmbInterpolation->setCurrentIndex(static_cast<int>(task.interpolationMethod));
+    ui->edtOutputBasename->setText(task.outputBasename);
     m_procModel->load(task);
 }
 
@@ -197,6 +204,7 @@ void MainWindow::saveToTask(ProcessingTask &task, double xyScaling, double tScal
 {
     task.filename=m_filename;
     task.outputFrames=m_video_xytscaled.depth()*video_everyNthFrame;
+    task.outputBasename=ui->edtOutputBasename->text();
     task.stillCnt=ui->spinStillCount->value();
     task.stillGap=ui->spinStillDelta->value();
     task.stillStrip=ui->chkStillStrip->isChecked();
@@ -214,6 +222,7 @@ void MainWindow::saveToTask(ProcessingTask &task, double xyScaling, double tScal
     task.whitepointR=ui->spinWhitepointR->value();
     task.whitepointG=ui->spinWhitepointG->value();
     task.whitepointB=ui->spinWhitepointB->value();
+    task.interpolationMethod=static_cast<ProcessingTask::InterpolationMethod>(ui->cmbInterpolation->currentIndex());
     m_procModel->save(task, xyScaling, tScaling);
 }
 
@@ -321,7 +330,7 @@ void MainWindow::changeEvent(QEvent* event)
 
 void MainWindow::loadINI()
 {
-    QString fn=QFileDialog::getOpenFileName(this, tr("Save Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
+    QString fn=QFileDialog::getOpenFileName(this, tr("Open Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
     if (fn.size()>0) {
         m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
         QString vfn;
@@ -379,7 +388,7 @@ void MainWindow::test()
     }
 }
 
-void MainWindow::openVideo(const QString& filename) {
+void MainWindow::openVideo(const QString& filename, const QString &ini_in) {
     auto finallySetWidgets=finally(std::bind([](MainWindow* t) {t->setWidgetsEnabledForCurrentMode();}, this));
     QString fn=filename;
     if (fn.size()<=0) {
@@ -396,7 +405,7 @@ void MainWindow::openVideo(const QString& filename) {
         QSharedPointer<ImportDialog> dlg(new ImportDialog(this, &m_settings));
         if (dlg->openVideo(fn, ini)) {
            m_procModel->clear();
-           if (QFile::exists(ini)) {
+           if (QFile::exists(ini) && (ini_in.isEmpty() || !QFile::exists(ini_in))) {
                loadINI(ini, NULL);
            }
            if (dlg->exec()==QDialog::Accepted) {
