@@ -90,6 +90,7 @@ set(HEADER_FILES
         configio.h
         configio_ini.h
         configio_dummy.h
+        slitscan_precomp.h
     )
 set(UI_FILES
         aboutbox.ui
@@ -130,13 +131,11 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     set(FFMPEG_PREFIX ${CMAKE_SOURCE_DIR}/3rdparty/ffmpeg/win32)
 endif()
 find_package(FFMPEG REQUIRED)
-include_directories(${FFMPEG_INCLUDE_DIRS})
 
 
 # Configure CImg
 set(CIMG_PREFIX ${CMAKE_SOURCE_DIR}/3rdparty/CImg)
 find_package(CIMG REQUIRED)
-include_directories(${CIMG_INCLUDE_DIR})
 
 
 
@@ -159,6 +158,10 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 add_dependencies(${CMAKE_PROJECT_NAME} SLITSCANGENERATOR_UPDATE_RANSLATIONS)
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${FFMPEG_INCLUDE_DIRS})
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CIMG_INCLUDE_DIR})
+target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/slitscan_precomp.h)
+
 
 
 
