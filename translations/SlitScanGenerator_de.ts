@@ -155,7 +155,7 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation>SlitScanGenerator</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="759"/>
+        <location filename="../source/mainwindow.ui" line="790"/>
         <source>PROCESSING ...</source>
         <translation>VERARBEITE ...</translation>
     </message>
@@ -348,7 +348,7 @@ Erzeugungs-Zeitstempel: %3</translation>
     </message>
     <message>
         <location filename="../source/mainwindow.ui" line="99"/>
-        <location filename="../source/mainwindow.ui" line="920"/>
+        <location filename="../source/mainwindow.ui" line="951"/>
         <source>Process &amp;All</source>
         <translation>&amp;Alle Verarbeiten</translation>
     </message>
@@ -358,47 +358,51 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation>Farbe</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="625"/>
+        <location filename="../source/mainwindow.ui" line="644"/>
         <source>modify white point:</source>
         <translation>Weißpunkt anpassen:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="641"/>
         <source>wite point (R|G|B):</source>
-        <translation>Weißpunkt (R|G|B):</translation>
+        <translation type="vanished">Weißpunkt (R|G|B):</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="686"/>
+        <location filename="../source/mainwindow.ui" line="634"/>
         <source>&lt;b&gt;Click on the preview image to select a location, where neutral white is shown.&lt;/b&gt;&lt;br/&gt;The whitepoint will be sampled from there.</source>
         <translation>&lt;b&gt;Klicken Sie in das Vorschaubild an eine Stelle, die neutrales Weiß zeigt.&lt;/b&gt;&lt;br/&gt;Der Weißpunkt wird von dort übernommen.</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="700"/>
+        <location filename="../source/mainwindow.ui" line="651"/>
+        <source>white point (R|G|B):</source>
+        <translation>Weißpunkt (R|G|B):</translation>
+    </message>
+    <message>
+        <location filename="../source/mainwindow.ui" line="731"/>
         <source>Output</source>
         <translation>Ausgabe</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="706"/>
+        <location filename="../source/mainwindow.ui" line="737"/>
         <source>output basename:</source>
         <translation>Ausgabe-Basisname:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="722"/>
+        <location filename="../source/mainwindow.ui" line="753"/>
         <source>empty = video filename</source>
         <translation>leer = Video-Dateiname</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="902"/>
+        <location filename="../source/mainwindow.ui" line="933"/>
         <source>Open &amp;INI-file</source>
         <translation>&amp;INI-Datei öffnen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="911"/>
+        <location filename="../source/mainwindow.ui" line="942"/>
         <source>Save INI-&amp;file</source>
         <translation>INI-Datei &amp;speichern</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="956"/>
+        <location filename="../source/mainwindow.ui" line="987"/>
         <source>Pr&amp;ocess INI-File</source>
         <translation>INI-Datei &amp;verarbeiten</translation>
     </message>
@@ -407,32 +411,32 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation type="vanished">Alle Verarbeiten</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="833"/>
+        <location filename="../source/mainwindow.ui" line="864"/>
         <source>&amp;File</source>
         <translation>&amp;Datei</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="850"/>
+        <location filename="../source/mainwindow.ui" line="881"/>
         <source>&amp;Help</source>
         <translation>&amp;Hilfe</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="857"/>
+        <location filename="../source/mainwindow.ui" line="888"/>
         <source>&amp;Language</source>
         <translation>&amp;Sprache (Language)</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="866"/>
+        <location filename="../source/mainwindow.ui" line="897"/>
         <source>toolBar</source>
         <translation>Toolbar</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="881"/>
+        <location filename="../source/mainwindow.ui" line="912"/>
         <source>&amp;Open Video</source>
         <translation>Video Ö&amp;ffnen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="890"/>
+        <location filename="../source/mainwindow.ui" line="921"/>
         <source>&amp;Quit</source>
         <translation>&amp;Beenden</translation>
     </message>
@@ -449,27 +453,27 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation type="vanished">Alle Verarbeiten</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="929"/>
+        <location filename="../source/mainwindow.ui" line="960"/>
         <source>&amp;About</source>
         <translation>&amp;Über</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="934"/>
+        <location filename="../source/mainwindow.ui" line="965"/>
         <source>Test</source>
         <translation>&amp;Test</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="939"/>
+        <location filename="../source/mainwindow.ui" line="970"/>
         <source>Open &amp;Example Video</source>
         <translation>&amp;Beispielvideo öffnen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="944"/>
+        <location filename="../source/mainwindow.ui" line="975"/>
         <source>&amp;Settings ...</source>
         <translation>&amp;Einstellungen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="947"/>
+        <location filename="../source/mainwindow.ui" line="978"/>
         <source>Open Settings Dialog</source>
         <translation>Einstellungs-Dialog öffnen</translation>
     </message>
@@ -591,7 +595,7 @@ frame size: %2x%3
     </message>
     <message>
         <location filename="../source/optionsdialog.ui" line="26"/>
-        <source>Stylesheet</source>
+        <source>Stylesheet:</source>
         <translation></translation>
     </message>
     <message>
@@ -610,12 +614,32 @@ frame size: %2x%3
         <translation>max. Anzahl an parallelen Verarbeitungs-Tasks:</translation>
     </message>
     <message>
-        <location filename="../source/optionsdialog.cpp" line="13"/>
+        <location filename="../source/optionsdialog.ui" line="72"/>
+        <source>FFMPEG Options</source>
+        <translation>FFMPEG Optionen</translation>
+    </message>
+    <message>
+        <location filename="../source/optionsdialog.ui" line="78"/>
+        <source>max. threads:</source>
+        <translation>max. Anzahl Threads:</translation>
+    </message>
+    <message>
+        <location filename="../source/optionsdialog.ui" line="85"/>
+        <source>auto</source>
+        <translation>Auto</translation>
+    </message>
+    <message>
+        <location filename="../source/optionsdialog.ui" line="92"/>
+        <source>hardware acceleration:</source>
+        <translation>Hardware-Beschleunigung:</translation>
+    </message>
+    <message>
+        <location filename="../source/optionsdialog.cpp" line="15"/>
         <source>Default</source>
         <translation>Standard</translation>
     </message>
     <message>
-        <location filename="../source/optionsdialog.cpp" line="14"/>
+        <location filename="../source/optionsdialog.cpp" line="16"/>
         <source>Dark Orange</source>
         <translation>Dunkelorange</translation>
     </message>
@@ -746,12 +770,12 @@ frame size: %2x%3
         <translation type="vanished">Speichere Ergebnis %2: &apos;%1&apos; ...</translation>
     </message>
     <message>
-        <location filename="../source/videopreviewreaderthread.cpp" line="40"/>
+        <location filename="../source/videopreviewreaderthread.cpp" line="42"/>
         <source>Reading frame %1/%2...</source>
         <translation>Lese Bild %1/%2...</translation>
     </message>
     <message>
-        <location filename="../source/videopreviewreaderthread.cpp" line="44"/>
+        <location filename="../source/videopreviewreaderthread.cpp" line="46"/>
         <source>Reading frame %1...</source>
         <translation>Lese Bild %1...</translation>
     </message>

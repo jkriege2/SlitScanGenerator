@@ -40,7 +40,7 @@ message(STATUS "    install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 project(SlitScanGenerator)
 set(PROJECT_LONGNAME "SlitScanGenerator")
-set(PROJECT_VERSION "2022.11.22")
+set(PROJECT_VERSION "2025.01.31")
 string(TIMESTAMP PROJECT_BUILDYEAR "%Y")
 string(TIMESTAMP PROJECT_BUILDDATETIME "%Y-%m-%d")
 set(PROJECT_COPYRIGHT "Copyright (c) 2016-${PROJECT_BUILDYEAR} Jan Krieger jan@jkrieger.de")
@@ -50,7 +50,7 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(PROJECT_BITNESS "64")
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     # 32 bits
-    set(PROJECT_BITNESS "32")
+    error("32-bit builds are not supported")
 endif()
 
 
@@ -63,8 +63,19 @@ option(ANALYZE_TIMING "if activate, additional code is compiled in, which output
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Set high optimization flags for different compilers
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR
+    CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
+    CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/O2 /Zi /DNDEBUG")
+endif()
 
 # Configure Qt
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)

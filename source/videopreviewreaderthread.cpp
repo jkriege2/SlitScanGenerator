@@ -1,4 +1,5 @@
 #include "videopreviewreaderthread.h"
+#include "slitscangeneratorsettings.h"
 #include <QApplication>
 
 VideoPreviewReaderThread::VideoPreviewReaderThread(cimg_library::CImg<uint8_t> &video, const std::string &filename, int everyNthFrame, double xyscale, std::string *error, int maxFrame, QProgressDialog *progress, QObject *parent):
@@ -22,8 +23,9 @@ bool VideoPreviewReaderThread::exec()
 
 void VideoPreviewReaderThread::run()
 {
+    SlitScanGeneratorSettings settings;
     auto progCB=std::bind(std::mem_fn(&VideoPreviewReaderThread::updateProgress), this, std::placeholders::_1, std::placeholders::_2);
-    m_result=readFFMPEGAsImageStack(m_video, m_filename, m_everyNthFrame, m_xyscale, m_error, progCB, m_maxFrame);
+    m_result=readFFMPEGAsImageStack(m_video, m_filename, m_everyNthFrame, m_xyscale, m_error, progCB, m_maxFrame, settings.value("ffmpeg_accel", "auto").toString(), settings.value("ffmpeg_threads", QThread::idealThreadCount()/2).toInt());
 }
 
 void VideoPreviewReaderThread::setCanceled()

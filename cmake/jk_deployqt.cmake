@@ -27,7 +27,7 @@ function(jk_deployqt TARGET_NAME)
 
         get_filename_component(CMAKE_CXX_COMPILER_BINPATH ${CMAKE_CXX_COMPILER} DIRECTORY )
         add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-            COMMAND "${WINDEPLOYQT_ENV_SETUP}" && "${WINDEPLOYQT_EXECUTABLE}" \"$<TARGET_FILE:${TARGET_NAME}>\"
+            COMMAND "${WINDEPLOYQT_ENV_SETUP}" && "${WINDEPLOYQT_EXECUTABLE}" --dir "${CMAKE_INSTALL_PREFIX}" \"$<TARGET_FILE:${TARGET_NAME}>\"
             COMMENT "Running windeployqt ... "
         )
     endif(WIN32)

@@ -84,14 +84,20 @@ Section Install
   File "${DIST_DIR}\*.dll"
 
   # Qt Plugins
+  SetOutPath "$INSTDIR\generic"
+  File "${DIST_DIR}\generic\*.*"
   SetOutPath "$INSTDIR\iconengines"
   File "${DIST_DIR}\iconengines\*.*"
   SetOutPath "$INSTDIR\imageformats"
   File "${DIST_DIR}\imageformats\*.*"
+  SetOutPath "$INSTDIR\networkinformation"
+  File "${DIST_DIR}\networkinformation\*.*"
   SetOutPath "$INSTDIR\platforms"
   File "${DIST_DIR}\platforms\*.*"
   SetOutPath "$INSTDIR\styles"
   File "${DIST_DIR}\styles\*.*"
+  SetOutPath "$INSTDIR\tls"
+  File "${DIST_DIR}\tls\*.*"
   SetOutPath "$INSTDIR\translations"
   File "${DIST_DIR}\translations\*.*"
 

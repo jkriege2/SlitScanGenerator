@@ -23,6 +23,7 @@ configure_file(installer.cmake.nsi ${CMAKE_BINARY_DIR}/installer.nsi @ONLY)
 # FFMPEG
 file(GLOB FFMPEG_ZIPS
     ${CMAKE_SOURCE_DIR}/3rdparty/ffmpeg/*.zip
+    ${CMAKE_SOURCE_DIR}/3rdparty/ffmpeg/*.7z
 )
 install(FILES ${FFMPEG_ZIPS}
   DESTINATION 3rdparty/ffmpeg

@@ -6,10 +6,12 @@ extern "C" {
     #include <libswscale/swscale.h>
     #include <libavutil/mem.h>
     #include <libavutil/imgutils.h>
+    #include <libavutil/hwcontext.h>
 }
 
 #include <QObject>
 #include <memory>
+
 
 // Custom deleter for AVFrame
 struct AVFrameDeleter {
@@ -20,7 +22,7 @@ struct AVFrameDeleter {
     }
 };
 
-// Custom deleter for AVFrame
+// Custom deleter for a frame
 struct AVFreeDeleter {
     void operator()(void* frame) const {
         if (frame) {
@@ -29,24 +31,81 @@ struct AVFreeDeleter {
     }
 };
 
-bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::string& filename, int everyNthFrame, double xyscale, std::string* error, std::function<bool(int, int)> frameCallback, int maxFrame)
+// Custom deleter for AVCodecContext
+struct AVCodecContextDeleter {
+    void operator()(AVCodecContext* frame) const {
+        if (frame) {
+            avcodec_free_context(&frame);
+        }
+    }
+};
+
+// Custom deleter for AVCodecContext
+struct AVFormatContextDeleter {
+    void operator()(AVFormatContext* frame) const {
+        if (frame) {
+            avformat_close_input(&frame);
+        }
+    }
+};
+
+// Custom deleter for AVPacket
+struct AVPacketDeleter {
+    void operator()(AVPacket* frame) const {
+        if (frame) {
+            av_packet_free(&frame);
+        }
+    }
+};
+
+// Custom deleter for AVPacket
+struct AVCodecParameterDeleter {
+    void operator()(AVCodecParameters* frame) const {
+        if (frame) {
+            avcodec_parameters_free(&frame);
+        }
+    }
+};
+QStringList listFFMPEGHWAccelOptions() {
+    QStringList res;
+    res<<"auto";
+    AVHWDeviceType type=AV_HWDEVICE_TYPE_NONE;
+    for (;;) {
+        res << av_hwdevice_get_type_name(type);
+        type = av_hwdevice_iterate_types(type);
+        if (type == AV_HWDEVICE_TYPE_NONE) {
+            break;
+        }
+    }
+    return res;
+}
+
+void printFFMPEGDictionary(AVDictionary* dict) {
+    AVDictionaryEntry *entry = nullptr;
+    while ((entry = av_dict_get(dict, "", entry, AV_DICT_IGNORE_SUFFIX))) {
+        qDebug() << "FFMPEG option: "<<entry->key << "= '" << entry->value<<"'";
+    }
+}
+
+bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::string& filename, int everyNthFrame, double xyscale, std::string* error, std::function<bool(int, int)> frameCallback, int maxFrame, QString hw_accel_opt, int numFFMPEGThreads)
 {
-    AVFormatContext *pFormatCtx = NULL;
+    AVFormatContext* pFormatCtx = nullptr;
     int i;
-    AVCodecContext *pCodecContext = NULL;
-    AVCodecParameters *pCodecParameters = NULL;
+    std::unique_ptr<AVCodecContext, AVCodecContextDeleter> pCodecContext = nullptr;
+    AVCodecParameters *pCodecParameters = nullptr;
     const AVCodec *pCodec = NULL;
     std::unique_ptr<AVFrame, AVFrameDeleter> pFrame = nullptr;
     std::unique_ptr<AVFrame, AVFrameDeleter> pFrameRGB = nullptr;
     std::unique_ptr<uint8_t, AVFreeDeleter> buffer = nullptr;
     int numBytes;
     struct SwsContext *sws_ctx = NULL;
-    int frameFinished;
-    AVPacket *pPacket;
+
+    std::unique_ptr<AVPacket, AVPacketDeleter> pPacket=nullptr;
     int videoStream;
     AVDictionary *optionsDict = NULL;
 
     video.clear();
+
     if (error) error->clear();
 
     pFormatCtx = avformat_alloc_context();
@@ -85,19 +144,39 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
     }
 
     // Get a pointer to the codec context for the video stream
-    pCodecContext = avcodec_alloc_context3(pCodec);
+    pCodecContext.reset(avcodec_alloc_context3(pCodec));
 
     // Fill the codec context based on the values from the supplied codec parameters
-    if (avcodec_parameters_to_context(pCodecContext, pCodecParameters) < 0) {
+    if (avcodec_parameters_to_context(pCodecContext.get(), pCodecParameters) < 0) {
         if (error) *error = "Failed to copy codec params to codec context";
         return false;
     }
 
     // Get number of frames
-    int nb_frames = pFormatCtx->streams[videoStream]->nb_frames;
+    const int nb_frames = pFormatCtx->streams[videoStream]->nb_frames;
+    const int finalFrameCnt=(maxFrame>0)?maxFrame:(nb_frames/everyNthFrame);
+
+    // set options
+    if (numFFMPEGThreads<=0) {
+        if (av_dict_set(&optionsDict, "threads", "auto", 0)<0) {
+            qDebug()<<"error setting option 'threads=auto'";
+        }
+    } else {
+        if (av_dict_set(&optionsDict, "threads", std::to_string(numFFMPEGThreads).c_str(), 0)<0) {
+            qDebug()<<"error setting option 'threads="<<numFFMPEGThreads<<"'";
+        }
+    }
+    if (av_dict_set(&optionsDict, "hwaccel", hw_accel_opt.toLatin1().data(), 0)<0) {
+        qDebug()<<"error setting option 'hwaccel="<<hw_accel_opt<<"'";
+    }
+    if (av_dict_set(&optionsDict, "hwaccel_output_format", hw_accel_opt.toLatin1().data(), 0)<0) {
+        qDebug()<<"error setting option 'hwaccel_output_format="<<hw_accel_opt<<"'";
+    }
+
+    printFFMPEGDictionary(optionsDict);
 
     // Open codec
-    if (avcodec_open2(pCodecContext, pCodec, &optionsDict) < 0) {
+    if (avcodec_open2(pCodecContext.get(), pCodec, &optionsDict) < 0) {
         if (error) *error = "Couldn't open codec";
         return false; // Could not open codec
     }
@@ -112,7 +191,7 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
         return false; // Could not open codec
     }
 
-    pPacket = av_packet_alloc();
+    pPacket.reset(av_packet_alloc());
     if (!pPacket) {
         if (error) *error = "Failed to allocate memory for AVPacket";
         return false; // Could not open codec
@@ -134,59 +213,99 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
         canceled = frameCallback(0, nb_frames);
     }
     int ifc = 0;
-
-    while (!canceled && av_read_frame(pFormatCtx, pPacket) >= 0) {
+    int decoded=0;
+    int disposable=0;
+    int keyFrames=0;
+    int discardFrames=0;
+    int corruptFrames=0;
+    cimg_library::CImg<uint8_t> frame, frameResized;
+    while (!canceled && av_read_frame(pFormatCtx, pPacket.get()) >= 0) {
         // Is this a packet from the video stream?
-        if (i % everyNthFrame == 0) {
-            if (pPacket->stream_index == videoStream) {
+        if (pPacket->stream_index == videoStream) {
+            // check whether we have to actually decode this frame, weither because it is an everyNthFrame
+            // and we want to process it, or it is an I-frame (i.e. not disposable), so subsequent frames may deüend on this frame
+            const bool frameToRead=i % everyNthFrame == 0;
+            const bool isDisposablePacket=((pPacket->flags & AV_PKT_FLAG_DISPOSABLE) == AV_PKT_FLAG_DISPOSABLE);
+            const bool isKeyPacket=((pPacket->flags & AV_PKT_FLAG_KEY) == AV_PKT_FLAG_KEY);
+            const bool isDiscardPacket=((pPacket->flags & AV_PKT_FLAG_DISCARD) == AV_PKT_FLAG_DISCARD);
+            const bool isCorruptPacket=((pPacket->flags & AV_PKT_FLAG_CORRUPT) == AV_PKT_FLAG_CORRUPT);
+            if (isDisposablePacket) disposable++;
+            if (isKeyPacket) keyFrames++;
+            if (isDiscardPacket) discardFrames++;
+            if (isCorruptPacket) corruptFrames++;
+            if (frameToRead || (!isDisposablePacket)) {
                 // Decode video frame
-                avcodec_send_packet(pCodecContext, pPacket);
-                frameFinished = avcodec_receive_frame(pCodecContext, pFrame.get()) == 0 ? TRUE : FALSE;
+                if (avcodec_send_packet(pCodecContext.get(), pPacket.get())==0) {
+                    const bool frameFinished = (avcodec_receive_frame(pCodecContext.get(), pFrame.get()) == 0);
+                    decoded++;
+                    // Did we get a video frame?
+                    if (frameFinished && frameToRead) {
+                        // Add frame to CImg
+                        // Convert the image from its native format to RGB
+                        sws_scale(sws_ctx, (uint8_t const *const *)pFrame->data, pFrame->linesize, 0, pCodecContext->height, pFrameRGB->data, pFrameRGB->linesize);
 
-                // Did we get a video frame?
-                if (frameFinished) {
-                    ifc++;
-                    // Add frame to CImg
-                    // Convert the image from its native format to RGB
-                    sws_scale(sws_ctx, (uint8_t const *const *)pFrame->data, pFrame->linesize, 0, pCodecContext->height, pFrameRGB->data, pFrameRGB->linesize);
+                        frame.resize(pCodecContext->width, pCodecContext->height, 1, 3);
+                        for (int y = 0; y < pCodecContext->height; y++) {
+                            const uint8_t *l = pFrameRGB->data[0] + y * pFrameRGB->linesize[0];
+                            for (int x = 0; x < pCodecContext->width * 3; x += 3) {
+                                frame(x / 3, y, 0, 0) = l[x + 0];
+                                frame(x / 3, y, 0, 1) = l[x + 1];
+                                frame(x / 3, y, 0, 2) = l[x + 2];
+                            }
+                        }
+                        if (video.is_empty()) {
+                            video.resize(pCodecContext->width / xyscale, pCodecContext->height / xyscale, finalFrameCnt, 3);
+                            qDebug()<<"allocated " << (double(video.size())/1024.0/1024.0)<<"MBytes memory for video "<<int(pCodecContext->width / xyscale)<<"x"<< int(pCodecContext->height / xyscale)<<"x"<< finalFrameCnt<<"x"<< 3;
+                        }
+                        frameResized=frame.get_resize(pCodecContext->width / xyscale, pCodecContext->height / xyscale, 1, 3);
 
-                    cimg_library::CImg<uint8_t> frame(pCodecContext->width, pCodecContext->height, 1, 3);
-                    for (int y = 0; y < pCodecContext->height; y++) {
-                        const uint8_t *l = pFrameRGB->data[0] + y * pFrameRGB->linesize[0];
-                        for (int x = 0; x < pCodecContext->width * 3; x += 3) {
-                            frame(x / 3, y, 0, 0) = l[x + 0];
-                            frame(x / 3, y, 0, 1) = l[x + 1];
-                            frame(x / 3, y, 0, 2) = l[x + 2];
+                        if (ifc<finalFrameCnt) {
+                            auto s0=video.get_shared_slice(ifc,0);
+                            s0.assign(frameResized.get_shared_channel(0));
+                            auto s1=video.get_shared_slice(ifc,1);
+                            s1.assign(frameResized.get_shared_channel(1));
+                            auto s2=video.get_shared_slice(ifc,2);
+                            s2.assign(frameResized.get_shared_channel(2));
                         }
-                    }
-                    frame.resize(pCodecContext->width / xyscale, pCodecContext->height / xyscale, 1, 3);
-                    video.append(frame, 'z');
-                    if (frameCallback) {
-                        if (frameCallback((nb_frames > 0) ? ifc : video.depth(), nb_frames)) {
-                            canceled = true;
+
+                        //video.append(frame.get_resize(pCodecContext->width / xyscale, pCodecContext->height / xyscale, 1, 3), 'z');
+                        if (frameCallback) {
+                            if (frameCallback((nb_frames > 0) ? i : video.depth(), nb_frames)) {
+                                canceled = true;
+                            }
                         }
+                        ifc++;
                     }
                 }
             }
+            i++;
         }
 
-        i++;
+        av_packet_unref(pPacket.get());
+
         if (maxFrame > 0 && ifc >= maxFrame) {
             break;
         }
     }
 
+    if (ifc<video.depth()) {
+        video.crop(0,0,0,0,video.width()-1,video.height()-1,ifc-1,video.spectrum()-1);
+    }
+
+    qDebug()<<"i="<<i<<", decoded="<<decoded<<", ifc="<<ifc<<", nb_frames="<<nb_frames<<", disposable="<<disposable<<", keyFrames="<<keyFrames<<", discardFrames="<<discardFrames<<", corruptFrames="<<corruptFrames;
+
     // Free the packet that was allocated by av_read_frame
-    av_packet_free(&pPacket);
+    pPacket.reset();
 	// Free the RGB image
     buffer.reset();
+
     pFrameRGB.reset();
 
     // Free the YUV frame
     pFrame.reset();
 
     // Close the codecs
-    avcodec_close(pCodecContext);
+    pCodecContext.reset();
 
     // Close the video file
     avformat_close_input(&pFormatCtx);
@@ -354,6 +473,7 @@ bool readFFMPEGFrame(cimg_library::CImg<uint8_t>& frame, FFMPEGVideo *video)
                 }
             }
         }
+        av_packet_unref(video->pPacket);
         if (done) break;
     }
 
@@ -376,7 +496,7 @@ void closeFFMPEGVideo(FFMPEGVideo *video)
         av_frame_free(&(video->pFrame));
 
         // Close the codecs
-        avcodec_close(video->pCodecCtx);
+        avcodec_free_context(&(video->pCodecCtx));
 
         // Close the video file
         avformat_close_input(&(video->pFormatCtx));

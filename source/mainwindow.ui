@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1054</width>
-    <height>725</height>
+    <width>1180</width>
+    <height>751</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,7 +21,7 @@
        <bool>true</bool>
       </property>
       <property name="alignment">
-       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
       </property>
      </widget>
     </item>
@@ -103,7 +103,7 @@
           <normaloff>:/icons/wizard2.png</normaloff>:/icons/wizard2.png</iconset>
         </property>
         <property name="toolButtonStyle">
-         <enum>Qt::ToolButtonTextUnderIcon</enum>
+         <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
         </property>
        </widget>
       </item>
@@ -112,7 +112,7 @@
     <item row="5" column="1">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>5</number>
       </property>
       <widget class="QWidget" name="tabCuts">
        <attribute name="title">
@@ -213,7 +213,7 @@
            <item row="0" column="0" rowspan="5">
             <widget class="QTableView" name="table">
              <property name="selectionBehavior">
-              <enum>QAbstractItemView::SelectRows</enum>
+              <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
              </property>
              <attribute name="horizontalHeaderDefaultSectionSize">
               <number>75</number>
@@ -233,7 +233,7 @@
            <item row="1" column="1" rowspan="3">
             <spacer name="verticalSpacer">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -249,7 +249,7 @@
         <item row="0" column="3">
          <spacer name="horizontalSpacer">
           <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+           <enum>Qt::Orientation::Horizontal</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -276,7 +276,7 @@
         <item row="0" column="1">
          <spacer name="horizontalSpacer_3">
           <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+           <enum>Qt::Orientation::Horizontal</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -619,13 +619,6 @@
         <string>Color</string>
        </attribute>
        <layout class="QFormLayout" name="formLayout_5">
-        <item row="0" column="0">
-         <widget class="QCheckBox" name="chkModifyWhitepoint">
-          <property name="text">
-           <string>modify white point:</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="1">
          <widget class="QWidget" name="widWhitepoint" native="true">
           <property name="enabled">
@@ -635,17 +628,40 @@
            <property name="topMargin">
             <number>0</number>
            </property>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_16">
+           <item row="3" column="1">
+            <widget class="QLabel" name="label_15">
              <property name="text">
-              <string>wite point (R|G|B):</string>
+              <string>&lt;b&gt;Click on the preview image to select a location, where neutral white is shown.&lt;/b&gt;&lt;br/&gt;The whitepoint will be sampled from there.</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QCheckBox" name="chkModifyWhitepoint">
+             <property name="text">
+              <string>modify white point:</string>
              </property>
             </widget>
            </item>
            <item row="0" column="1">
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string>white point (R|G|B):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
             <layout class="QHBoxLayout" name="horizontalLayout_3">
              <item>
               <widget class="QSpinBox" name="spinWhitepointR">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="maximum">
                 <number>255</number>
                </property>
@@ -653,6 +669,12 @@
              </item>
              <item>
               <widget class="QSpinBox" name="spinWhitepointG">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="maximum">
                 <number>255</number>
                </property>
@@ -660,6 +682,12 @@
              </item>
              <item>
               <widget class="QSpinBox" name="spinWhitepointB">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="maximum">
                 <number>255</number>
                </property>
@@ -668,7 +696,7 @@
              <item>
               <spacer name="horizontalSpacer_2">
                <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+                <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -680,15 +708,18 @@
              </item>
             </layout>
            </item>
-           <item row="1" column="1">
-            <widget class="QLabel" name="label_15">
-             <property name="text">
-              <string>&lt;b&gt;Click on the preview image to select a location, where neutral white is shown.&lt;/b&gt;&lt;br/&gt;The whitepoint will be sampled from there.</string>
+           <item row="2" column="1">
+            <spacer name="verticalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
-             <property name="wordWrap">
-              <bool>true</bool>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
              </property>
-            </widget>
+            </spacer>
            </item>
           </layout>
          </widget>
@@ -726,7 +757,7 @@
         <item row="2" column="1">
          <spacer name="verticalSpacer_2">
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Orientation::Vertical</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -777,7 +808,7 @@
        <item row="0" column="0">
         <widget class="QScrollArea" name="scrollArea">
          <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+          <enum>QFrame::Shape::StyledPanel</enum>
          </property>
          <property name="widgetResizable">
           <bool>true</bool>
@@ -787,8 +818,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>1034</width>
-            <height>52</height>
+            <width>1158</width>
+            <height>55</height>
            </rect>
           </property>
          </widget>
@@ -803,7 +834,7 @@
        <bool>true</bool>
       </property>
       <property name="alignment">
-       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
       </property>
      </widget>
     </item>
@@ -813,7 +844,7 @@
        <bool>true</bool>
       </property>
       <property name="alignment">
-       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+       <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
       </property>
      </widget>
     </item>
@@ -824,8 +855,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1054</width>
-     <height>17</height>
+     <width>1180</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_Datei">
