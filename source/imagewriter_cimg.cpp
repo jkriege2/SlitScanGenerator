@@ -12,7 +12,7 @@ ImageWriter_CImg::ImageWriter_CImg(cimg_library::CImg<uint8_t> &outframe, ImageT
 
 }
 
-std::string ImageWriter_CImg::saveImage(const std::string &filename, ImageType type, const cimg_library::CImg<uint8_t> &frame) const
+std::string ImageWriter_CImg::saveImage(const std::string &filename, ImageType type, const cimg_library::CImg<uint8_t> &frame, int /*quality*/) const
 {
     bool doCopy=false;
     if (!m_do_filter) {
@@ -24,4 +24,9 @@ std::string ImageWriter_CImg::saveImage(const std::string &filename, ImageType t
         m_outframe=frame;
     }
     return filename;
+}
+
+bool ImageWriter_CImg::writesToDisk() const
+{
+    return false;
 }

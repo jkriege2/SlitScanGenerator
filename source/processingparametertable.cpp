@@ -28,6 +28,7 @@ void ProcessingParameterTable::save(ProcessingTask& task, double xyScaling, doub
     for (auto& p: task.pis) {
         p.location_x=p.location_x*xyScaling;
         p.location_y=p.location_y*xyScaling;
+        p.set_z_step(p.get_z_step()*tScaling);
         switch (p.angleMode) {
         case ProcessingTask::AngleMode::AnglePitch:
             // pitch angle is corrected, so the (in x/y and t differently reduced) preview-dataset yields the same results as when processing the full dataset.
@@ -47,11 +48,12 @@ QVariant ProcessingParameterTable::headerData(int section, Qt::Orientation orien
 {
     if (orientation==Qt::Horizontal) {
         if (role==Qt::DisplayRole) {
-            if (section==0) return tr("Mode");
-            if (section==1) return tr("X");
-            if (section==2) return tr("Y");
-            if (section==3) return tr("Angle Mode");
-            if (section==4) return tr("Angle");
+            if (section==colMode) return tr("Mode");
+            if (section==colPos) return tr("Pos.");
+            if (section==colAngleMode) return tr("Angle Mode");
+            if (section==colSlitWidth) return tr("Slit Width");
+            if (section==colComposition) return tr("Composition");
+            if (section==colZStep) return tr("Z-Step");
         }
     } else {
         return section+1;
@@ -72,7 +74,7 @@ int ProcessingParameterTable::rowCount(const QModelIndex &/*parent*/) const
 
 int ProcessingParameterTable::columnCount(const QModelIndex &/*parent*/) const
 {
-    return 5;
+    return 8;
 }
 
 QVariant ProcessingParameterTable::data(const QModelIndex &index, int role) const
@@ -80,37 +82,37 @@ QVariant ProcessingParameterTable::data(const QModelIndex &index, int role) cons
     if (!index.isValid())
         return QVariant();
 
-    auto mode=m_data.value(index.row(), ProcessingTask::ProcessingItem()).mode;
-    auto angle=m_data.value(index.row(), ProcessingTask::ProcessingItem()).angle;
-    auto angleMode=m_data.value(index.row(), ProcessingTask::ProcessingItem()).filteredAngleMode();
-    int x=m_data.value(index.row(), ProcessingTask::ProcessingItem()).location_x;
-    int y=m_data.value(index.row(), ProcessingTask::ProcessingItem()).location_y;
+    const auto mode=m_data.value(index.row(), ProcessingTask::ProcessingItem()).mode;
+    const auto addBefore=m_data.value(index.row(), ProcessingTask::ProcessingItem()).addBefore;
+    const auto addAfter=m_data.value(index.row(), ProcessingTask::ProcessingItem()).addAfter;
+    const auto angle=m_data.value(index.row(), ProcessingTask::ProcessingItem()).angle;
+    const auto angleMode=m_data.value(index.row(), ProcessingTask::ProcessingItem()).filteredAngleMode();
+    const int x=m_data.value(index.row(), ProcessingTask::ProcessingItem()).location_x;
+    const int y=m_data.value(index.row(), ProcessingTask::ProcessingItem()).location_y;
+    const int slit_width=m_data.value(index.row(), ProcessingTask::ProcessingItem()).get_slit_width();
+    const int z_step=m_data.value(index.row(), ProcessingTask::ProcessingItem()).get_z_step();
     if (role==Qt::DisplayRole || role==Qt::EditRole) {
-        if (index.column()==0) {
+        if (index.column()==colMode) {
             if (mode==ProcessingTask::Mode::XZ) return tr("XZ");
             if (mode==ProcessingTask::Mode::ZY) return tr("ZY");
-        } else if (index.column()==1) {
-            return x;
-        } else if (index.column()==2) {
-            return y;
-        } else if (index.column()==3) {
-            if (role==Qt::EditRole) {
-                if (angleMode==ProcessingTask::AngleMode::AngleNone) return 0;
-                else if (angleMode==ProcessingTask::AngleMode::AngleRoll) return 0;
-                else if (angleMode==ProcessingTask::AngleMode::AnglePitch) return 1;
-            } else {
-                if (angleMode==ProcessingTask::AngleMode::AngleNone) return "---";
-                else if (angleMode==ProcessingTask::AngleMode::AngleRoll) return tr("roll");
-                else if (angleMode==ProcessingTask::AngleMode::AnglePitch) return tr("pitch");
-            }
-        } else if (index.column()==4) {
-            if (role==Qt::EditRole) {
-                if (angleMode==ProcessingTask::AngleMode::AngleNone) return 0.0;
-                else return angle;
-            } else {
-                if (angleMode==ProcessingTask::AngleMode::AngleNone) return "---";
-                else return QString::number(angle, 'f', 1)+QLatin1Char('\xB0');
-            }
+        } else if (index.column()==colPos) {
+            if (mode==ProcessingTask::Mode::XZ) return y;
+            if (mode==ProcessingTask::Mode::ZY) return x;
+        } else if (index.column()==colAngleMode) {
+            if (angleMode==ProcessingTask::AngleMode::AngleNone) return "---";
+            else if (angleMode==ProcessingTask::AngleMode::AngleRoll) return tr("roll")+" ("+QString::number(angle, 'f', 1)+QLatin1Char('\xB0')+")";
+            else if (angleMode==ProcessingTask::AngleMode::AnglePitch) return tr("pitch")+" ("+QString::number(angle, 'f', 1)+QLatin1Char('\xB0')+")";
+        } else if (index.column()==colSlitWidth) {
+            return slit_width;
+        } else if (index.column()==colZStep) {
+            return z_step;
+        } else if (index.column()==colComposition) {
+            QString comp=QString::fromUtf8("\u2592\u2592\u2592");
+            if (addBefore==ProcessingTask::AddBeforeAfterMode::ToLower) comp=QString::fromUtf8("\u25B2")+comp;
+            else if (addBefore==ProcessingTask::AddBeforeAfterMode::ToHigher) comp=QString::fromUtf8("\u25BC")+comp;
+            if (addAfter==ProcessingTask::AddBeforeAfterMode::ToLower) comp=comp+QString::fromUtf8("\u25B2");
+            else if (addAfter==ProcessingTask::AddBeforeAfterMode::ToHigher) comp=comp+QString::fromUtf8("\u25BC");
+            return comp;
         }
     }
     return QVariant();

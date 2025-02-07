@@ -1,10 +1,10 @@
-#ifndef IMAGEWRITER_PNG_H
-#define IMAGEWRITER_PNG_H
+#ifndef IMAGEWRITER_JPEG_H
+#define IMAGEWRITER_JPEG_H
 
 #include "imagewriter.h"
 
-/** \brief this concrete implementation of ImageWriter saves frames to a PNG file, using Qt */
-class ImageWriter_PNG: public ImageWriter
+/** \brief this concrete implementation of ImageWriter saves frames to a JPEG file, using Qt */
+class ImageWriter_JPEG: public ImageWriter
 {
 public:
     /** \copydoc ImageWriter::saveImage() */
@@ -12,4 +12,4 @@ public:
     virtual bool writesToDisk() const override { return true; };
 };
 
-#endif // IMAGEWRITER_PNG_H
+#endif // IMAGEWRITER_JPEG_H

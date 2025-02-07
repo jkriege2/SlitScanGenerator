@@ -49,4 +49,6 @@ CMakeLists.txt.user
 /*.exe
 /3rdparty/ffmpeg/win32
 /3rdparty/ffmpeg/win64
-/3rdparty - Kopie/
+/build/
+*.bak
+Sicherungskopie_*.*

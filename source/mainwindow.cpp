@@ -11,7 +11,6 @@
 #include <QProgressDialog>
 #include <QFileInfo>
 #include <QSettings>
-#include <vector>
 #include "importdialog.h"
 #include "processingthread.h"
 #include "optionsdialog.h"
@@ -22,7 +21,7 @@
 #include "cpp_tools.h"
 #include "qt_tools.h"
 #include "imagewriter_cimg.h"
-#include "imagewriter_png.h"
+#include "imagewriterfactory.h"
 #include "configio_dummy.h"
 #include "configio_ini.h"
 
@@ -72,6 +71,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->toolBar->addAction(ui->actProcessAll);
     ui->btnProcessAll->setDefaultAction(ui->actProcessAll);
     ui->tabWidget->setCurrentIndex(0);
+    ui->cmbFileFormat->setCurrentIndex(0);
 
 #ifdef DEBUG_FLAG
     ui->actTest->setVisible(true);
@@ -95,22 +95,31 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->scrollYZ->verticalScrollBar(), SIGNAL(sliderMoved(int)), ui->scrollXY->verticalScrollBar(), SLOT(setValue(int)));
     connect(ui->table, SIGNAL(clicked(QModelIndex)), this, SLOT(tableRowClicked(QModelIndex)));
     connect(labXY, SIGNAL(mouseClicked(int,int)), this, SLOT(ImageClicked(int,int)));
+    connect(labXY, SIGNAL(mouseDraggedDXDY(int,int,int,int,Qt::MouseButton,Qt::KeyboardModifiers)), this, SLOT(imageDraggedDXDY(int,int,int,int,Qt::MouseButton,Qt::KeyboardModifiers)));
     connect(m_procModel, SIGNAL(rowsInserted(QModelIndex,int,int)), this, SLOT(setWidgetsEnabledForCurrentMode()));
     connect(m_procModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), this, SLOT(setWidgetsEnabledForCurrentMode()));
     connect(m_procModel, SIGNAL(modelReset()), this, SLOT(setWidgetsEnabledForCurrentMode()));
-    connect(ui->chkNormalize, SIGNAL(toggled(bool)),this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->spinWavelength, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->spinAngle, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->cmbAngle, SIGNAL(currentIndexChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->cmbInterpolation, SIGNAL(currentIndexChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->spinFilterDelta, SIGNAL(valueChanged(double)), this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->chkWavelength, SIGNAL(toggled(bool)), this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->chkModifyWhitepoint, SIGNAL(toggled(bool)), this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->spinWhitepointR, SIGNAL(valueChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->spinWhitepointG, SIGNAL(valueChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->spinWhitepointB, SIGNAL(valueChanged(int)), this, SLOT(recalcAndRedisplaySamples()));
-    connect(ui->edtOutputBasename, SIGNAL(editingFinished()), this, SLOT(recalcAndRedisplaySamples()));
+    connect(ui->chkNormalize, SIGNAL(toggled(bool)),this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinWavelength, SIGNAL(valueChanged(double)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinAngle, SIGNAL(valueChanged(double)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinSlitWidth, SIGNAL(valueChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinZStep, SIGNAL(valueChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->cmbAngle, SIGNAL(currentIndexChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->cmbAddAfter, SIGNAL(currentIndexChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->cmbAddBefore, SIGNAL(currentIndexChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->cmbInterpolation, SIGNAL(currentIndexChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinFilterDelta, SIGNAL(valueChanged(double)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->chkWavelength, SIGNAL(toggled(bool)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->chkModifyWhitepoint, SIGNAL(toggled(bool)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinWhitepointR, SIGNAL(valueChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinWhitepointG, SIGNAL(valueChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinWhitepointB, SIGNAL(valueChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->edtOutputBasename, SIGNAL(editingFinished()), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinFirstFrame, SIGNAL(valueChanged(int)), this, SLOT(firstFrameChanged(int)));
+    connect(ui->spinLastFrame, SIGNAL(valueChanged(int)), this, SLOT(flastFrameChanged(int)));
+    connect(ui->spinFirstFrame, SIGNAL(valueChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinLastFrame, SIGNAL(valueChanged(int)), this, SLOT(updateGUIAndRedisplay()));
     setWidgetsEnabledForCurrentMode();
 
     ui->spinWavelength->setValue(m_settings.value("lastFilterWavelength", 5).toDouble());
@@ -121,11 +130,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->spinStillCount->setValue(m_settings.value("lastStillCount", 5).toInt());
     ui->spinStillDelta->setValue(m_settings.value("lastStillDelta", 60).toInt());
     ui->spinAngle->setValue(m_settings.value("lastAngle", 0).toDouble());
+    ui->spinSlitWidth->setValue(m_settings.value("lastSlitWidth", 1).toDouble());
+    ui->spinZStep->setValue(m_settings.value("lastZStep", 1).toDouble());
     ui->cmbAngle->setCurrentIndex(m_settings.value("lastAngleMode", 0).toInt());
     ui->cmbInterpolation->setCurrentIndex(m_settings.value("lastInterpolation", 2).toInt());
+    ui->cmbFileFormat->setCurrentIndex(m_settings.value("lastFileFormat", 0).toInt());
+    ui->cmbOutputTargetOptions->setCurrentIndex(m_settings.value("lastOutputTarget", 1).toInt());
     ui->chkStillStrip->setChecked(m_settings.value("lastStillStrip", true).toBool());
     ui->chkStillDeparateFile->setChecked(m_settings.value("lastStillSeparateFiles", false).toBool());
     ui->edtOutputBasename->setText("");
+    ui->spinOutputQuality->setValue(m_settings.value("lastOutputQuality", -1).toInt());
 #ifndef USE_FILTERING
     ui->chkWavelength->setChecked(false);
     ui->tabWidget->setTabEnabled(3, false);
@@ -135,6 +149,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     loadLanguages();
     loadLanguage(m_settings.value("lastLanguage", "en").toString());
+    setWidgetsEnabledForCurrentMode();
 }
 
 MainWindow::~MainWindow()
@@ -149,8 +164,13 @@ MainWindow::~MainWindow()
     m_settings.setValue("lastStillBorder", ui->spinStillBorder->value());
     m_settings.setValue("lastStillLineWidth", ui->spinStillLineWidth->value());
     m_settings.setValue("lastAngle", ui->spinAngle->value());
+    m_settings.setValue("lastSlitWidth", ui->spinSlitWidth->value());
+    m_settings.setValue("lastZStep", ui->spinZStep->value());
     m_settings.setValue("lastAngleMode", ui->cmbAngle->currentIndex());
     m_settings.setValue("lastInterpolation", ui->cmbInterpolation->currentIndex());
+    m_settings.setValue("lastOutputQuality", ui->spinOutputQuality->value());
+    m_settings.setValue("lastFileFormat", ui->cmbFileFormat->currentIndex());
+    m_settings.setValue("lastOutputTarget", ui->cmbOutputTargetOptions->currentIndex());
     delete ui;
 }
 
@@ -195,8 +215,13 @@ void MainWindow::loadFromTask(const ProcessingTask &task)
     ui->spinWhitepointR->setValue(task.whitepointR);
     ui->spinWhitepointG->setValue(task.whitepointG);
     ui->spinWhitepointB->setValue(task.whitepointB);
-    ui->cmbInterpolation->setCurrentIndex(static_cast<int>(task.interpolationMethod));
+    ui->spinOutputQuality->setValue(task.outputFileQuality);
+    ui->cmbInterpolation->setCurrentInterpolationMode(task.interpolationMethod);
+    ui->cmbFileFormat->setCurrentFileFormat(task.outputFileFormat);
+    ui->cmbOutputTargetOptions->setCurrentOutputTarget(task.outputTarget);
     ui->edtOutputBasename->setText(task.outputBasename);
+    ui->spinFirstFrame->setValue(task.firstFrame);
+    ui->spinLastFrame->setValue(task.lastFrame);
     m_procModel->load(task);
 }
 
@@ -205,6 +230,9 @@ void MainWindow::saveToTask(ProcessingTask &task, double xyScaling, double tScal
     task.filename=m_filename;
     task.outputFrames=m_video_xytscaled.depth()*video_everyNthFrame;
     task.outputBasename=ui->edtOutputBasename->text();
+    task.outputFileFormat=ui->cmbFileFormat->currentFileFormat();
+    task.outputTarget=ui->cmbOutputTargetOptions->currentOutputTarget();
+    task.outputFileQuality=ui->spinOutputQuality->value();
     task.stillCnt=ui->spinStillCount->value();
     task.stillGap=ui->spinStillDelta->value();
     task.stillStrip=ui->chkStillStrip->isChecked();
@@ -222,7 +250,9 @@ void MainWindow::saveToTask(ProcessingTask &task, double xyScaling, double tScal
     task.whitepointR=ui->spinWhitepointR->value();
     task.whitepointG=ui->spinWhitepointG->value();
     task.whitepointB=ui->spinWhitepointB->value();
-    task.interpolationMethod=static_cast<ProcessingTask::InterpolationMethod>(ui->cmbInterpolation->currentIndex());
+    task.interpolationMethod=ui->cmbInterpolation->getCurrentInterpolationMode();
+    task.firstFrame=ui->spinFirstFrame->value()*tScaling;
+    task.lastFrame=ui->spinLastFrame->value()*tScaling;
     m_procModel->save(task, xyScaling, tScaling);
 }
 
@@ -336,11 +366,25 @@ void MainWindow::loadINI()
         QString vfn;
         loadINI(fn, &vfn);
         if (vfn!=m_filename && vfn.size()>0 && QFile::exists(vfn)) {
-            if (QMessageBox::question(this, tr("Load Video File?"), tr("The INI-file you loaded mentioned a video. Should this video be loaded?"), QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)==QMessageBox::Yes) {
+            if (QMessageBox::question(this, tr("Load Video File?"), tr("The INI-file you loaded mentioned a video. Should this video be loaded?"), QMessageBox::StandardButtons(QMessageBox::Yes | QMessageBox::No), QMessageBox::Yes)==QMessageBox::Yes) {
                 openVideo(vfn);
             }
         }
     }
+}
+
+void MainWindow::firstFrameChanged(int value)
+{
+    /*ui->spinLastFrame->setMinimum(qMax(value+1, 1));
+    ui->slideLastFrame->setMinimum(ui->spinLastFrame->minimum());*/
+    ui->spinLastFrame->setValue(qMax(ui->spinLastFrame->value(), value+1));
+}
+
+void MainWindow::lastFrameChanged(int value)
+{
+    /*ui->spinFirstFrame->setMaximum(value-1);
+    ui->slideFirstFrame->setMaximum(ui->spinFirstFrame->maximum());*/
+    ui->spinFirstFrame->setValue(qMin(ui->spinFirstFrame->value(), value-1));
 }
 
 
@@ -352,7 +396,10 @@ void MainWindow::setWidgetsEnabledForCurrentMode() {
     ui->scrollXY->setEnabled(isloaded);
     ui->scrollYZ->setEnabled(isloaded);
     ui->scrollXZ->setEnabled(isloaded);
-    ui->widAngle->setEnabled(isloaded);
+    ui->widCurrentScanProps->setEnabled(isloaded);
+    ui->spinFirstFrame->setEnabled(isloaded);
+    ui->spinFirstFrame->setEnabled(isloaded);
+
 
     ui->btnDelete->setEnabled(m_procModel->rowCount()>0);
     ui->btnDeleteAll->setEnabled(m_procModel->rowCount()>0);
@@ -363,16 +410,16 @@ void MainWindow::setWidgetsEnabledForCurrentMode() {
 
 void MainWindow::showAbout()
 {
-  AboutBox* dlg=new AboutBox(this);
-  dlg->exec();
-  delete dlg;
+    AboutBox* dlg=new AboutBox(this);
+    dlg->exec();
+    delete dlg;
 }
 
 void MainWindow::showSettings()
 {
-  OptionsDialog* dlg=new OptionsDialog(this);
-  dlg->exec();
-  delete dlg;
+    OptionsDialog* dlg=new OptionsDialog(this);
+    dlg->exec();
+    delete dlg;
 }
 
 void MainWindow::test()
@@ -404,48 +451,55 @@ void MainWindow::openVideo(const QString& filename, const QString &ini_in) {
 
         QSharedPointer<ImportDialog> dlg(new ImportDialog(this, &m_settings));
         if (dlg->openVideo(fn, ini)) {
-           m_procModel->clear();
-           if (QFile::exists(ini) && (ini_in.isEmpty() || !QFile::exists(ini_in))) {
-               loadINI(ini, NULL);
-           }
-           if (dlg->exec()==QDialog::Accepted) {
-               ui->labFilename->setText(fn);
-               ui->labProps->setText(tr("%1 frames, %2x%3 Pixels^2").arg(dlg->getFrames()).arg(dlg->getWidth()).arg(dlg->getHeight()));
-               ui->labPreviewSettings->setText(tr("every %1-th frame, 1/%2x-scaling").arg(dlg->getEveryNthFrame()).arg(dlg->getXYScaleFactor()));
-               QOverrideCursorGuard cursorGuard(Qt::WaitCursor);
-               QProgressDialog progress(tr("Opening Video"), tr("Cancel"), 0, 2, this);
-               progress.setLabelText(tr("opening file '%1'...").arg(fn));
-               progress.setMinimumDuration(0);
-               progress.setWindowModality(Qt::WindowModal);
-               progress.show();
-               QApplication::processEvents();
-               VideoPreviewReaderThread frameReader(m_video_xytscaled, fn.toStdString(), video_everyNthFrame=dlg->getEveryNthFrame(), video_xyFactor=dlg->getXYScaleFactor(), &error, -1, &progress, nullptr);
+            m_procModel->clear();
+            if (QFile::exists(ini) && (ini_in.isEmpty() || !QFile::exists(ini_in))) {
+                loadINI(ini, NULL);
+            }
+            if (dlg->exec()==QDialog::Accepted) {
+                ui->labFilename->setText(fn);
+                ui->labProps->setText(tr("%1 frames, %2x%3 Pixels^2").arg(dlg->getFrames()).arg(dlg->getWidth()).arg(dlg->getHeight()));
+                ui->labPreviewSettings->setText(tr("every %1-th frame, 1/%2x-scaling").arg(dlg->getEveryNthFrame()).arg(dlg->getXYScaleFactor()));
+                QOverrideCursorGuard cursorGuard(Qt::WaitCursor);
+                QProgressDialog progress(tr("Opening Video"), tr("Cancel"), 0, 2, this);
+                progress.setLabelText(tr("opening file '%1'...").arg(fn));
+                progress.setMinimumDuration(0);
+                progress.setWindowModality(Qt::WindowModal);
+                progress.show();
+                QApplication::processEvents();
+                VideoPreviewReaderThread frameReader(m_video_xytscaled, fn.toStdString(), video_everyNthFrame=dlg->getEveryNthFrame(), video_xyFactor=dlg->getXYScaleFactor(), &error, -1, &progress, nullptr);
 
 
-               if (!frameReader.exec()) {
+                if (!frameReader.exec()) {
 
-                   progress.close();
-                   QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
-                   m_filename="";
-                   m_mode=DisplayModes::unloaded;
-               } else {
-                   VideoPreviewReaderThread frameReaderDetail(m_video_some_frames, fn.toStdString(), 1, 1, &error, dlg->getFramesHR(), &progress, nullptr);
-                   if (dlg->getFramesHR()<=0 || frameReaderDetail.exec()) {
-                       progress.close();
-                       recalcAndRedisplaySamples(m_video_xytscaled.width()/2, m_video_xytscaled.height()/2, 0, 0);
-                       cursorGuard.resetCursor();
-                       QMessageBox::information(this, tr("Video opened"), tr("Video: %1\nframe size: %2x%3\n frames: %4\n color channels: %5").arg(fn).arg(m_video_xytscaled.width()).arg(m_video_xytscaled.height()).arg(m_video_xytscaled.depth()).arg(m_video_xytscaled.spectrum()));
-                       m_filename=fn;
-                       m_mode=DisplayModes::loaded;
-                   } else {
-                       progress.close();
-                       cursorGuard.resetCursor();
-                       QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
-                       m_filename="";
-                       m_mode=DisplayModes::unloaded;
-                   }
-               }
-           }
+                    progress.close();
+                    QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
+                    m_filename="";
+                    m_mode=DisplayModes::unloaded;
+                } else {
+                    VideoPreviewReaderThread frameReaderDetail(m_video_some_frames, fn.toStdString(), 1, 1, &error, dlg->getFramesHR(), &progress, nullptr);
+                    if (dlg->getFramesHR()<=0 || frameReaderDetail.exec()) {
+                        progress.close();
+                        ui->spinFirstFrame->setRange(1,dlg->getFrames());
+                        ui->spinLastFrame->setRange(2,dlg->getFrames());
+                        ui->slideFirstFrame->setRange(1,dlg->getFrames());
+                        ui->slideLastFrame->setRange(2,dlg->getFrames());
+                        ui->spinFirstFrame->setValue(1);
+                        ui->spinLastFrame->setValue(dlg->getFrames());
+                        setLastXY(m_video_xytscaled.width()/2, m_video_xytscaled.height()/2);
+                        storeProcessingItemToGUIWidgetsAndRedisplayScan(ProcessingTask::ProcessingItem(m_video_xytscaled.width()/2, m_video_xytscaled.height()/2));
+                        cursorGuard.resetCursor();
+                        QMessageBox::information(this, tr("Video opened"), tr("Video: %1\nframe size: %2x%3\n frames: %4\n color channels: %5").arg(fn).arg(m_video_xytscaled.width()).arg(m_video_xytscaled.height()).arg(m_video_xytscaled.depth()).arg(m_video_xytscaled.spectrum()));
+                        m_filename=fn;
+                        m_mode=DisplayModes::loaded;
+                    } else {
+                        progress.close();
+                        cursorGuard.resetCursor();
+                        QMessageBox::critical(this, tr("Error opening video"), QString(error.c_str()));
+                        m_filename="";
+                        m_mode=DisplayModes::unloaded;
+                    }
+                }
+            }
         }
 
     }
@@ -462,13 +516,38 @@ void MainWindow::openExampleVideo()
     }
 }
 
-void MainWindow::recalcAndRedisplaySamples(int x, int y, double angle, int angleMode)
-{
+
+ProcessingTask::ProcessingItem MainWindow::fillProcessingItem(ProcessingTask::Mode mode) const {
+    const auto item = fillProcessingItem(lastX_reducedCoords*video_xyFactor, lastY_reducedCoords*video_xyFactor, ui->spinZStep->value(), mode);
+    return item;
+}
+
+ProcessingTask::ProcessingItem MainWindow::fillProcessingItem(int locX, int locY, int zstep, ProcessingTask::Mode mode) const {
+    ProcessingTask::ProcessingItem item;
+    item.mode=mode;
+    item.location_x=locX;
+    item.location_y=locY;
+    item.angle=ui->spinAngle->value();
+    item.angleMode=ProcessingTask::AngleMode::AngleNone;
+    item.addBefore=ui->cmbAddBefore->currentMode();
+    item.addAfter=ui->cmbAddAfter->currentMode();
+    item.set_slit_width(ui->spinSlitWidth->value());
+    item.set_z_step(zstep);
+    if (fabs(item.angle)>0.0001) {
+        item.angleMode=ui->cmbAngle->currentMode();
+        item.addBefore=ProcessingTask::AddBeforeAfterMode::None;
+        item.addAfter=ProcessingTask::AddBeforeAfterMode::None;
+        item.set_slit_width(1);
+    }
+    return item;
+}
+
+void MainWindow::setLastXY(int x, int y) {
+
     cimg_library::CImg<uint8_t>* video_input=&m_video_xytscaled;
     if (ui->tabWidget->currentWidget()==ui->tabFiltering) {
         video_input=&m_video_some_frames;
     }
-    //qDebug()<<"recalcCuts("<<x<<", "<<y<<")  "<<m_video_scaled.width()<<","<<m_video_scaled.height();
     if (x>=0 && x<video_input->width() && y>=0 && y<video_input->height()) {
         if (ui->tabWidget->currentWidget()==ui->tabFiltering) {
             lastX_reducedCoords=x/video_xyFactor;
@@ -479,28 +558,64 @@ void MainWindow::recalcAndRedisplaySamples(int x, int y, double angle, int angle
         }
 
     }
-
-    if (ui->spinAngle->value()!=angle) ui->spinAngle->setValue(angle);
-    if (ui->cmbAngle->currentIndex()!=angleMode) ui->cmbAngle->setCurrentIndex(angleMode);
-    recalcAndRedisplaySamples();
+}
+void MainWindow::updateProcessingItemWidgetsEnabledStates()
+{
+    const QString ttDeactivatedDueToAngle=tr("This option is not supported (deactivated) when a roll/pitch angle is used!");
+    if (std::fabs(ui->spinAngle->value())>0.0001) {
+        ui->spinSlitWidth->setEnabled(false);
+        ui->labSlitWidth->setEnabled(false);
+        ui->labAddbeforeAfter->setEnabled(false);
+        ui->widAddbeforeAfter->setEnabled(false);
+        ui->labSlitWidth->setToolTip(ttDeactivatedDueToAngle);
+        ui->labAddbeforeAfter->setToolTip(ttDeactivatedDueToAngle);
+        ui->labAddBefore->setToolTip(ttDeactivatedDueToAngle);
+        ui->labAddAfter->setToolTip(ttDeactivatedDueToAngle);
+    } else {
+        ui->spinSlitWidth->setEnabled(true);
+        ui->labSlitWidth->setEnabled(true);
+        ui->labAddbeforeAfter->setEnabled(true);
+        ui->widAddbeforeAfter->setEnabled(true);
+        ui->labSlitWidth->setToolTip("");
+        ui->labAddbeforeAfter->setToolTip("");
+        ui->labAddBefore->setToolTip("");
+        ui->labAddAfter->setToolTip("");
+    }
 }
 
-void MainWindow::recalcAndRedisplaySamples()
+void MainWindow::storeProcessingItemToGUIWidgetsAndRedisplayScan(const ProcessingTask::ProcessingItem& pi)
+{
+    if (ui->spinAngle->value()!=pi.angle) ui->spinAngle->setValue(pi.angle);
+    if (ui->spinSlitWidth->value()!=pi.get_slit_width()) ui->spinSlitWidth->setValue(pi.get_slit_width());
+    if (ui->spinZStep->value()!=pi.get_z_step()) ui->spinZStep->setValue(pi.get_z_step());
+    if (ui->cmbAngle->currentMode()!=pi.angleMode) ui->cmbAngle->setCurrentMode(pi.angleMode);
+    if (ui->cmbAddBefore->currentMode()!=pi.addBefore) ui->cmbAddBefore->setCurrentMode(pi.addBefore);
+    if (ui->cmbAddAfter->currentMode()!=pi.addAfter) ui->cmbAddAfter->setCurrentMode(pi.addAfter);
+
+    updateProcessingItemWidgetsEnabledStates();
+
+    redisplayCurrentScan();
+}
+
+void MainWindow::updateGUIAndRedisplay()
+{
+    updateProcessingItemWidgetsEnabledStates();
+    redisplayCurrentScan();
+}
+
+
+void MainWindow::redisplayCurrentScan()
 {
     TIME_BLOCK_SW(timer,"recalcAndRedisplaySamples()");
     QOverrideCursorGuard cursorGuard(Qt::WaitCursor);
+
     cimg_library::CImg<uint8_t>* video_input=&m_video_xytscaled;
     const bool isFilteringPreview=ui->tabWidget->currentWidget()==ui->tabFiltering;
+    const int z_step=ui->spinZStep->value();
     const double angle=ui->spinAngle->value();
-    ProcessingTask::AngleMode angleMode=ProcessingTask::AngleMode::AngleNone;
-    if (angle!=0) {
-        if (ui->cmbAngle->currentIndex()==0) {
-            angleMode=ProcessingTask::AngleMode::AngleRoll;
-        } else if (ui->cmbAngle->currentIndex()==1) {
-            angleMode=ProcessingTask::AngleMode::AnglePitch;
-        }
-    }
-    double angleCorrected=angle;
+    const auto angleMode=ui->cmbAngle->currentMode();
+
+    double angleCorrected=ui->spinAngle->value();
 
     double xyFactor=1;
     double invxyFactor=video_xyFactor;
@@ -531,7 +646,7 @@ void MainWindow::recalcAndRedisplaySamples()
     if (lastX_reducedCoords*xyFactor>=0 && lastX_reducedCoords*xyFactor<video_input->width() && lastY_reducedCoords*xyFactor>=0 && lastY_reducedCoords*xyFactor<video_input->height()) {
         TIME_BLOCK_SW(timer, "recalcAndRedisplaySamples:doRecalc()");
 
-        QImage img=CImgToQImage(*video_input, video_input->depth()/2);
+        QImage img=CImgToQImage(*video_input, 0);//video_input->depth()/2);
         cimg_library::CImg<uint8_t> cxz;
         cimg_library::CImg<uint8_t> cyz;
 
@@ -539,12 +654,8 @@ void MainWindow::recalcAndRedisplaySamples()
         { // store current settings and modify the ProcessingItem to only cover the currently selected item
             saveToTask(taskXZ, 1.0/invxyFactor, 1.0/tFactor);
             taskXZ.pis.clear();
-            ProcessingTask::ProcessingItem pi;
-            pi.mode=ProcessingTask::Mode::XZ;
-            pi.location_x=lastX_reducedCoords*xyFactor;
-            pi.location_y=lastY_reducedCoords*xyFactor;
+            ProcessingTask::ProcessingItem pi=fillProcessingItem(lastX_reducedCoords*xyFactor, lastY_reducedCoords*xyFactor, ui->spinZStep->value()*tFactor, ProcessingTask::Mode::XZ);
             pi.angle=angleCorrected;
-            pi.angleMode=angleMode;
             taskXZ.pis.push_back(pi);
             if (!isFilteringPreview) taskXZ.filterNotch=false;
             if (isFilteringPreview) taskXZ.filterNotch=ui->chkWavelength->isChecked();
@@ -555,12 +666,8 @@ void MainWindow::recalcAndRedisplaySamples()
         { // store current settings and modify the ProcessingItem to only cover the currently selected item
             saveToTask(taskYZ, 1.0/invxyFactor, 1.0/tFactor);
             taskYZ.pis.clear();
-            ProcessingTask::ProcessingItem pi;
-            pi.mode=ProcessingTask::Mode::ZY;
-            pi.location_x=lastX_reducedCoords*xyFactor;
-            pi.location_y=lastY_reducedCoords*xyFactor;
+            ProcessingTask::ProcessingItem pi=fillProcessingItem(lastX_reducedCoords*xyFactor, lastY_reducedCoords*xyFactor, ui->spinZStep->value()*tFactor, ProcessingTask::Mode::ZY);
             pi.angle=angleCorrected;
-            pi.angleMode=angleMode;
             taskYZ.pis.push_back(pi);
             if (!isFilteringPreview) taskYZ.filterNotch=false;
             if (isFilteringPreview) taskXZ.filterNotch=ui->chkWavelength->isChecked();
@@ -640,7 +747,6 @@ void MainWindow::ImageClicked(int x, int y)
         if (ui->chkNormalize->isChecked()) {
             ui->spinNormalizeX->setValue(x*video_xyFactor);
             ui->spinNormalizeY->setValue(y*video_xyFactor);
-            recalcAndRedisplaySamples();
         }
     } else if (ui->tabWidget->currentWidget()==ui->tabColor) {
         if (ui->chkModifyWhitepoint->isChecked()) {
@@ -648,40 +754,56 @@ void MainWindow::ImageClicked(int x, int y)
             ui->spinWhitepointR->setValue(m_video_xytscaled.atXYZC(x,y,0,0,255));
             ui->spinWhitepointG->setValue(m_video_xytscaled.atXYZC(x,y,0,1,255));
             ui->spinWhitepointB->setValue(m_video_xytscaled.atXYZC(x,y,0,2,255));
-            recalcAndRedisplaySamples();
         }
     } else /*if (ui->tabWidget->currentWidget()==ui->tabCuts)*/ {
-        recalcAndRedisplaySamples(x,y,ui->spinAngle->value(), ui->cmbAngle->currentIndex());
+        setLastXY(x,y);
+    }
+    // it is not important which ProcessingTask::Mode  is selected here, as finally
+    // recalcAndRedisplaySamples() will recalculate for all possible modes to display both slit-scans!
+    updateGUIAndRedisplay();
+}
+
+void MainWindow::imageDraggedDXDY(int x, int y, int x2, int y2, Qt::MouseButton button, Qt::KeyboardModifiers modifiers)
+{
+    //qDebug()<<"imageDragged("<<x<<y<<x2<<y2<<button<<"): 0";
+    if (ui->tabWidget->currentWidget()==ui->tabCuts) {
+        if (button==Qt::RightButton) {
+            //qDebug()<<"imageDragged("<<x<<y<<x2<<y2<<button<<"): 1";
+            if (ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AnglePitch) {// pitch
+                const double dx=x2-lastX_reducedCoords;
+                const double dy=y2-lastY_reducedCoords;
+                const double angle=atan2(dy, dx)/M_PI*180.0;
+                ui->spinAngle->setValue(angle);
+                //qDebug()<<"imageDragged("<<x<<y<<x2<<y2<<button<<"): 2: angle="<<angle;
+            } else if (ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AngleRoll) {// roll
+                const double dx=x2-lastX_reducedCoords;
+                const double dy=y2-lastY_reducedCoords;
+                const double angle=(abs(x-x2)>abs(y-y2)) ?
+                                         (atan2((x2-x), m_video_xytscaled.depth())/M_PI*180.0) :
+                                         (atan2((y2-y), m_video_xytscaled.depth())/M_PI*180.0) ;
+                ui->spinAngle->setValue(angle);
+                //qDebug()<<"imageDragged("<<x<<y<<x2<<y2<<button<<"): 3: angle="<<angle;
+            }
+        } else if (button==Qt::LeftButton) {
+            ImageClicked(x2,y2);
+        }
     }
 }
 
 void MainWindow::on_btnAddXZ_clicked()
 {
     if (lastY_reducedCoords<0) return;
-    ProcessingTask::ProcessingItem item;
-    item.mode=ProcessingTask::Mode::XZ;
-    item.location_x=lastX_reducedCoords*video_xyFactor;
-    item.location_y=lastY_reducedCoords*video_xyFactor;
-    item.angle=ui->spinAngle->value();
-    item.angleMode=ProcessingTask::AngleMode::AngleNone;
-    if (ui->cmbAngle->currentIndex()==0) item.angleMode=ProcessingTask::AngleMode::AngleRoll;
-    if (ui->cmbAngle->currentIndex()==1) item.angleMode=ProcessingTask::AngleMode::AnglePitch;
+    ProcessingTask::ProcessingItem item=fillProcessingItem(ProcessingTask::Mode::XZ);
     m_procModel->addItem(item);
 }
 
 void MainWindow::on_btnAddZY_clicked()
 {
     if (lastX_reducedCoords<0) return;
-    ProcessingTask::ProcessingItem item;
-    item.mode=ProcessingTask::Mode::ZY;
-    item.location_x=lastX_reducedCoords*video_xyFactor;
-    item.location_y=lastY_reducedCoords*video_xyFactor;
-    item.angle=ui->spinAngle->value();
-    item.angleMode=ProcessingTask::AngleMode::AngleNone;
-    if (ui->cmbAngle->currentIndex()==0) item.angleMode=ProcessingTask::AngleMode::AngleRoll;
-    if (ui->cmbAngle->currentIndex()==1) item.angleMode=ProcessingTask::AngleMode::AnglePitch;
+    ProcessingTask::ProcessingItem item=fillProcessingItem(ProcessingTask::Mode::ZY);
     m_procModel->addItem(item);
 }
+
 
 void MainWindow::on_btnDelete_clicked()
 {
@@ -708,7 +830,7 @@ void MainWindow::processINIFile()
     QString fn=QFileDialog::getOpenFileName(this, tr("Save Configuration File ..."), m_settings.value("lastIniDir", "").toString(), tr("INI-File (*.ini)"));
     if (fn.size()>0) {
         m_settings.setValue("lastIniDir", QFileInfo(fn).absolutePath());
-        ProcessingTask* task=new ProcessingTask(std::make_shared<VideoReader_FFMPEG>(), std::make_shared<ImageWriter_PNG>(), std::make_shared<ConfigIO_INI>());
+        ProcessingTask* task=new ProcessingTask(std::make_shared<VideoReader_FFMPEG>(), std::shared_ptr<ImageWriter>(), std::make_shared<ConfigIO_INI>());
         task->load(fn);
 
         ProcessingThread* thr=new ProcessingThread(task, this);
@@ -721,7 +843,7 @@ void MainWindow::processAll()
     if (m_filename.size()<=0) return;
     if (m_procModel->rowCount()<=0) return;
 
-    ProcessingTask* task=new ProcessingTask(std::make_shared<VideoReader_FFMPEG>(), std::make_shared<ImageWriter_PNG>(), std::make_shared<ConfigIO_INI>());
+    ProcessingTask* task=new ProcessingTask(std::make_shared<VideoReader_FFMPEG>(), std::shared_ptr<ImageWriter>(), std::make_shared<ConfigIO_INI>());
     saveToTask(*task);
 
     ProcessingThread* thr=new ProcessingThread(task, this);
@@ -731,13 +853,6 @@ void MainWindow::processAll()
 
 void MainWindow::tableRowClicked(const QModelIndex &index)
 {
-    //qDebug()<<"clicked "<<index<<"  "<<m_procModel->getItem(index).location;
-    //if (index.isValid()) {
-        if (m_procModel->getItem(index).mode==ProcessingTask::Mode::ZY) {
-            recalcAndRedisplaySamples(m_procModel->getItem(index).location_x/video_xyFactor, m_procModel->getItem(index).location_y/video_xyFactor, m_procModel->getItem(index).angle, m_procModel->getItem(index).angleModeForCombo());
-        } else if (m_procModel->getItem(index).mode==ProcessingTask::Mode::XZ) {
-            recalcAndRedisplaySamples(m_procModel->getItem(index).location_x/video_xyFactor, m_procModel->getItem(index).location_y/video_xyFactor, m_procModel->getItem(index).angle, m_procModel->getItem(index).angleModeForCombo());
-        }
-    //}
+    storeProcessingItemToGUIWidgetsAndRedisplayScan(m_procModel->getItem(index));
 }
 

@@ -9,6 +9,7 @@ public:
     SlitScanGeneratorSettings();
 
     static void loadCurrentStylesheet();
+    static void loadCurrentStyle();
 };
 
 #endif // SLITSCANGENERATORSETTINGS_H

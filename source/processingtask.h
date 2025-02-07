@@ -3,6 +3,7 @@
 #include <QString>
 #include <memory>
 #include <vector>
+#include <QDir>
 #include <QSettings>
 #include "videoreader.h"
 #include "imagewriter.h"
@@ -18,10 +19,18 @@ struct ProcessingTask
             ZY
         };
 
+        enum class AddBeforeAfterMode {
+            None=0,
+            ToLower=1,
+            ToHigher=2,
+        };
         enum class AngleMode {
             AngleNone=0,
             AngleRoll=1,
             AnglePitch=2,
+
+
+            DefaultNotNothing=AngleRoll
         };
 
         enum class InterpolationMethod {
@@ -34,15 +43,57 @@ struct ProcessingTask
         static InterpolationMethod String2InterpolationMethod(const QString& m);
         interpolatingAtXYFunctor InterpolationMethod2XYFunctor(InterpolationMethod m);
 
+        enum class FileFormat {
+            PNG=0,
+            JPEG,
+            __COUNT
+        };
+
+        static QString FileFormat2String(FileFormat m);
+        static QString FileFormat2Extension(FileFormat m);
+        static FileFormat String2FileFormat(const QString& m);
+
+        enum class OutputTargetOptions {
+            SameDirectoryAsInput=0,
+            SubDirectoryPerInput
+        };
+
+        static QString OutputTargetOptions2String(OutputTargetOptions m);
+        static OutputTargetOptions String2OutputTargetOptions(const QString& m);
 
         struct ProcessingItem {
         public:
-            ProcessingItem();
+            ProcessingItem(int x=-1, int y=-1);
             Mode mode;
             int location_x;
             int location_y;
             double angle;
             AngleMode angleMode;
+            AddBeforeAfterMode addBefore;
+            AddBeforeAfterMode addAfter;
+
+            inline void set_slit_width(unsigned int width) {
+                slit_width=std::max<unsigned int>(1,width);
+            }
+            inline int get_slit_width() const {
+                if (std::fabs(angle)<0.0001) {
+                    return std::max<unsigned int>(1,slit_width);
+                } else {
+                    return 1;
+                }
+            }
+
+            inline int get_slit_offset() const {
+                return 0;
+            }
+
+
+            inline void set_z_step(unsigned int step) {
+                z_step=std::max<unsigned int>(1,step);
+            }
+            inline int get_z_step() const {
+                return std::max<unsigned int>(1,z_step);
+            }
 
             int angleModeForCombo() const;
 
@@ -50,6 +101,10 @@ struct ProcessingTask
 
             void save(std::shared_ptr<ConfigIO> ini, const std::string& basename) const;
             void load(std::shared_ptr<ConfigIO> ini, const std::string &basename) ;
+        private:
+            unsigned int slit_width;
+            unsigned int z_step;
+
         };
 
         ProcessingTask(std::shared_ptr<VideoReader> reader, std::shared_ptr<ImageWriter> writer, std::shared_ptr<ConfigIO> configio);
@@ -71,6 +126,10 @@ struct ProcessingTask
         QString filename;
         QString outputBasename;
         int outputFrames;
+
+        int outputFileQuality;
+        FileFormat outputFileFormat;
+        OutputTargetOptions outputTarget;
         QVector<ProcessingTask::ProcessingItem> pis;
 
         InterpolationMethod interpolationMethod;
@@ -82,6 +141,9 @@ struct ProcessingTask
         double stillGap;
         double stillBorder;
         double stillLineWidth;
+
+        int firstFrame;
+        int lastFrame;
 
         bool normalize;
         int normalizeX;
@@ -97,6 +159,8 @@ struct ProcessingTask
         uint8_t whitepointB;
 
         void save(const QString& inifilename) const;
+        // loads configruation from a given INI file.
+        // NOTE: If m_writer is sti8ll ==nullptr, this uses makeSharedImageWriter() to generate an image writer matching the setting in the INI-file!
         void load(const QString& inifilename);
 
         bool processInit();
@@ -114,12 +178,16 @@ struct ProcessingTask
             int maxX;
             int maxY;
             int zs_val;
+            int addAfterImageSTackPixels;
+            int output_zs;
+            int z;
             QString filename;
             QString filt_filename;
             QString inifilename;
         };
         QVector<ResultData > results;
         int z;
+        int z_all;
         cimg_library::CImg<uint8_t> frame;
         QVector<cimg_library::CImg<uint8_t> > stillStripImg;
         bool m_saving;
@@ -128,11 +196,14 @@ struct ProcessingTask
 
         void saveBase(std::shared_ptr<ConfigIO> ini) const;
 
+        QDir getOutputDir() const;
+
         std::shared_ptr<VideoReader> m_reader;
         std::shared_ptr<ImageWriter> m_writer;
         std::shared_ptr<ConfigIO> m_configio;
         ProcessingTaskReporter* m_reporter;
         int m_prog;
+        QDir m_outputDir;
 };
 
 #endif // PROCESSINGTASK_H

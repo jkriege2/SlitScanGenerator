@@ -18,7 +18,9 @@ public:
     ImageWriter_CImg(cimg_library::CImg<uint8_t>& outframe);
     ImageWriter_CImg(cimg_library::CImg<uint8_t>& outframe, ImageType type_match);
     /** \copydoc ImageWriter::saveImage() */
-    virtual std::string saveImage(const std::string& filename, ImageType type, const cimg_library::CImg<uint8_t>& frame) const override;
+    virtual std::string saveImage(const std::string& filename, ImageType type, const cimg_library::CImg<uint8_t>& frame, int quality=-1) const override;
+    virtual bool writesToDisk() const override;
+
 
 private:
     cimg_library::CImg<uint8_t>& m_outframe;

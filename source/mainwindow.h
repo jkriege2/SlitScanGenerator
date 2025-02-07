@@ -28,11 +28,15 @@ class MainWindow : public QMainWindow
     protected slots:
         void saveINI();
         void loadINI();
+        void firstFrameChanged(int value);
+        void lastFrameChanged(int value);
         void openVideo(const QString &filename=QString(), const QString& ini_in=QString());
         void openExampleVideo();
-        void recalcAndRedisplaySamples(int x, int y, double angle, int angleMode);
-        void recalcAndRedisplaySamples();
+        void storeProcessingItemToGUIWidgetsAndRedisplayScan(const ProcessingTask::ProcessingItem &pi);
+        void redisplayCurrentScan();
+        void updateGUIAndRedisplay();
         void ImageClicked(int x, int y);
+        void imageDraggedDXDY(int x, int y, int x2, int y2, Qt::MouseButton button, Qt::KeyboardModifiers modifiers);
 
         void on_btnAddXZ_clicked();
         void on_btnAddZY_clicked();
@@ -47,6 +51,7 @@ class MainWindow : public QMainWindow
         void test();
         /** \brief this slot is called by the language menu actions */
         void slotLanguageChanged(QAction *action);
+        void updateProcessingItemWidgetsEnabledStates();
     private:
         Ui::MainWindow *ui;
 
@@ -107,6 +112,9 @@ class MainWindow : public QMainWindow
         void saveToTask(ProcessingTask& task, double xyScaling=1.0, double tScaling=1.0) const;
         /** \brief this event is called, when a new translator is loaded or the system language is changed */
         void changeEvent(QEvent *event) override;
+        ProcessingTask::ProcessingItem fillProcessingItem(ProcessingTask::Mode mode) const;
+        ProcessingTask::ProcessingItem fillProcessingItem(int locX, int locY, int zstep, ProcessingTask::Mode mode) const;
+        void setLastXY(int x, int y);
     private:
         /** \brief creates the language menu dynamically from the translations-subdirectory */
         void loadLanguages() ;

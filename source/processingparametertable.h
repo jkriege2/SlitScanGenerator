@@ -37,6 +37,14 @@ class ProcessingParameterTable : public QAbstractTableModel {
         void load(const ProcessingTask &task);
     private:
         QVector<ProcessingTask::ProcessingItem> m_data;
+        enum Columns {
+            colMode=0,
+            colPos,
+            colAngleMode,
+            colSlitWidth,
+            colZStep,
+            colComposition
+        };
 };
 
 #endif // PROCESSINGPARAMETERTABLE_H

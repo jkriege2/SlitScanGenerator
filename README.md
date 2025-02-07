@@ -85,9 +85,9 @@ SlitScanGenerator processes videos (X-Y-T) in the following steps:
 
 
 
-### Cut Modes
+### SlitScan Modes
 
-SlitScanGenerator supports different cut modes. These are explained in the next sections. 
+SlitScanGenerator supports different slit-scan modes. These are explained in the next sections. 
 
 You can configure the parameters and which cuts to generate in the main window in the tab "XZ/YZ-Cuts" (at the bottom-right). There you can set the angle for roll/pith and the roll/pitch-mode itself. Also the tab shows a table with all the tabs already created for the current video (as a table). 
 
@@ -117,6 +117,24 @@ The output is a series of rotated horizontal/vertical lines from the video frame
 
 The output is a series of horizontal or vertical lines from the video frames. Other than in the simple case (above), the line is moved through the frame along the time/z-axis of the video.
 
+
+### SlitScan Composition
+
+![Still Images before/after slit-scan](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/doc/screenshots/stillimages_beforeafter.png)
+
+If you select to add a still image portion before and/or after the slit scan, you can generate images as above. Here SlitScanGenerator will add the left half image of the first frame until the scan-line to the output (yellow), then add the actual slit scan and finally from the last frame the half image from the scan-line to the left edge (yellow). You can also select the half image to the right-hand image edge (orange). And you can mix as you wish. Also note that you can limit the video range in order to select a proper first and last frame.
+
+![Still Images before/after slit-scan GUI](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/doc/screenshots/stillimages_beforeafter_gui.png)
+
+### Scan Step Width (Z-Step)
+
+By default SlitScanGenerator will take one image line from each frame in the video. You can also choose a higher z-step size, so some frames are skipped over. This shortens the scan e.g. if you acquired at very high framerates. Also this function is useful in conjunction with the slit width option.
+
+### Slit Width
+
+By default SlitScanGenerator takes a single image line from each frame. You have the option to broaden this "slit" and achieve an effect like this (also think about reducing the z-step to adjust the overall slit-scan image size):
+
+![Still Images before/after slit-scan](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/doc/screenshots/slit_width.png)
 
 
 

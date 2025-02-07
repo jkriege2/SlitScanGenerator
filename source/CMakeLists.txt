@@ -42,6 +42,7 @@ set(CODE_FILES
         optionsdialog.cpp
         processingparametertable.cpp
         processingtask.cpp
+        processingtasktoolwidgets.cpp
         processingthread.cpp
         processingwidget.cpp
         slitscangeneratorsettings.cpp
@@ -55,6 +56,8 @@ set(CODE_FILES
         imagewriter.cpp
         imagewriter_png.cpp
         imagewriter_cimg.cpp
+        imagewriter_jpeg.cpp
+        imagewriterfactory.cpp
         processingtaskreporter.cpp
         processingtaskreporter_dummy.cpp
         configio.cpp
@@ -73,6 +76,7 @@ set(HEADER_FILES
         optionsdialog.h
         processingparametertable.h
         processingtask.h
+        processingtasktoolwidgets.h
         processingthread.h
         processingwidget.h
         slitscangeneratorsettings.h
@@ -85,6 +89,8 @@ set(HEADER_FILES
         imagewriter.h
         imagewriter_png.h
         imagewriter_cimg.h
+        imagewriter_jpeg.h
+        imagewriterfactory.h
         processingtaskreporter.h
         processingtaskreporter_dummy.h
         configio.h

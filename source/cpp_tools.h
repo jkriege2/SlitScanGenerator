@@ -67,4 +67,14 @@ private:
 #define TIME_BLOCK_A_SW(objname)
 #endif
 
+template <class T>
+T qMinMin(T x,T y,T z) {
+    return qMin<T>(qMin<T>(x,y),z);
+}
+
+template <class T>
+T qMaxMax(T x,T y,T z) {
+    return qMax<T>(qMax<T>(x,y),z);
+}
+
 #endif // CPP_TOOLS_H
