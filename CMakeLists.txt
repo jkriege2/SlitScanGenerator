@@ -45,6 +45,17 @@ string(TIMESTAMP PROJECT_BUILDYEAR "%Y")
 string(TIMESTAMP PROJECT_BUILDDATETIME "%Y-%m-%d")
 set(PROJECT_COPYRIGHT "Copyright (c) 2016-${PROJECT_BUILDYEAR} Jan Krieger jan@jkrieger.de")
 
+include(FetchContent)
+FetchContent_Declare(cimg
+    GIT_REPOSITORY https://github.com/dtschump/CImg.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(cimg)
+
+add_library(cimg_headers INTERFACE)
+add_library(CImg::CImg ALIAS cimg_headers)
+target_include_directories(cimg_headers INTERFACE "${cimg_SOURCE_DIR}")
+
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     # 64 bits
     set(PROJECT_BITNESS "64")

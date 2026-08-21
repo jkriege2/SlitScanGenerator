@@ -138,34 +138,22 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 endif()
 find_package(FFMPEG REQUIRED)
 
-
-# Configure CImg
-set(CIMG_PREFIX ${CMAKE_SOURCE_DIR}/3rdparty/CImg)
-find_package(CIMG REQUIRED)
-
-
-
-
-
 # main executable
 add_executable(${CMAKE_PROJECT_NAME} WIN32
   ${UI_HEADERS}
   ${UI_FILES}
-  ${CODE_FILES}
-  ${HEADER_FILES}
-  ${QRC_FILES}
   ${RESOURCE_FILES}
   ${WINDOWS_RES_FILE}
 )
 target_link_libraries(${CMAKE_PROJECT_NAME}
   Qt${QT_VERSION_MAJOR}::Widgets
+  CImg::CImg
   ${FFMPEG_LIBRARIES}
 )
 add_dependencies(${CMAKE_PROJECT_NAME} SLITSCANGENERATOR_UPDATE_RANSLATIONS)
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${FFMPEG_INCLUDE_DIRS})
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CIMG_INCLUDE_DIR})
 target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/slitscan_precomp.h)
 
 
