@@ -27,6 +27,15 @@ cmake --build --preset vcpkg-mingw-release
 
 Use a Qt kit that matches the selected compiler. The presets use separate build directories and vcpkg triplets for MSVC and MinGW.
 
+To collect the optional processing timing output, configure with `ANALYZE_TIMING=ON` and rebuild:
+
+```powershell
+cmake --preset vcpkg-mingw -DANALYZE_TIMING=ON
+cmake --build --preset vcpkg-mingw-release
+```
+
+The timing output is written to the application's standard output. Run a representative video with the settings and filters you want to measure, and preserve the `STARTING`/`FINISHING` lines in the captured log.
+
 To build the NSIS installer after configuring, run the `package` target:
 
 ```powershell

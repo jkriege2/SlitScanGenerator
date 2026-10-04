@@ -4,8 +4,6 @@ extern "C" {
     #include <libavcodec/avcodec.h>
     #include <libavformat/avformat.h>
     #include <libswscale/swscale.h>
-    #include <libavutil/mem.h>
-    #include <libavutil/imgutils.h>
     #include <libavutil/hwcontext.h>
 }
 
@@ -18,15 +16,6 @@ struct AVFrameDeleter {
     void operator()(AVFrame* frame) const {
         if (frame) {
             av_frame_free(&frame);
-        }
-    }
-};
-
-// Custom deleter for a frame
-struct AVFreeDeleter {
-    void operator()(void* frame) const {
-        if (frame) {
-            av_free(frame);
         }
     }
 };
@@ -95,9 +84,6 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
     AVCodecParameters *pCodecParameters = nullptr;
     const AVCodec *pCodec = NULL;
     std::unique_ptr<AVFrame, AVFrameDeleter> pFrame = nullptr;
-    std::unique_ptr<AVFrame, AVFrameDeleter> pFrameRGB = nullptr;
-    std::unique_ptr<uint8_t, AVFreeDeleter> buffer = nullptr;
-    int numBytes;
     struct SwsContext *sws_ctx = NULL;
 
     std::unique_ptr<AVPacket, AVPacketDeleter> pPacket=nullptr;
@@ -184,9 +170,7 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
     // Allocate video frame
     pFrame.reset(av_frame_alloc());
 
-    // Allocate an AVFrame structure
-    pFrameRGB.reset(av_frame_alloc());
-    if (!pFrameRGB  || !pFrame) {
+    if (!pFrame) {
         if (error) *error = "Couldn't allocate frames";
         return false; // Could not open codec
     }
@@ -200,15 +184,7 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
     const int outputWidth = static_cast<int>(pCodecContext->width / xyscale);
     const int outputHeight = static_cast<int>(pCodecContext->height / xyscale);
 
-    // Determine required buffer size and allocate buffer
-    numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB24, outputWidth, outputHeight, 1);
-    buffer.reset((uint8_t *)av_malloc(numBytes * sizeof(uint8_t)));
-
-    // Assign appropriate parts of buffer to image planes in pFrameRGB
-    av_image_fill_arrays(pFrameRGB->data, pFrameRGB->linesize, buffer.get(), AV_PIX_FMT_RGB24, outputWidth, outputHeight, 1);
-
-    // Convert and scale directly to the preview dimensions.
-    sws_ctx = sws_getContext(pCodecContext->width, pCodecContext->height, pCodecContext->pix_fmt, outputWidth, outputHeight, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+    sws_ctx = sws_getContext(pCodecContext->width, pCodecContext->height, pCodecContext->pix_fmt, outputWidth, outputHeight, AV_PIX_FMT_GBRP, SWS_BILINEAR, NULL, NULL, NULL);
 
     i = 0;
     bool canceled = false;
@@ -238,23 +214,27 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
             if (isCorruptPacket) corruptFrames++;
             if (frameToRead || (!isDisposablePacket)) {
                 // Decode video frame
-                if (avcodec_send_packet(pCodecContext.get(), pPacket.get())==0) {
-                    const bool frameFinished = (avcodec_receive_frame(pCodecContext.get(), pFrame.get()) == 0);
-                    decoded++;
+                bool frameFinished=false;
+                {
+                    TIME_BLOCK_SW(timerDecodePacket, "ffmpeg.stack.decode_packet");
+                    if (avcodec_send_packet(pCodecContext.get(), pPacket.get())==0) {
+                        frameFinished=(avcodec_receive_frame(pCodecContext.get(), pFrame.get()) == 0);
+                        decoded++;
+                    }
+                }
                     // Did we get a video frame?
                     if (frameFinished && frameToRead) {
-                        // Add frame to CImg
-                        // Convert the image from its native format to RGB
-                        sws_scale(sws_ctx, (uint8_t const *const *)pFrame->data, pFrame->linesize, 0, pCodecContext->height, pFrameRGB->data, pFrameRGB->linesize);
-
                         frame.resize(outputWidth, outputHeight, 1, 3);
-                        for (int y = 0; y < outputHeight; y++) {
-                            const uint8_t *l = pFrameRGB->data[0] + y * pFrameRGB->linesize[0];
-                            for (int x = 0; x < outputWidth * 3; x += 3) {
-                                frame(x / 3, y, 0, 0) = l[x + 0];
-                                frame(x / 3, y, 0, 1) = l[x + 1];
-                                frame(x / 3, y, 0, 2) = l[x + 2];
-                            }
+                        uint8_t* dstData[4] = {
+                            frame.data(0, 0, 0, 1),
+                            frame.data(0, 0, 0, 2),
+                            frame.data(0, 0, 0, 0),
+                            nullptr
+                        };
+                        int dstLinesize[4] = {outputWidth, outputWidth, outputWidth, 0};
+                        {
+                            TIME_BLOCK_SW(timerScaleToCImg, "ffmpeg.stack.sws_to_cimg");
+                            sws_scale(sws_ctx, (uint8_t const *const *)pFrame->data, pFrame->linesize, 0, pCodecContext->height, dstData, dstLinesize);
                         }
                         if (video.is_empty()) {
                             video.resize(outputWidth, outputHeight, finalFrameCnt, 3);
@@ -277,7 +257,6 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
                         }
                         ifc++;
                     }
-                }
             }
             i++;
         }
@@ -297,10 +276,6 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
 
     // Free the packet that was allocated by av_read_frame
     pPacket.reset();
-	// Free the RGB image
-    buffer.reset();
-
-    pFrameRGB.reset();
 
     // Free the YUV frame
     pFrame.reset();
@@ -326,9 +301,6 @@ struct FFMPEGVideo {
     AVCodecParameters *pCodecParameters = NULL;
     const AVCodec *pCodec;
     AVFrame *pFrame;
-    AVFrame *pFrameRGB;
-    uint8_t *buffer;
-    int numBytes;
     struct SwsContext *sws_ctx;
     int nb_frames;
     int frameFinished;
@@ -347,9 +319,6 @@ FFMPEGVideo *openFFMPEGVideo(const std::string &filename, std::string *error)
     res->pCodecParameters = NULL;
     res->pCodec = NULL;
     res->pFrame = NULL;
-    res->pFrameRGB = NULL;
-    res->buffer = NULL;
-    res->numBytes = 0;
     res->sws_ctx = NULL;
     res->frameFinished = 0;
     res->pPacket = NULL;
@@ -414,9 +383,7 @@ FFMPEGVideo *openFFMPEGVideo(const std::string &filename, std::string *error)
     // Allocate video frame
     res->pFrame = av_frame_alloc();
 
-    // Allocate an AVFrame structure
-    res->pFrameRGB = av_frame_alloc();
-    if (res->pFrameRGB == NULL || res->pFrame == NULL) {
+    if (res->pFrame == NULL) {
         if (error) *error = "Couldn't allocate frames";
         free(res);
         return nullptr;
@@ -427,15 +394,7 @@ FFMPEGVideo *openFFMPEGVideo(const std::string &filename, std::string *error)
         if (error) *error = "Failed to allocate memory for AVPacket";
         return nullptr; // Could not open codec
     }
-    // Determine required buffer size and allocate buffer
-    res->numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB24, res->pCodecCtx->width, res->pCodecCtx->height, 1);
-    res->buffer = (uint8_t *)av_malloc(res->numBytes * sizeof(uint8_t));
-
-    // Assign appropriate parts of buffer to image planes in pFrameRGB
-    av_image_fill_arrays(res->pFrameRGB->data, res->pFrameRGB->linesize, res->buffer, AV_PIX_FMT_RGB24, res->pCodecCtx->width, res->pCodecCtx->height, 1);
-
-    // Initialize SWS context for software scaling
-    res->sws_ctx = sws_getContext(res->pCodecCtx->width, res->pCodecCtx->height, res->pCodecCtx->pix_fmt, res->pCodecCtx->width, res->pCodecCtx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+    res->sws_ctx = sws_getContext(res->pCodecCtx->width, res->pCodecCtx->height, res->pCodecCtx->pix_fmt, res->pCodecCtx->width, res->pCodecCtx->height, AV_PIX_FMT_GBRP, SWS_BILINEAR, NULL, NULL, NULL);
 
     res->i = 0;
 
@@ -452,24 +411,26 @@ bool readFFMPEGFrame(cimg_library::CImg<uint8_t>& frame, FFMPEGVideo *video)
         // Is this a packet from the video stream?
         if (video->pPacket->stream_index == video->videoStream) {
             // Decode video frame
-            avcodec_send_packet(video->pCodecCtx, video->pPacket);
-            video->frameFinished = avcodec_receive_frame(video->pCodecCtx, video->pFrame) == 0 ? TRUE : FALSE;
+            {
+                TIME_BLOCK_SW(timerDecodePacket, "ffmpeg.process.decode_packet");
+                avcodec_send_packet(video->pCodecCtx, video->pPacket);
+                video->frameFinished = avcodec_receive_frame(video->pCodecCtx, video->pFrame) == 0 ? TRUE : FALSE;
+            }
 
             // Did we get a video frame?
             if (video->frameFinished) {
                 done = (video->pCodecCtx->width * video->pCodecCtx->height) > 0;
-                // Add frame to CImg
-                // Convert the image from its native format to RGB
-                sws_scale(video->sws_ctx, (uint8_t const *const *)video->pFrame->data, video->pFrame->linesize, 0, video->pCodecCtx->height, video->pFrameRGB->data, video->pFrameRGB->linesize);
-
                 frame.assign(video->pCodecCtx->width, video->pCodecCtx->height, 1, 3);
-                for (int y = 0; y < video->pCodecCtx->height; y++) {
-                    const uint8_t *l = video->pFrameRGB->data[0] + y * video->pFrameRGB->linesize[0];
-                    for (int x = 0; x < video->pCodecCtx->width * 3; x += 3) {
-                        frame(x / 3, y, 0, 0) = l[x + 0];
-                        frame(x / 3, y, 0, 1) = l[x + 1];
-                        frame(x / 3, y, 0, 2) = l[x + 2];
-                    }
+                uint8_t* dstData[4] = {
+                    frame.data(0, 0, 0, 1),
+                    frame.data(0, 0, 0, 2),
+                    frame.data(0, 0, 0, 0),
+                    nullptr
+                };
+                int dstLinesize[4] = {video->pCodecCtx->width, video->pCodecCtx->width, video->pCodecCtx->width, 0};
+                {
+                    TIME_BLOCK_SW(timerScaleToCImg, "ffmpeg.process.sws_to_cimg");
+                    sws_scale(video->sws_ctx, (uint8_t const *const *)video->pFrame->data, video->pFrame->linesize, 0, video->pCodecCtx->height, dstData, dstLinesize);
                 }
             }
         }
@@ -485,10 +446,6 @@ bool readFFMPEGFrame(cimg_library::CImg<uint8_t>& frame, FFMPEGVideo *video)
 void closeFFMPEGVideo(FFMPEGVideo *video)
 {
     if (video) {
-        // Free the RGB image
-        av_free(video->buffer);
-        av_frame_free(&(video->pFrameRGB));
-
         // Free the YUV frame
         av_frame_free(&(video->pFrame));
 

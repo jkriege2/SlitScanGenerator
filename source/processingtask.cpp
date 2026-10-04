@@ -622,7 +622,11 @@ bool ProcessingTask::processStep()
 
             // process stills
             if (stills<stillCnt && z%stillDelta==0 && (stillSeparateFiles || stillStrip)) {
-                auto frame_s=frame;
+                cimg_library::CImg<uint8_t> frame_s;
+                {
+                    TIME_BLOCK_SW(timerStillCopy, "still.copy_frame");
+                    frame_s=frame;
+                }
                 const unsigned char color[] = { 255,0,0 };
                 if (pi. filteredAngleMode()==AngleMode::AngleNone && pi.mode==Mode::ZY && z<res.img.width()) {
                     if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
@@ -640,9 +644,11 @@ bool ProcessingTask::processStep()
                 if (stillSeparateFiles) {
                     const QFileInfo fi(filename);
                     const QString fn=m_outputDir.absoluteFilePath(QString("%1_stack%3_still%2.%4").arg(outputBasename).arg(z+1, 3, 10,QChar('0')).arg(j+1, 3, 10,QChar('0')).arg(FileFormat2Extension(outputFileFormat)));
+                    TIME_BLOCK_SW(timerStillSave, "still.save_separate_file");
                     if (m_writer) m_writer->saveImage(fn.toStdString(), ImageWriter::StillImage, frame_s);
                 }
                 if (stillStrip) {
+                    TIME_BLOCK_SW(timerStillStrip, "still.copy_to_strip");
                     for (int c=0; c<3; c++) {
                         cimg_forXY(frame,x,y) {
                             stillStripImg[j](still_b+x,still_b+y+stills*(still_g+frame.height()),0,c)=frame_s(x,y,0,c);
@@ -916,7 +922,11 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
         }
 
         //get Fourier tranform image
-        cimg_library::CImgList<float> F = img.get_FFT();
+        cimg_library::CImgList<float> F;
+        {
+            TIME_BLOCK_SW(timerForwardFFT, "notch.forward_fft");
+            F=img.get_FFT();
+        }
         cimglist_apply(F,shift)(img.width()/2,img.height()/2,0,0,2);
         //magnitude
         if (testoutput) {
@@ -935,18 +945,25 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
             filteredSpectrum=F;
             spectrum=&filteredSpectrum;
         }
-        for (unsigned int l=0; l<spectrum->size(); l++) {
-            (*spectrum)[l].mul(mask).shift(-img.width()/2,-img.height()/2,0,0,2);
+        cimg_library::CImg<uint8_t> r;
+        {
+            TIME_BLOCK_SW(timerMaskInverseFFT, "notch.mask_inverse_fft");
+            for (unsigned int l=0; l<spectrum->size(); l++) {
+                (*spectrum)[l].mul(mask).shift(-img.width()/2,-img.height()/2,0,0,2);
+            }
+            r=(*spectrum).FFT(true)[0].normalize(cMin,cMax);
         }
-        cimg_library::CImg<uint8_t> r = (*spectrum).FFT(true)[0].normalize(cMin,cMax);
         if (testoutput) {
             sprintf(fn, "c%d_testNF0.bmp", int(c));
             F[0].save_bmp(fn);
             sprintf(fn, "c%d_testNF1.bmp", int(c));
             F[1].save_bmp(fn);
         }
-        cimg_forXY(imgrgb,x,y) {
-            imgrgb(x,y,0,c)=r(x+offx,y+offy);
+        {
+            TIME_BLOCK_SW(timerNotchWriteback, "notch.writeback");
+            cimg_forXY(imgrgb,x,y) {
+                imgrgb(x,y,0,c)=r(x+offx,y+offy);
+            }
         }
     }
     if (testoutput) {
