@@ -49,6 +49,7 @@ set(CODE_FILES
         videoreader_cimg.cpp
         main.cpp
         videopreviewreaderthread.cpp
+        videorangeslider.cpp
         cpp_tools.cpp
         qt_tools.cpp
         imagewriter.cpp
@@ -82,6 +83,7 @@ set(HEADER_FILES
         videoreader_ffmpeg.h
         videoreader_cimg.h
         videopreviewreaderthread.h
+        videorangeslider.h
         cpp_tools.h
         qt_tools.h
         imagewriter.h

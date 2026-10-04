@@ -365,8 +365,8 @@ bool ProcessingTask::processInit()
             }
         }
         if (outputFrames<=0) {
-            if (firstFrame>=1 && lastFrame>=2) {
-                outputFrames=lastFrame-firstFrame;
+            if (firstFrame>=1 && lastFrame>=firstFrame) {
+                outputFrames=lastFrame-firstFrame+1;
             } else {
                 outputFrames=m_reader->getFrameCount();
             }
@@ -670,7 +670,7 @@ bool ProcessingTask::processStep()
             res=m_reader->readNext(frame);
         }
         z++;
-        if (!res || z_all>=lastFrame-1) {
+        if (!res || (lastFrame>=1 && z_all>=lastFrame)) {
             m_saving=true;
             m_savingFrame=0;
         }

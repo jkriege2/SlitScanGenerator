@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <cstdint>
 #include <QLabel>
+#include <QImage>
 #include <QSettings>
 #include <QActionGroup>
 #include <QTranslator>
@@ -35,6 +36,7 @@ class MainWindow : public QMainWindow
         void storeProcessingItemToGUIWidgetsAndRedisplayScan(const ProcessingTask::ProcessingItem &pi);
         void redisplayCurrentScan();
         void updateGUIAndRedisplay();
+        void previewFrameChanged(int frame);
         void ImageClicked(int x, int y);
         void imageDraggedDXDY(int x, int y, int x2, int y2, Qt::MouseButton button, Qt::KeyboardModifiers modifiers);
 
@@ -58,6 +60,7 @@ class MainWindow : public QMainWindow
         ImageViewer* labXY;
         QLabel* labXZ;
         QLabel* labYZ;
+        QLabel* m_excludedFrameIndicator;
     protected:
 
         enum class DisplayModes {
@@ -71,6 +74,8 @@ class MainWindow : public QMainWindow
         int lastY_reducedCoords;
         /** \brief current display mode */
         DisplayModes m_mode;
+        int m_previewFrame;
+        int m_totalFrameCount;
 
         /** \brief internal video, xyt-scaled version */
         cimg_library::CImg<uint8_t> m_video_xytscaled;
@@ -108,6 +113,9 @@ class MainWindow : public QMainWindow
 
 
         void loadINI(const QString& filename, QString *vfn);
+        QImage createTopLeftPreviewImage() const;
+        void updateVideoPreview();
+        void updatePreviewRangeIndicator();
         void loadFromTask(const ProcessingTask& task);
         void saveToTask(ProcessingTask& task, double xyScaling=1.0, double tScaling=1.0) const;
         /** \brief this event is called, when a new translator is loaded or the system language is changed */

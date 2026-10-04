@@ -51,6 +51,8 @@ MainWindow::MainWindow(QWidget *parent) :
     lastX_reducedCoords(-1),
     lastY_reducedCoords(-1),
     m_mode(DisplayModes::unloaded),
+    m_previewFrame(1),
+    m_totalFrameCount(0),
     m_settings(),
     m_langGroup(nullptr)
 {
@@ -62,6 +64,25 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
     ui->scrollXY->setWidget(labXY=new ImageViewer(this));
+    m_excludedFrameIndicator=new QLabel(ui->scrollXY->viewport());
+    m_excludedFrameIndicator->setFixedSize(24,24);
+    m_excludedFrameIndicator->setAttribute(Qt::WA_TransparentForMouseEvents);
+    m_excludedFrameIndicator->setToolTip(tr("Preview frame is outside the selected range"));
+    QPixmap excludedIcon(24,24);
+    excludedIcon.fill(Qt::transparent);
+    {
+        QPainter painter(&excludedIcon);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(255,255,255,230));
+        painter.drawEllipse(QRectF(1,1,22,22));
+        painter.setPen(QPen(QColor(210,35,45), 3));
+        painter.drawEllipse(QRectF(4,4,16,16));
+        painter.drawLine(QPointF(5,19), QPointF(19,5));
+    }
+    m_excludedFrameIndicator->setPixmap(excludedIcon);
+    m_excludedFrameIndicator->move(8,8);
+    m_excludedFrameIndicator->hide();
     ui->scrollXZ->setWidget(labXZ=new QLabel(this));
     ui->scrollYZ->setWidget(labYZ=new QLabel(this));
     ui->table->setModel(m_procModel=new ProcessingParameterTable(ui->table));
@@ -120,6 +141,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->spinLastFrame, SIGNAL(valueChanged(int)), this, SLOT(flastFrameChanged(int)));
     connect(ui->spinFirstFrame, SIGNAL(valueChanged(int)), this, SLOT(updateGUIAndRedisplay()));
     connect(ui->spinLastFrame, SIGNAL(valueChanged(int)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinFirstFrame, &QSpinBox::valueChanged, ui->videoRangeSlider, &VideoRangeSlider::setStartFrame);
+    connect(ui->spinLastFrame, &QSpinBox::valueChanged, ui->videoRangeSlider, &VideoRangeSlider::setEndFrame);
+    connect(ui->videoRangeSlider, &VideoRangeSlider::startFrameChanged, ui->spinFirstFrame, &QSpinBox::setValue);
+    connect(ui->videoRangeSlider, &VideoRangeSlider::endFrameChanged, ui->spinLastFrame, &QSpinBox::setValue);
+    connect(ui->videoRangeSlider, &VideoRangeSlider::currentFrameChanged, this, &MainWindow::previewFrameChanged);
+    connect(ui->chkPreviewOutsideRange, &QCheckBox::toggled, ui->videoRangeSlider, &VideoRangeSlider::setPreviewOutsideRange);
+    connect(ui->chkPreviewOutsideRange, &QCheckBox::toggled, this, &MainWindow::updatePreviewRangeIndicator);
     setWidgetsEnabledForCurrentMode();
 
     ui->spinWavelength->setValue(m_settings.value("lastFilterWavelength", 5).toDouble());
@@ -375,16 +403,12 @@ void MainWindow::loadINI()
 
 void MainWindow::firstFrameChanged(int value)
 {
-    /*ui->spinLastFrame->setMinimum(qMax(value+1, 1));
-    ui->slideLastFrame->setMinimum(ui->spinLastFrame->minimum());*/
-    ui->spinLastFrame->setValue(qMax(ui->spinLastFrame->value(), value+1));
+    ui->spinLastFrame->setValue(qMax(ui->spinLastFrame->value(), value));
 }
 
 void MainWindow::lastFrameChanged(int value)
 {
-    /*ui->spinFirstFrame->setMaximum(value-1);
-    ui->slideFirstFrame->setMaximum(ui->spinFirstFrame->maximum());*/
-    ui->spinFirstFrame->setValue(qMin(ui->spinFirstFrame->value(), value-1));
+    ui->spinFirstFrame->setValue(qMin(ui->spinFirstFrame->value(), value));
 }
 
 
@@ -398,7 +422,9 @@ void MainWindow::setWidgetsEnabledForCurrentMode() {
     ui->scrollXZ->setEnabled(isloaded);
     ui->widCurrentScanProps->setEnabled(isloaded);
     ui->spinFirstFrame->setEnabled(isloaded);
-    ui->spinFirstFrame->setEnabled(isloaded);
+    ui->spinLastFrame->setEnabled(isloaded);
+    ui->videoRangeSlider->setEnabled(isloaded);
+    ui->chkPreviewOutsideRange->setEnabled(isloaded);
 
 
     ui->btnDelete->setEnabled(m_procModel->rowCount()>0);
@@ -479,12 +505,26 @@ void MainWindow::openVideo(const QString& filename, const QString &ini_in) {
                     VideoPreviewReaderThread frameReaderDetail(m_video_some_frames, fn.toStdString(), 1, 1, &error, dlg->getFramesHR(), &progress, nullptr);
                     if (dlg->getFramesHR()<=0 || frameReaderDetail.exec()) {
                         progress.close();
+                        m_totalFrameCount=dlg->getFrames();
+                        m_previewFrame=1;
+                        ui->videoRangeSlider->setFrameCount(m_totalFrameCount);
+                        QVector<QImage> thumbnails;
+                        QVector<int> thumbnailFrames;
+                        const int thumbnailCount=qMin(16, m_video_xytscaled.depth());
+                        for (int i=0; i<thumbnailCount; ++i) {
+                            const int z=(thumbnailCount<=1) ? 0 : qRound(double(i)*(m_video_xytscaled.depth()-1)/double(thumbnailCount-1));
+                            const int sourceFrame=qMin(m_totalFrameCount, 1+z*qMax(1,video_everyNthFrame));
+                            thumbnails.push_back(CImgToQImage(m_video_xytscaled,z).scaled(112,64,Qt::KeepAspectRatio,Qt::SmoothTransformation));
+                            thumbnailFrames.push_back(sourceFrame);
+                        }
+                        ui->videoRangeSlider->setThumbnails(thumbnails, thumbnailFrames);
                         ui->spinFirstFrame->setRange(1,dlg->getFrames());
-                        ui->spinLastFrame->setRange(2,dlg->getFrames());
-                        ui->slideFirstFrame->setRange(1,dlg->getFrames());
-                        ui->slideLastFrame->setRange(2,dlg->getFrames());
+                        ui->spinLastFrame->setRange(1,dlg->getFrames());
                         ui->spinFirstFrame->setValue(1);
                         ui->spinLastFrame->setValue(dlg->getFrames());
+                        ui->videoRangeSlider->setStartFrame(1);
+                        ui->videoRangeSlider->setEndFrame(dlg->getFrames());
+                        ui->videoRangeSlider->setCurrentFrame(1);
                         setLastXY(m_video_xytscaled.width()/2, m_video_xytscaled.height()/2);
                         storeProcessingItemToGUIWidgetsAndRedisplayScan(ProcessingTask::ProcessingItem(m_video_xytscaled.width()/2, m_video_xytscaled.height()/2));
                         cursorGuard.resetCursor();
@@ -603,6 +643,67 @@ void MainWindow::updateGUIAndRedisplay()
     redisplayCurrentScan();
 }
 
+void MainWindow::previewFrameChanged(int frame)
+{
+    m_previewFrame=frame;
+    updateVideoPreview();
+}
+
+void MainWindow::updateVideoPreview()
+{
+    if (!m_video_xytscaled.is_empty()) {
+        labXY->setPixmap(QPixmap::fromImage(createTopLeftPreviewImage()));
+    }
+    updatePreviewRangeIndicator();
+}
+
+void MainWindow::updatePreviewRangeIndicator()
+{
+    const bool outside=m_totalFrameCount>0 &&
+        (m_previewFrame<ui->spinFirstFrame->value() || m_previewFrame>ui->spinLastFrame->value());
+    m_excludedFrameIndicator->setVisible(outside);
+}
+
+QImage MainWindow::createTopLeftPreviewImage() const
+{
+    const cimg_library::CImg<uint8_t>* videoInput=&m_video_xytscaled;
+    const bool isFilteringPreview=ui->tabWidget->currentWidget()==ui->tabFiltering && !m_video_some_frames.is_empty();
+    if (isFilteringPreview) videoInput=&m_video_some_frames;
+
+    const int stride=qMax(1,video_everyNthFrame);
+    int frameIndex=isFilteringPreview ? m_previewFrame-1 : qRound(double(m_previewFrame-1)/stride);
+    frameIndex=qBound(0, frameIndex, qMax(0,videoInput->depth()-1));
+    QImage image=CImgToQImage(*videoInput,frameIndex);
+
+    const double xyFactor=isFilteringPreview ? video_xyFactor : 1.0;
+    const double invxyFactor=isFilteringPreview ? 1.0 : video_xyFactor;
+    double angle=ui->spinAngle->value();
+    if (!isFilteringPreview && ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AnglePitch) {
+        angle=atan(tan(angle/180.0*M_PI)*stride/invxyFactor)/M_PI*180.0;
+    }
+
+    QPainter painter(&image);
+    painter.setPen(QPen(QColor("red")));
+    if (ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AngleNone ||
+        ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AngleRoll) {
+        painter.save();
+        painter.translate(lastX_reducedCoords,lastY_reducedCoords);
+        painter.rotate(angle);
+        const int length=2*qMax(image.width(),image.height());
+        painter.drawLine(-length,0,length,0);
+        painter.drawLine(0,-length,0,length);
+        painter.restore();
+    } else {
+        painter.drawLine(0,lastY_reducedCoords*xyFactor,image.width(),lastY_reducedCoords*xyFactor);
+        painter.drawLine(lastX_reducedCoords*xyFactor,0,lastX_reducedCoords*xyFactor,image.height());
+    }
+    if (ui->chkNormalize->isChecked()) {
+        painter.setPen(QPen(QColor("blue")));
+        painter.drawRect(QRect(ui->spinNormalizeX->value()/invxyFactor-1, ui->spinNormalizeY->value()/invxyFactor-1,3,3));
+    }
+    return image;
+}
+
 
 void MainWindow::redisplayCurrentScan()
 {
@@ -646,7 +747,7 @@ void MainWindow::redisplayCurrentScan()
     if (lastX_reducedCoords*xyFactor>=0 && lastX_reducedCoords*xyFactor<video_input->width() && lastY_reducedCoords*xyFactor>=0 && lastY_reducedCoords*xyFactor<video_input->height()) {
         TIME_BLOCK_SW(timer, "recalcAndRedisplaySamples:doRecalc()");
 
-        QImage img=CImgToQImage(*video_input, 0);//video_input->depth()/2);
+        QImage img=createTopLeftPreviewImage();
         cimg_library::CImg<uint8_t> cxz;
         cimg_library::CImg<uint8_t> cyz;
 
@@ -700,25 +801,6 @@ void MainWindow::redisplayCurrentScan()
             TIME_BLOCK_SW(timer3, "paint lines")
             {
 
-                QPainter pnt(&img);
-                pnt.setPen(QPen(QColor("red")));
-                if (angleMode==ProcessingTask::AngleMode::AngleNone || angleMode==ProcessingTask::AngleMode::AngleRoll) {
-                    pnt.save();
-                    pnt.translate(lastX_reducedCoords,lastY_reducedCoords);
-                    pnt.rotate(angle);
-                    const int l=2*std::max(img.width(), img.height());
-                    pnt.drawLine(-l,0,l,0);
-                    pnt.drawLine(0,-l,0,l);
-                    pnt.restore();
-                } else {
-                    pnt.drawLine(0, lastY_reducedCoords*xyFactor,img.width(),lastY_reducedCoords*xyFactor);
-                    pnt.drawLine(lastX_reducedCoords*xyFactor, 0,lastX_reducedCoords*xyFactor, img.height());
-                }
-
-                if (ui->chkNormalize->isChecked()) {
-                    pnt.setPen(QPen(QColor("blue")));
-                    pnt.drawRect(QRect(ui->spinNormalizeX->value()/invxyFactor-1, ui->spinNormalizeY->value()/invxyFactor-1,3,3));
-                }
             }
             if (ui->chkNormalize->isChecked()) {
                 QPainter pnt(&imgxz);
@@ -737,6 +819,7 @@ void MainWindow::redisplayCurrentScan()
             labXY->setPixmap(QPixmap::fromImage(img));
             labXZ->setPixmap(QPixmap::fromImage(imgxz));
             labYZ->setPixmap(QPixmap::fromImage(imgyz));
+            updatePreviewRangeIndicator();
         }
     }
 }
