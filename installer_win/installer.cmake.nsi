@@ -23,11 +23,11 @@
 !define APP_LONGNAME "@PROJECT_LONGNAME@_@PROJECT_BITNESS@bit"
 !define APP_VERSION "@PROJECT_VERSION@, @PROJECT_BITNESS@bit"
 
-!define DIST_DIR "@CMAKE_INSTALL_PREFIX@"
-!define SOURCE_DIR "@CMAKE_SOURCE_DIR@"
+!define DIST_DIR "@NSIS_DIST_DIR@"
+!define SOURCE_DIR "@NSIS_SOURCE_DIR@"
 
 Name "${APP_LONGNAME}"
-OutFile "@PROJECT_LONGNAME@-@PROJECT_VERSION@-@PROJECT_BITNESS@bit_Setup.exe"
+OutFile "@NSIS_OUTPUT_FILE@"
 !define ORGANISATION_NAME "Jan Krieger"
 InstallDir "$PROGRAMFILES@PROJECT_BITNESS@\${APP_LONGNAME}"
 !define APP_REGISTRY_KEY "Software\${APP_LONGNAME}"
@@ -109,10 +109,6 @@ Section Install
   SetOutPath "$INSTDIR\3rdparty\CImg"
   File "${DIST_DIR}\3rdparty\CImg\*.*"
 
-  # 3rdparty general
-  SetOutPath "$INSTDIR\3rdparty\"
-  File "${DIST_DIR}\3rdparty\*.*"
-
   # Examples
   SetOutPath "$INSTDIR\testmovie"
   File "${DIST_DIR}\testmovie\*.*"
@@ -141,33 +137,24 @@ SectionEnd
 # Uninstallation
 #==
 Section Uninstall
-  Delete "$INSTDIR\LICENCE"
+  Delete "$INSTDIR\LICENSE.txt"
 
   # Delete all files in InstallDir
   Delete "$INSTDIR\*.*"
 
-    # Qt Plugins
-    Delete "$INSTDIR\imageformats\*.*"
-    RMDir "$INSTDIR\imageformats"
-    Delete "$INSTDIR\platforms\*.*"
-    RMDir "$INSTDIR\platforms"
-    Delete "$INSTDIR\iconengines\*.*"
-    RMDir "$INSTDIR\iconengines"
-    Delete "$INSTDIR\styles\*.*"
-    RMDir "$INSTDIR\styles"
-    Delete "$INSTDIR\translations\*.*"
-    RMDir "$INSTDIR\translations"
+    # Deployed Qt plugins and translations
+    RMDir /r "$INSTDIR\generic"
+    RMDir /r "$INSTDIR\iconengines"
+    RMDir /r "$INSTDIR\imageformats"
+    RMDir /r "$INSTDIR\networkinformation"
+    RMDir /r "$INSTDIR\platforms"
+    RMDir /r "$INSTDIR\styles"
+    RMDir /r "$INSTDIR\tls"
+    RMDir /r "$INSTDIR\translations"
 
-    # 3rdParty
-    Delete "$INSTDIR\3rdparty\ffmpeg\*.*"
-    RMDir "$INSTDIR\3rdparty\ffmpeg"
-    Delete "$INSTDIR\3rdparty\CImg\*.*"
-    RMDir "$INSTDIR\3rdparty\CImg"
-    Delete "$INSTDIR\3rdparty\*.*"
-    RMDir "$INSTDIR\3rdparty"
-
-    Delete "$INSTDIR\testmovie\*.*"
-    RMDir "$INSTDIR\testmovie"
+    # Third-party notices and examples
+    RMDir /r "$INSTDIR\3rdparty"
+    RMDir /r "$INSTDIR\testmovie"
 
   # Menu folder
   !insertmacro MUI_STARTMENU_GETFOLDER Application $StartMenuFolder

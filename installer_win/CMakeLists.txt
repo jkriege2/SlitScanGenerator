@@ -15,8 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# Configure the installer scripts
-configure_file(installer.cmake.nsi ${CMAKE_BINARY_DIR}/installer.nsi @ONLY)
+# Configure the NSIS script with paths in Windows-native form.
+file(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" NSIS_DIST_DIR)
+file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}" NSIS_SOURCE_DIR)
+set(NSIS_OUTPUT_FILE
+  "${CMAKE_SOURCE_DIR}/${PROJECT_LONGNAME}-${PROJECT_VERSION}-${PROJECT_BITNESS}bit_Setup.exe"
+)
+file(TO_NATIVE_PATH "${NSIS_OUTPUT_FILE}" NSIS_OUTPUT_FILE)
+configure_file(installer.cmake.nsi "${CMAKE_BINARY_DIR}/installer.nsi" @ONLY)
 
 
 
@@ -36,3 +42,24 @@ install(DIRECTORY
   ${CMAKE_SOURCE_DIR}/testmovie/
   DESTINATION testmovie
 )
+
+find_program(MAKENSIS_EXECUTABLE
+  NAMES makensis makensis.exe
+  HINTS
+    "$ENV{ProgramFiles}/NSIS"
+    "C:/Program Files (x86)/NSIS"
+)
+
+if (MAKENSIS_EXECUTABLE)
+  add_custom_target(package
+    COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}" --config "$<CONFIG>"
+    COMMAND "${MAKENSIS_EXECUTABLE}" "${CMAKE_BINARY_DIR}/installer.nsi"
+    DEPENDS ${CMAKE_PROJECT_NAME}
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMMENT "Staging SlitScanGenerator and creating the NSIS installer"
+    USES_TERMINAL
+    VERBATIM
+  )
+else()
+  message(STATUS "NSIS was not found; the package target is unavailable")
+endif()
