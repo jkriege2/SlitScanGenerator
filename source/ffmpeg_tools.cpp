@@ -197,15 +197,18 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
         return false; // Could not open codec
     }
 
+    const int outputWidth = static_cast<int>(pCodecContext->width / xyscale);
+    const int outputHeight = static_cast<int>(pCodecContext->height / xyscale);
+
     // Determine required buffer size and allocate buffer
-    numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB24, pCodecContext->width, pCodecContext->height, 1);
+    numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB24, outputWidth, outputHeight, 1);
     buffer.reset((uint8_t *)av_malloc(numBytes * sizeof(uint8_t)));
 
     // Assign appropriate parts of buffer to image planes in pFrameRGB
-    av_image_fill_arrays(pFrameRGB->data, pFrameRGB->linesize, buffer.get(), AV_PIX_FMT_RGB24, pCodecContext->width, pCodecContext->height, 1);
+    av_image_fill_arrays(pFrameRGB->data, pFrameRGB->linesize, buffer.get(), AV_PIX_FMT_RGB24, outputWidth, outputHeight, 1);
 
-    // Initialize SWS context for software scaling
-    sws_ctx = sws_getContext(pCodecContext->width, pCodecContext->height, pCodecContext->pix_fmt, pCodecContext->width, pCodecContext->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+    // Convert and scale directly to the preview dimensions.
+    sws_ctx = sws_getContext(pCodecContext->width, pCodecContext->height, pCodecContext->pix_fmt, outputWidth, outputHeight, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
 
     i = 0;
     bool canceled = false;
@@ -218,7 +221,7 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
     int keyFrames=0;
     int discardFrames=0;
     int corruptFrames=0;
-    cimg_library::CImg<uint8_t> frame, frameResized;
+    cimg_library::CImg<uint8_t> frame;
     while (!canceled && av_read_frame(pFormatCtx, pPacket.get()) >= 0) {
         // Is this a packet from the video stream?
         if (pPacket->stream_index == videoStream) {
@@ -244,31 +247,29 @@ bool readFFMPEGAsImageStack(cimg_library::CImg<uint8_t> &video, const std::strin
                         // Convert the image from its native format to RGB
                         sws_scale(sws_ctx, (uint8_t const *const *)pFrame->data, pFrame->linesize, 0, pCodecContext->height, pFrameRGB->data, pFrameRGB->linesize);
 
-                        frame.resize(pCodecContext->width, pCodecContext->height, 1, 3);
-                        for (int y = 0; y < pCodecContext->height; y++) {
+                        frame.resize(outputWidth, outputHeight, 1, 3);
+                        for (int y = 0; y < outputHeight; y++) {
                             const uint8_t *l = pFrameRGB->data[0] + y * pFrameRGB->linesize[0];
-                            for (int x = 0; x < pCodecContext->width * 3; x += 3) {
+                            for (int x = 0; x < outputWidth * 3; x += 3) {
                                 frame(x / 3, y, 0, 0) = l[x + 0];
                                 frame(x / 3, y, 0, 1) = l[x + 1];
                                 frame(x / 3, y, 0, 2) = l[x + 2];
                             }
                         }
                         if (video.is_empty()) {
-                            video.resize(pCodecContext->width / xyscale, pCodecContext->height / xyscale, finalFrameCnt, 3);
-                            qDebug()<<"allocated " << (double(video.size())/1024.0/1024.0)<<"MBytes memory for video "<<int(pCodecContext->width / xyscale)<<"x"<< int(pCodecContext->height / xyscale)<<"x"<< finalFrameCnt<<"x"<< 3;
+                            video.resize(outputWidth, outputHeight, finalFrameCnt, 3);
+                            qDebug()<<"allocated " << (double(video.size())/1024.0/1024.0)<<"MBytes memory for video "<<outputWidth<<"x"<<outputHeight<<"x"<< finalFrameCnt<<"x"<< 3;
                         }
-                        frameResized=frame.get_resize(pCodecContext->width / xyscale, pCodecContext->height / xyscale, 1, 3);
 
                         if (ifc<finalFrameCnt) {
                             auto s0=video.get_shared_slice(ifc,0);
-                            s0.assign(frameResized.get_shared_channel(0));
+                            s0.assign(frame.get_shared_channel(0));
                             auto s1=video.get_shared_slice(ifc,1);
-                            s1.assign(frameResized.get_shared_channel(1));
+                            s1.assign(frame.get_shared_channel(1));
                             auto s2=video.get_shared_slice(ifc,2);
-                            s2.assign(frameResized.get_shared_channel(2));
+                            s2.assign(frame.get_shared_channel(2));
                         }
 
-                        //video.append(frame.get_resize(pCodecContext->width / xyscale, pCodecContext->height / xyscale, 1, 3), 'z');
                         if (frameCallback) {
                             if (frameCallback((nb_frames > 0) ? i : video.depth(), nb_frames)) {
                                 canceled = true;
