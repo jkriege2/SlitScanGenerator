@@ -621,7 +621,7 @@ bool ProcessingTask::processStep()
 
 
             // process stills
-            if (stills<stillCnt && z%stillDelta==0) {
+            if (stills<stillCnt && z%stillDelta==0 && (stillSeparateFiles || stillStrip)) {
                 auto frame_s=frame;
                 const unsigned char color[] = { 255,0,0 };
                 if (pi. filteredAngleMode()==AngleMode::AngleNone && pi.mode==Mode::ZY && z<res.img.width()) {
@@ -643,10 +643,10 @@ bool ProcessingTask::processStep()
                     if (m_writer) m_writer->saveImage(fn.toStdString(), ImageWriter::StillImage, frame_s);
                 }
                 if (stillStrip) {
-                    cimg_forXY(frame,x,y) {
-                        stillStripImg[j](still_b+x,still_b+y+stills*(still_g+frame.height()),0,0)=frame_s(x,y,0,0);
-                        stillStripImg[j](still_b+x,still_b+y+stills*(still_g+frame.height()),0,1)=frame_s(x,y,0,1);
-                        stillStripImg[j](still_b+x,still_b+y+stills*(still_g+frame.height()),0,2)=frame_s(x,y,0,2);
+                    for (int c=0; c<3; c++) {
+                        cimg_forXY(frame,x,y) {
+                            stillStripImg[j](still_b+x,still_b+y+stills*(still_g+frame.height()),0,c)=frame_s(x,y,0,c);
+                        }
                     }
                 }
             }
