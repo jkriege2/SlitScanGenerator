@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QPixmap>
+#include <QPoint>
 #include <cstdint>
 #include <QLabel>
 #include <QImage>
@@ -18,6 +20,8 @@ namespace Ui {
     class MainWindow;
 }
 
+class QScrollArea;
+
 class MainWindow : public QMainWindow
 {
         Q_OBJECT
@@ -25,6 +29,9 @@ class MainWindow : public QMainWindow
     public:
         explicit MainWindow(QWidget *parent = 0);
         ~MainWindow();
+
+    protected:
+        bool eventFilter(QObject *watched, QEvent *event) override;
 
     protected slots:
         void saveINI();
@@ -61,6 +68,7 @@ class MainWindow : public QMainWindow
         QLabel* labXZ;
         QLabel* labYZ;
         QLabel* m_excludedFrameIndicator;
+        QLabel* m_zoomPercentLabel=nullptr;
     protected:
 
         enum class DisplayModes {
@@ -76,6 +84,8 @@ class MainWindow : public QMainWindow
         DisplayModes m_mode;
         int m_previewFrame;
         int m_totalFrameCount;
+        double m_previewZoom=1.0;
+        QPixmap m_previewPixmaps[3];
 
         /** \brief internal video, xyt-scaled version */
         cimg_library::CImg<uint8_t> m_video_xytscaled;
@@ -116,6 +126,9 @@ class MainWindow : public QMainWindow
         QImage createTopLeftPreviewImage() const;
         void updateVideoPreview();
         void updatePreviewRangeIndicator();
+        void setPreviewPixmap(int index, const QPixmap &pixmap);
+        void updateScaledPreviewPixmaps();
+        void setPreviewZoom(double zoom, QScrollArea *anchorArea=nullptr, const QPoint &anchorPosition=QPoint());
         void loadFromTask(const ProcessingTask& task);
         void saveToTask(ProcessingTask& task, double xyScaling=1.0, double tScaling=1.0) const;
         /** \brief this event is called, when a new translator is loaded or the system language is changed */

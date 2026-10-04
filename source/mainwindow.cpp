@@ -7,10 +7,15 @@
 #include <QInputDialog>
 #include <QDebug>
 #include <QPainter>
+#include <QScrollArea>
 #include <QScrollBar>
 #include <QProgressDialog>
+#include <QToolButton>
+#include <QWheelEvent>
+#include <QNativeGestureEvent>
 #include <QFileInfo>
 #include <QSettings>
+#include <cmath>
 #include "importdialog.h"
 #include "processingthread.h"
 #include "optionsdialog.h"
@@ -64,6 +69,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
     ui->scrollXY->setWidget(labXY=new ImageViewer(this));
+    ui->scrollXY->setWidgetResizable(false);
+    labXY->setAlignment(Qt::AlignLeft|Qt::AlignTop);
     m_excludedFrameIndicator=new QLabel(ui->scrollXY->viewport());
     m_excludedFrameIndicator->setFixedSize(24,24);
     m_excludedFrameIndicator->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -85,11 +92,24 @@ MainWindow::MainWindow(QWidget *parent) :
     m_excludedFrameIndicator->hide();
     ui->scrollXZ->setWidget(labXZ=new QLabel(this));
     ui->scrollYZ->setWidget(labYZ=new QLabel(this));
+    ui->scrollXZ->setWidgetResizable(false);
+    ui->scrollYZ->setWidgetResizable(false);
+    labXZ->setAlignment(Qt::AlignLeft|Qt::AlignTop);
+    labYZ->setAlignment(Qt::AlignLeft|Qt::AlignTop);
+    for (QScrollArea *area : {ui->scrollXY, ui->scrollXZ, ui->scrollYZ}) {
+        area->installEventFilter(this);
+        area->viewport()->installEventFilter(this);
+    }
+    for (QLabel *label : {static_cast<QLabel*>(labXY), labXZ, labYZ}) label->installEventFilter(this);
     ui->table->setModel(m_procModel=new ProcessingParameterTable(ui->table));
     ui->toolBar->addAction(ui->actQuit);
     ui->toolBar->addSeparator();
     ui->toolBar->addAction(ui->actOpenVideo);
     ui->toolBar->addAction(ui->actProcessAll);
+    m_zoomPercentLabel=ui->labPreviewZoom;
+    connect(ui->btnPreviewZoomOut,&QToolButton::clicked,this,[this]() { setPreviewZoom(m_previewZoom/1.25); });
+    connect(ui->btnPreviewZoomIn,&QToolButton::clicked,this,[this]() { setPreviewZoom(m_previewZoom*1.25); });
+    connect(ui->btnPreviewZoomReset,&QToolButton::clicked,this,[this]() { setPreviewZoom(1.0); });
     ui->btnProcessAll->setDefaultAction(ui->actProcessAll);
     ui->tabWidget->setCurrentIndex(0);
     ui->cmbFileFormat->setCurrentIndex(0);
@@ -455,9 +475,9 @@ void MainWindow::test()
         m_settings.setValue("lastTestDir", QFileInfo(fn).absolutePath());
         cimg_library::CImg<uint8_t> img;
         img.load_bmp(fn.toLocal8Bit().data());
-        labXY->setPixmap(QPixmap::fromImage(CImgToQImage(img)));
+        setPreviewPixmap(0,QPixmap::fromImage(CImgToQImage(img)));
         ProcessingTask::applyFilterNotch(img, QInputDialog::getInt(this, "TEST", "wavelength=", 10, 0,1000,2), 2, true);
-        labYZ->setPixmap(QPixmap::fromImage(CImgToQImage(img)));
+        setPreviewPixmap(2,QPixmap::fromImage(CImgToQImage(img)));
     }
 }
 
@@ -652,9 +672,98 @@ void MainWindow::previewFrameChanged(int frame)
 void MainWindow::updateVideoPreview()
 {
     if (!m_video_xytscaled.is_empty()) {
-        labXY->setPixmap(QPixmap::fromImage(createTopLeftPreviewImage()));
+        setPreviewPixmap(0,QPixmap::fromImage(createTopLeftPreviewImage()));
     }
     updatePreviewRangeIndicator();
+}
+
+void MainWindow::setPreviewPixmap(int index, const QPixmap &pixmap)
+{
+    if (index<0 || index>=3) return;
+    m_previewPixmaps[index]=pixmap;
+    updateScaledPreviewPixmaps();
+}
+
+void MainWindow::updateScaledPreviewPixmaps()
+{
+    QLabel *labels[]={labXY,labXZ,labYZ};
+    for (int i=0; i<3; ++i) {
+        if (m_previewPixmaps[i].isNull()) continue;
+        const QSize targetSize(qMax(1,qRound(m_previewPixmaps[i].width()*m_previewZoom)),
+                               qMax(1,qRound(m_previewPixmaps[i].height()*m_previewZoom)));
+        const QPixmap displayPixmap=qFuzzyCompare(m_previewZoom,1.0) ? m_previewPixmaps[i] :
+            m_previewPixmaps[i].scaled(targetSize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
+        labels[i]->setPixmap(displayPixmap);
+        labels[i]->adjustSize();
+    }
+    if (m_zoomPercentLabel) m_zoomPercentLabel->setText(QStringLiteral("%1%").arg(qRound(m_previewZoom*100.0)));
+}
+
+void MainWindow::setPreviewZoom(double zoom, QScrollArea *anchorArea, const QPoint &anchorPosition)
+{
+    const double newZoom=qBound(0.1,zoom,8.0);
+    if (qFuzzyCompare(m_previewZoom,newZoom)) return;
+
+    QScrollArea *areas[]={ui->scrollXY,ui->scrollXZ,ui->scrollYZ};
+    QPoint anchors[3];
+    QPointF imagePositions[3];
+    for (int i=0; i<3; ++i) {
+        anchors[i]=(areas[i]==anchorArea) ? anchorPosition : areas[i]->viewport()->rect().center();
+        imagePositions[i]=QPointF((areas[i]->horizontalScrollBar()->value()+anchors[i].x())/m_previewZoom,
+                                  (areas[i]->verticalScrollBar()->value()+anchors[i].y())/m_previewZoom);
+    }
+
+    m_previewZoom=newZoom;
+    updateScaledPreviewPixmaps();
+
+    for (int i=0; i<3; ++i) {
+        areas[i]->horizontalScrollBar()->setValue(qRound(imagePositions[i].x()*m_previewZoom-anchors[i].x()));
+        areas[i]->verticalScrollBar()->setValue(qRound(imagePositions[i].y()*m_previewZoom-anchors[i].y()));
+    }
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    QScrollArea *area=nullptr;
+    for (QScrollArea *candidate : {ui->scrollXY,ui->scrollXZ,ui->scrollYZ}) {
+        if (watched==candidate || watched==candidate->viewport() || watched==candidate->widget()) {
+            area=candidate;
+            break;
+        }
+    }
+    if (!area) return QMainWindow::eventFilter(watched,event);
+
+    if (event->type()==QEvent::Wheel) {
+        auto *wheel=static_cast<QWheelEvent*>(event);
+        if (!(wheel->modifiers() & Qt::ControlModifier)) return QMainWindow::eventFilter(watched,event);
+        int delta=wheel->angleDelta().y();
+        if (delta==0) delta=wheel->angleDelta().x();
+        double factor=1.0;
+        if (delta!=0) {
+            factor=std::pow(1.25,double(delta)/120.0);
+        } else {
+            const QPoint pixelDelta=wheel->pixelDelta();
+            const int pixels=(pixelDelta.y()!=0) ? pixelDelta.y() : pixelDelta.x();
+            factor=std::exp(double(pixels)*0.0025);
+        }
+        QWidget *sourceWidget=qobject_cast<QWidget*>(watched);
+        const QPoint globalPosition=sourceWidget->mapToGlobal(wheel->position().toPoint());
+        const QPoint anchor=area->viewport()->mapFromGlobal(globalPosition);
+        setPreviewZoom(m_previewZoom*factor,area,anchor);
+        event->accept();
+        return true;
+    }
+
+    if (event->type()==QEvent::NativeGesture) {
+        auto *gesture=static_cast<QNativeGestureEvent*>(event);
+        if (gesture->gestureType()==Qt::ZoomNativeGesture) {
+            const double factor=1.0+gesture->value();
+            if (factor>0.0) setPreviewZoom(m_previewZoom*factor,area,area->viewport()->rect().center());
+            event->accept();
+            return true;
+        }
+    }
+    return QMainWindow::eventFilter(watched,event);
 }
 
 void MainWindow::updatePreviewRangeIndicator()
@@ -816,9 +925,9 @@ void MainWindow::redisplayCurrentScan()
 
         {
             TIME_BLOCK_SW(timer, "update GUI")
-            labXY->setPixmap(QPixmap::fromImage(img));
-            labXZ->setPixmap(QPixmap::fromImage(imgxz));
-            labYZ->setPixmap(QPixmap::fromImage(imgyz));
+            setPreviewPixmap(0,QPixmap::fromImage(img));
+            setPreviewPixmap(1,QPixmap::fromImage(imgxz));
+            setPreviewPixmap(2,QPixmap::fromImage(imgyz));
             updatePreviewRangeIndicator();
         }
     }
@@ -826,20 +935,22 @@ void MainWindow::redisplayCurrentScan()
 
 void MainWindow::ImageClicked(int x, int y)
 {
+    const int imageX=qRound(double(x)/m_previewZoom);
+    const int imageY=qRound(double(y)/m_previewZoom);
     if (ui->tabWidget->currentWidget()==ui->tabNormalize) {
         if (ui->chkNormalize->isChecked()) {
-            ui->spinNormalizeX->setValue(x*video_xyFactor);
-            ui->spinNormalizeY->setValue(y*video_xyFactor);
+            ui->spinNormalizeX->setValue(imageX*video_xyFactor);
+            ui->spinNormalizeY->setValue(imageY*video_xyFactor);
         }
     } else if (ui->tabWidget->currentWidget()==ui->tabColor) {
         if (ui->chkModifyWhitepoint->isChecked()) {
             //qDebug()<<m_video_xytscaled.width()<<m_video_xytscaled.height()<<m_video_xytscaled.depth()<<m_video_xytscaled.spectrum();
-            ui->spinWhitepointR->setValue(m_video_xytscaled.atXYZC(x,y,0,0,255));
-            ui->spinWhitepointG->setValue(m_video_xytscaled.atXYZC(x,y,0,1,255));
-            ui->spinWhitepointB->setValue(m_video_xytscaled.atXYZC(x,y,0,2,255));
+            ui->spinWhitepointR->setValue(m_video_xytscaled.atXYZC(imageX,imageY,0,0,255));
+            ui->spinWhitepointG->setValue(m_video_xytscaled.atXYZC(imageX,imageY,0,1,255));
+            ui->spinWhitepointB->setValue(m_video_xytscaled.atXYZC(imageX,imageY,0,2,255));
         }
     } else /*if (ui->tabWidget->currentWidget()==ui->tabCuts)*/ {
-        setLastXY(x,y);
+        setLastXY(imageX,imageY);
     }
     // it is not important which ProcessingTask::Mode  is selected here, as finally
     // recalcAndRedisplaySamples() will recalculate for all possible modes to display both slit-scans!
@@ -848,22 +959,26 @@ void MainWindow::ImageClicked(int x, int y)
 
 void MainWindow::imageDraggedDXDY(int x, int y, int x2, int y2, Qt::MouseButton button, Qt::KeyboardModifiers modifiers)
 {
+    const int imageX=qRound(double(x)/m_previewZoom);
+    const int imageY=qRound(double(y)/m_previewZoom);
+    const int imageX2=qRound(double(x2)/m_previewZoom);
+    const int imageY2=qRound(double(y2)/m_previewZoom);
     //qDebug()<<"imageDragged("<<x<<y<<x2<<y2<<button<<"): 0";
     if (ui->tabWidget->currentWidget()==ui->tabCuts) {
         if (button==Qt::RightButton) {
             //qDebug()<<"imageDragged("<<x<<y<<x2<<y2<<button<<"): 1";
             if (ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AnglePitch) {// pitch
-                const double dx=x2-lastX_reducedCoords;
-                const double dy=y2-lastY_reducedCoords;
+                const double dx=imageX2-lastX_reducedCoords;
+                const double dy=imageY2-lastY_reducedCoords;
                 const double angle=atan2(dy, dx)/M_PI*180.0;
                 ui->spinAngle->setValue(angle);
                 //qDebug()<<"imageDragged("<<x<<y<<x2<<y2<<button<<"): 2: angle="<<angle;
             } else if (ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AngleRoll) {// roll
-                const double dx=x2-lastX_reducedCoords;
-                const double dy=y2-lastY_reducedCoords;
-                const double angle=(abs(x-x2)>abs(y-y2)) ?
-                                         (atan2((x2-x), m_video_xytscaled.depth())/M_PI*180.0) :
-                                         (atan2((y2-y), m_video_xytscaled.depth())/M_PI*180.0) ;
+                const double dx=imageX2-lastX_reducedCoords;
+                const double dy=imageY2-lastY_reducedCoords;
+                const double angle=(abs(imageX-imageX2)>abs(imageY-imageY2)) ?
+                                         (atan2((imageX2-imageX), m_video_xytscaled.depth())/M_PI*180.0) :
+                                         (atan2((imageY2-imageY), m_video_xytscaled.depth())/M_PI*180.0) ;
                 ui->spinAngle->setValue(angle);
                 //qDebug()<<"imageDragged("<<x<<y<<x2<<y2<<button<<"): 3: angle="<<angle;
             }

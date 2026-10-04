@@ -204,12 +204,12 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation>SlitScanGenerator</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="175"/>
+        <location filename="../source/mainwindow.ui" line="274"/>
         <source>PROCESSING ...</source>
         <translation>VERARBEITE ...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="223"/>
+        <location filename="../source/mainwindow.ui" line="322"/>
         <source>ZY/XZ-cuts</source>
         <translation>ZY/XZ-Schnitte</translation>
     </message>
@@ -222,43 +222,43 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation type="vanished">Kippung</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="477"/>
+        <location filename="../source/mainwindow.ui" line="576"/>
         <source> °</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="320"/>
+        <location filename="../source/mainwindow.ui" line="419"/>
         <source>delete</source>
         <translation>Löschen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="396"/>
+        <location filename="../source/mainwindow.ui" line="495"/>
         <source>delete all</source>
         <translation>Alle Löschen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="279"/>
+        <location filename="../source/mainwindow.ui" line="378"/>
         <source>add XZ</source>
         <translation>XZ hinzufügen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="306"/>
+        <location filename="../source/mainwindow.ui" line="405"/>
         <source>add ZY</source>
         <translation>ZY hinzufügen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="505"/>
-        <location filename="../source/mainwindow.ui" line="523"/>
+        <location filename="../source/mainwindow.ui" line="604"/>
+        <location filename="../source/mainwindow.ui" line="622"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the width of the slit, whcih is copied from each frame into the output.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Note: This option is only available when the puitch/roll angle is 0°!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Setzt die Breite des Spalts, welcher aus jedem Frame in das Ausgabe-Bild kopiert wird.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;ACHTUNG: Diese Option ist nur nutzbar, wenn der Drehungs-/Kippungs-Winkel 0° ist!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="682"/>
+        <location filename="../source/mainwindow.ui" line="781"/>
         <source>Proc. Options</source>
         <translation>Verarbeitungsopt.</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="688"/>
+        <location filename="../source/mainwindow.ui" line="787"/>
         <source>Interpolation Method:</source>
         <translation>Interpolationsmethode:</translation>
     </message>
@@ -275,104 +275,104 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation type="vanished">Kubisch (höchste Qualität)</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="712"/>
+        <location filename="../source/mainwindow.ui" line="811"/>
         <source>Stills</source>
         <translation>Standbilder</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="718"/>
+        <location filename="../source/mainwindow.ui" line="817"/>
         <source># stills:</source>
         <translation>Anzahl Standbilder:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="732"/>
+        <location filename="../source/mainwindow.ui" line="831"/>
         <source>frames between stills:</source>
         <translation>Bilder zwischen zwei Standbildern:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="749"/>
+        <location filename="../source/mainwindow.ui" line="848"/>
         <source>mode:</source>
         <translation>Modus:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="756"/>
+        <location filename="../source/mainwindow.ui" line="855"/>
         <source>strip of stills</source>
         <translation>Streifen mit Standbildern</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="763"/>
+        <location filename="../source/mainwindow.ui" line="862"/>
         <source>separate files</source>
         <translation>separate Dateien für Standbilder</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="770"/>
+        <location filename="../source/mainwindow.ui" line="869"/>
         <source>gap between stills in strip:</source>
         <translation>Abstand zwischen Standbilder im Streifen:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="777"/>
+        <location filename="../source/mainwindow.ui" line="876"/>
         <source> % of height</source>
         <translation> % der Höhe</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="793"/>
+        <location filename="../source/mainwindow.ui" line="892"/>
         <source>border around stills in strip:</source>
         <translation>Rand um Standbilder im Streifen:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="800"/>
-        <location filename="../source/mainwindow.ui" line="823"/>
+        <location filename="../source/mainwindow.ui" line="899"/>
+        <location filename="../source/mainwindow.ui" line="922"/>
         <source> % of width</source>
         <translation> % der Breite
 </translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="816"/>
+        <location filename="../source/mainwindow.ui" line="915"/>
         <source>still marker line width:</source>
         <translation>Dicke der Standbild-Markierungslinie:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="859"/>
+        <location filename="../source/mainwindow.ui" line="958"/>
         <source>Normalization</source>
         <translation>Normalisierung</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="868"/>
+        <location filename="../source/mainwindow.ui" line="967"/>
         <source>normalization x:</source>
         <translation>X-Normalisierung:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="888"/>
+        <location filename="../source/mainwindow.ui" line="987"/>
         <source>normalization y:</source>
         <translation>Y-Normalisierung:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="905"/>
+        <location filename="../source/mainwindow.ui" line="1004"/>
         <source>normalize image to time-series (against intensity flicker in video)</source>
         <translation>normalisiere Bilder in der Zeitserie (entfernt Intensitätsvariationen im Video)</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="926"/>
+        <location filename="../source/mainwindow.ui" line="1025"/>
         <source>Filtering</source>
         <translation>Filterung</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="932"/>
+        <location filename="../source/mainwindow.ui" line="1031"/>
         <source>wave pattern filter </source>
         <translation>Bandpassfiler (Wellen)</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="957"/>
+        <location filename="../source/mainwindow.ui" line="1056"/>
         <source>wavelength:</source>
         <translation>Wellenlänge</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="980"/>
+        <location filename="../source/mainwindow.ui" line="1079"/>
         <source> +/- </source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1006"/>
+        <location filename="../source/mainwindow.ui" line="1105"/>
         <source>Pix</source>
         <translation>Pixel</translation>
     </message>
@@ -407,68 +407,68 @@ Erzeugungs-Zeitstempel: %3</translation>
     </message>
     <message>
         <location filename="../source/mainwindow.ui" line="143"/>
-        <location filename="../source/mainwindow.ui" line="1375"/>
+        <location filename="../source/mainwindow.ui" line="1474"/>
         <source>Process &amp;All</source>
         <translation>&amp;Alle Verarbeiten</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="252"/>
+        <location filename="../source/mainwindow.ui" line="351"/>
         <source> Scans Table </source>
         <translation> Tabelle der Schnitte </translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="406"/>
+        <location filename="../source/mainwindow.ui" line="505"/>
         <source> Current Scan Properties </source>
         <translation>Aktuelle Schnitt-Einstellungen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="433"/>
+        <location filename="../source/mainwindow.ui" line="532"/>
         <source>scan plane orientation:</source>
         <translation>Orientierung der Schnittebene:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="458"/>
+        <location filename="../source/mainwindow.ui" line="557"/>
         <source>angle:</source>
         <translation>Winkel:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="498"/>
+        <location filename="../source/mainwindow.ui" line="597"/>
         <source>add still image section:</source>
         <translation>Standbildanteil hinzufügen:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="508"/>
+        <location filename="../source/mainwindow.ui" line="607"/>
         <source>slit width:</source>
         <translation>Spaltbreite:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="555"/>
+        <location filename="../source/mainwindow.ui" line="654"/>
         <source>z step:</source>
         <translation>Z-Schritt:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="613"/>
+        <location filename="../source/mainwindow.ui" line="712"/>
         <source>before (1. frame):</source>
         <translation>vorher (1. Bild):</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="626"/>
-        <location filename="../source/mainwindow.ui" line="668"/>
+        <location filename="../source/mainwindow.ui" line="725"/>
+        <location filename="../source/mainwindow.ui" line="767"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add a part of the first frame to the slit scan.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Note: This option is only available when the puitch/roll angle is 0°!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>hinterher (letztes Bild):</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="655"/>
+        <location filename="../source/mainwindow.ui" line="754"/>
         <source>after (last frame):</source>
         <translation>hinterher (letztes Bild):</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1030"/>
+        <location filename="../source/mainwindow.ui" line="1129"/>
         <source>Color</source>
         <translation>Farbe</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1168"/>
+        <location filename="../source/mainwindow.ui" line="1267"/>
         <source>modify white point:</source>
         <translation>Weißpunkt anpassen:</translation>
     </message>
@@ -477,12 +477,12 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation type="vanished">Weißpunkt (R|G|B):</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1145"/>
+        <location filename="../source/mainwindow.ui" line="1244"/>
         <source>&lt;b&gt;Click on the preview image to select a location, where neutral white is shown.&lt;/b&gt;&lt;br/&gt;The whitepoint will be sampled from there.</source>
         <translation>&lt;b&gt;Klicken Sie in das Vorschaubild an eine Stelle, die neutrales Weiß zeigt.&lt;/b&gt;&lt;br/&gt;Der Weißpunkt wird von dort übernommen.</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1042"/>
+        <location filename="../source/mainwindow.ui" line="1141"/>
         <source>white point (R|G|B):</source>
         <translation>Weißpunkt (R|G|B):</translation>
     </message>
@@ -492,63 +492,63 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="526"/>
-        <location filename="../source/mainwindow.ui" line="574"/>
+        <location filename="../source/mainwindow.ui" line="625"/>
+        <location filename="../source/mainwindow.ui" line="673"/>
         <source> px</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1179"/>
+        <location filename="../source/mainwindow.ui" line="1278"/>
         <source>Output</source>
         <translation>Ausgabe</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1185"/>
+        <location filename="../source/mainwindow.ui" line="1284"/>
         <source>output basename:</source>
         <translation>Ausgabe-Basisname:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1201"/>
+        <location filename="../source/mainwindow.ui" line="1300"/>
         <source>empty = video filename</source>
         <translation>leer = Video-Dateiname</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1228"/>
+        <location filename="../source/mainwindow.ui" line="1327"/>
         <source>output fileformat:</source>
         <translation>Ausgabeformat:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1238"/>
+        <location filename="../source/mainwindow.ui" line="1337"/>
         <source>default</source>
         <translation>Standard</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1241"/>
+        <location filename="../source/mainwindow.ui" line="1340"/>
         <source>%</source>
         <translation>%</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1257"/>
+        <location filename="../source/mainwindow.ui" line="1356"/>
         <source>output file quality:</source>
         <translation>Ausgabequalität:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1264"/>
+        <location filename="../source/mainwindow.ui" line="1363"/>
         <source>output target location:</source>
         <translation>Ausgabeziel:</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1357"/>
+        <location filename="../source/mainwindow.ui" line="1456"/>
         <source>Open &amp;INI-file</source>
         <translation>&amp;INI-Datei öffnen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1366"/>
+        <location filename="../source/mainwindow.ui" line="1465"/>
         <source>Save INI-&amp;file</source>
         <translation>INI-Datei &amp;speichern</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1411"/>
+        <location filename="../source/mainwindow.ui" line="1510"/>
         <source>Pr&amp;ocess INI-File</source>
         <translation>INI-Datei &amp;verarbeiten</translation>
     </message>
@@ -557,32 +557,32 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation type="vanished">Alle Verarbeiten</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1288"/>
+        <location filename="../source/mainwindow.ui" line="1387"/>
         <source>&amp;File</source>
         <translation>&amp;Datei</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1305"/>
+        <location filename="../source/mainwindow.ui" line="1404"/>
         <source>&amp;Help</source>
         <translation>&amp;Hilfe</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1312"/>
+        <location filename="../source/mainwindow.ui" line="1411"/>
         <source>&amp;Language</source>
         <translation>&amp;Sprache (Language)</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1321"/>
+        <location filename="../source/mainwindow.ui" line="1420"/>
         <source>toolBar</source>
         <translation>Toolbar</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1336"/>
+        <location filename="../source/mainwindow.ui" line="1435"/>
         <source>&amp;Open Video</source>
         <translation>Video Ö&amp;ffnen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1345"/>
+        <location filename="../source/mainwindow.ui" line="1444"/>
         <source>&amp;Quit</source>
         <translation>&amp;Beenden</translation>
     </message>
@@ -599,105 +599,130 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation type="vanished">Alle Verarbeiten</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1384"/>
+        <location filename="../source/mainwindow.ui" line="1483"/>
         <source>&amp;About</source>
         <translation>&amp;Über</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1389"/>
+        <location filename="../source/mainwindow.ui" line="1488"/>
         <source>Test</source>
         <translation>&amp;Test</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1394"/>
+        <location filename="../source/mainwindow.ui" line="1493"/>
         <source>Open &amp;Example Video</source>
         <translation>&amp;Beispielvideo öffnen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1399"/>
+        <location filename="../source/mainwindow.ui" line="1498"/>
         <source>&amp;Settings ...</source>
         <translation>&amp;Einstellungen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.ui" line="1402"/>
+        <location filename="../source/mainwindow.ui" line="1501"/>
         <source>Open Settings Dialog</source>
         <translation>Einstellungs-Dialog öffnen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="70"/>
+        <location filename="../source/mainwindow.cpp" line="77"/>
         <source>Preview frame is outside the selected range</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="176"/>
+        <location filename="../source/mainwindow.ui" line="190"/>
+        <source>Zoom out (Ctrl+mouse wheel)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../source/mainwindow.ui" line="210"/>
+        <source>Zoom in (Ctrl+mouse wheel or trackpad pinch)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../source/mainwindow.ui" line="230"/>
+        <source>Reset preview zoom to 100%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../source/mainwindow.ui" line="246"/>
+        <source>100%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../source/mainwindow.ui" line="249"/>
+        <source>Shared preview zoom level</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../source/mainwindow.cpp" line="196"/>
         <source>%1 %2 [%3bit]</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="207"/>
-        <location filename="../source/mainwindow.cpp" line="913"/>
+        <location filename="../source/mainwindow.cpp" line="227"/>
+        <location filename="../source/mainwindow.cpp" line="1028"/>
         <source>Save Configuration File ...</source>
         <translation>Konfigurationsdatei speichern ...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="207"/>
-        <location filename="../source/mainwindow.cpp" line="391"/>
-        <location filename="../source/mainwindow.cpp" line="913"/>
+        <location filename="../source/mainwindow.cpp" line="227"/>
+        <location filename="../source/mainwindow.cpp" line="411"/>
+        <location filename="../source/mainwindow.cpp" line="1028"/>
         <source>INI-File (*.ini)</source>
         <translation>INI-Datei (*.ini)</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="391"/>
+        <location filename="../source/mainwindow.cpp" line="411"/>
         <source>Open Configuration File ...</source>
         <translation>Konfigurationsdatei öffnen ...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="397"/>
+        <location filename="../source/mainwindow.cpp" line="417"/>
         <source>Load Video File?</source>
         <translation>Video-Datei laden?</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="397"/>
+        <location filename="../source/mainwindow.cpp" line="417"/>
         <source>The INI-file you loaded mentioned a video. Should this video be loaded?</source>
         <translation>Die gerade geladene INI-Datei verweist auf eine zugehörige Video-Datei. Soll dieses zugehörige Video geladen werden?</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="453"/>
+        <location filename="../source/mainwindow.cpp" line="473"/>
         <source>Open Test Image ...</source>
         <translation>Testbilder laden ...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="468"/>
+        <location filename="../source/mainwindow.cpp" line="488"/>
         <source>Open Video File ...</source>
         <translation>Video-Datei laden ...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="486"/>
+        <location filename="../source/mainwindow.cpp" line="506"/>
         <source>%1 frames, %2x%3 Pixels^2</source>
         <translation>%1 Bilder, %2x%3 Pixel²</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="487"/>
+        <location filename="../source/mainwindow.cpp" line="507"/>
         <source>every %1-th frame, 1/%2x-scaling</source>
         <translation>jedes %1-te Bild, 1/%2x-Skalierung</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="489"/>
+        <location filename="../source/mainwindow.cpp" line="509"/>
         <source>Opening Video</source>
         <translation>Öffne Video</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="489"/>
+        <location filename="../source/mainwindow.cpp" line="509"/>
         <source>Cancel</source>
         <translation>&amp;Abbrechen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="490"/>
+        <location filename="../source/mainwindow.cpp" line="510"/>
         <source>opening file &apos;%1&apos;...</source>
         <translation>Öffne Datei &apos;%1&apos;...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="604"/>
+        <location filename="../source/mainwindow.cpp" line="624"/>
         <source>This option is not supported (deactivated) when a roll/pitch angle is used!</source>
         <translation>Diese Funktion wird nicht unterstützt (d.h. deaktiviert), wenn ein Kipp-/Drehwinkel eingestellt ist!</translation>
     </message>
@@ -710,18 +735,18 @@ Erzeugungs-Zeitstempel: %3</translation>
         <translation type="vanished">Lese Bild %1...</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="501"/>
-        <location filename="../source/mainwindow.cpp" line="537"/>
+        <location filename="../source/mainwindow.cpp" line="521"/>
+        <location filename="../source/mainwindow.cpp" line="557"/>
         <source>Error opening video</source>
         <translation>Fehler beim Öffnen des Videos</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="531"/>
+        <location filename="../source/mainwindow.cpp" line="551"/>
         <source>Video opened</source>
         <translation>Video erfolgreich geladen</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="531"/>
+        <location filename="../source/mainwindow.cpp" line="551"/>
         <source>Video: %1
 frame size: %2x%3
  frames: %4
@@ -732,7 +757,7 @@ frame size: %2x%3
  Farbkanäle: %5</translation>
     </message>
     <message>
-        <location filename="../source/mainwindow.cpp" line="553"/>
+        <location filename="../source/mainwindow.cpp" line="573"/>
         <source>Open Example Video File ...</source>
         <translation>Beispielvideo öffnen ...</translation>
     </message>
