@@ -144,6 +144,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(updateGUIAndRedisplay()));
     connect(ui->spinWavelength, SIGNAL(valueChanged(double)), this, SLOT(updateGUIAndRedisplay()));
     connect(ui->spinAngle, SIGNAL(valueChanged(double)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinRotationTurns, SIGNAL(valueChanged(double)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinWaveAmplitudeX, SIGNAL(valueChanged(double)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinWaveAmplitudeY, SIGNAL(valueChanged(double)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinWaveCycles, SIGNAL(valueChanged(double)), this, SLOT(updateGUIAndRedisplay()));
+    connect(ui->spinWavePhaseY, SIGNAL(valueChanged(double)), this, SLOT(updateGUIAndRedisplay()));
     connect(ui->spinSlitWidth, SIGNAL(valueChanged(int)), this, SLOT(updateGUIAndRedisplay()));
     connect(ui->spinZStep, SIGNAL(valueChanged(int)), this, SLOT(updateGUIAndRedisplay()));
     connect(ui->cmbAngle, SIGNAL(currentIndexChanged(int)), this, SLOT(updateGUIAndRedisplay()));
@@ -197,6 +202,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     loadLanguages();
     loadLanguage(m_settings.value("lastLanguage", "en").toString());
+    updateProcessingItemWidgetsEnabledStates();
     setWidgetsEnabledForCurrentMode();
 }
 
@@ -578,7 +584,9 @@ void MainWindow::openExampleVideo()
 
 
 ProcessingTask::ProcessingItem MainWindow::fillProcessingItem(ProcessingTask::Mode mode) const {
-    const auto item = fillProcessingItem(lastX_reducedCoords*video_xyFactor, lastY_reducedCoords*video_xyFactor, ui->spinZStep->value(), mode);
+    auto item = fillProcessingItem(lastX_reducedCoords*video_xyFactor, lastY_reducedCoords*video_xyFactor, ui->spinZStep->value(), mode);
+    item.waveAmplitudeX*=video_xyFactor;
+    item.waveAmplitudeY*=video_xyFactor;
     return item;
 }
 
@@ -588,13 +596,20 @@ ProcessingTask::ProcessingItem MainWindow::fillProcessingItem(int locX, int locY
     item.location_x=locX;
     item.location_y=locY;
     item.angle=ui->spinAngle->value();
+    item.rotationTurns=ui->spinRotationTurns->value();
+    item.waveAmplitudeX=ui->spinWaveAmplitudeX->value();
+    item.waveAmplitudeY=ui->spinWaveAmplitudeY->value();
+    item.waveCycles=ui->spinWaveCycles->value();
+    item.wavePhaseY=ui->spinWavePhaseY->value();
     item.angleMode=ProcessingTask::AngleMode::AngleNone;
     item.addBefore=ui->cmbAddBefore->currentMode();
     item.addAfter=ui->cmbAddAfter->currentMode();
     item.set_slit_width(ui->spinSlitWidth->value());
     item.set_z_step(zstep);
-    if (fabs(item.angle)>0.0001) {
-        item.angleMode=ui->cmbAngle->currentMode();
+    const auto selectedAngleMode=ui->cmbAngle->currentMode();
+    const bool hasRotation=selectedAngleMode==ProcessingTask::AngleMode::AngleRotateThroughStack && std::fabs(item.rotationTurns)>0.0001;
+    if (fabs(item.angle)>0.0001 || hasRotation || selectedAngleMode==ProcessingTask::AngleMode::AngleWaveThroughStack) {
+        item.angleMode=selectedAngleMode;
         item.addBefore=ProcessingTask::AddBeforeAfterMode::None;
         item.addAfter=ProcessingTask::AddBeforeAfterMode::None;
         item.set_slit_width(1);
@@ -621,8 +636,18 @@ void MainWindow::setLastXY(int x, int y) {
 }
 void MainWindow::updateProcessingItemWidgetsEnabledStates()
 {
-    const QString ttDeactivatedDueToAngle=tr("This option is not supported (deactivated) when a roll/pitch angle is used!");
-    if (std::fabs(ui->spinAngle->value())>0.0001) {
+    const bool rotatesThroughStack=ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AngleRotateThroughStack;
+    const bool wavesThroughStack=ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AngleWaveThroughStack;
+    ui->label_28->setText(rotatesThroughStack ? tr("starting angle:") : tr("angle:"));
+    ui->labelRotationTurns->setVisible(rotatesThroughStack);
+    ui->spinRotationTurns->setVisible(rotatesThroughStack);
+    ui->labelWavePath->setVisible(wavesThroughStack);
+    ui->waveParametersWidget->setVisible(wavesThroughStack);
+    const QString ttDeactivatedDueToAngle=tr("This option is not supported (deactivated) when a rotated or moving scanline is used!");
+    const bool angleIsActive=std::fabs(ui->spinAngle->value())>0.0001 ||
+        (rotatesThroughStack && std::fabs(ui->spinRotationTurns->value())>0.0001) ||
+        wavesThroughStack;
+    if (angleIsActive) {
         ui->spinSlitWidth->setEnabled(false);
         ui->labSlitWidth->setEnabled(false);
         ui->labAddbeforeAfter->setEnabled(false);
@@ -646,6 +671,12 @@ void MainWindow::updateProcessingItemWidgetsEnabledStates()
 void MainWindow::storeProcessingItemToGUIWidgetsAndRedisplayScan(const ProcessingTask::ProcessingItem& pi)
 {
     if (ui->spinAngle->value()!=pi.angle) ui->spinAngle->setValue(pi.angle);
+    if (ui->spinRotationTurns->value()!=pi.rotationTurns) ui->spinRotationTurns->setValue(pi.rotationTurns);
+    const double amplitudeScale=qMax(0.0001,video_xyFactor);
+    if (ui->spinWaveAmplitudeX->value()!=pi.waveAmplitudeX/amplitudeScale) ui->spinWaveAmplitudeX->setValue(pi.waveAmplitudeX/amplitudeScale);
+    if (ui->spinWaveAmplitudeY->value()!=pi.waveAmplitudeY/amplitudeScale) ui->spinWaveAmplitudeY->setValue(pi.waveAmplitudeY/amplitudeScale);
+    if (ui->spinWaveCycles->value()!=pi.waveCycles) ui->spinWaveCycles->setValue(pi.waveCycles);
+    if (ui->spinWavePhaseY->value()!=pi.wavePhaseY) ui->spinWavePhaseY->setValue(pi.wavePhaseY);
     if (ui->spinSlitWidth->value()!=pi.get_slit_width()) ui->spinSlitWidth->setValue(pi.get_slit_width());
     if (ui->spinZStep->value()!=pi.get_z_step()) ui->spinZStep->setValue(pi.get_z_step());
     if (ui->cmbAngle->currentMode()!=pi.angleMode) ui->cmbAngle->setCurrentMode(pi.angleMode);
@@ -787,24 +818,50 @@ QImage MainWindow::createTopLeftPreviewImage() const
     const double xyFactor=isFilteringPreview ? video_xyFactor : 1.0;
     const double invxyFactor=isFilteringPreview ? 1.0 : video_xyFactor;
     double angle=ui->spinAngle->value();
-    if (!isFilteringPreview && ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AnglePitch) {
+    const auto angleMode=ui->cmbAngle->currentMode();
+    double centerX=lastX_reducedCoords*xyFactor;
+    double centerY=lastY_reducedCoords*xyFactor;
+    if (angleMode==ProcessingTask::AngleMode::AngleRotateThroughStack) {
+        const int firstFrame=ui->spinFirstFrame->value();
+        const int lastFrame=ui->spinLastFrame->value();
+        const double progress=lastFrame>firstFrame ? qBound(0.0,double(m_previewFrame-firstFrame)/double(lastFrame-firstFrame),1.0) : 0.0;
+        angle+=360.0*ui->spinRotationTurns->value()*progress;
+    } else if (angleMode==ProcessingTask::AngleMode::AngleWaveThroughStack) {
+        const int firstFrame=ui->spinFirstFrame->value();
+        const int lastFrame=ui->spinLastFrame->value();
+        const QPointF waveCenter=sinusoidalScanCenter(m_previewFrame-firstFrame,qMax(1,lastFrame-firstFrame+1),
+            qRound(centerX),qRound(centerY),ui->spinWaveAmplitudeX->value()*xyFactor,ui->spinWaveAmplitudeY->value()*xyFactor,
+            ui->spinWaveCycles->value(),ui->spinWavePhaseY->value());
+        centerX=waveCenter.x();
+        centerY=waveCenter.y();
+    } else if (!isFilteringPreview && angleMode==ProcessingTask::AngleMode::AnglePitch) {
         angle=atan(tan(angle/180.0*M_PI)*stride/invxyFactor)/M_PI*180.0;
+    }
+    if (angleMode==ProcessingTask::AngleMode::AnglePitch) {
+        const int firstFrame=ui->spinFirstFrame->value();
+        const int firstPreviewIndex=isFilteringPreview ? firstFrame-1 : (firstFrame-1+stride-1)/stride;
+        const int pitchFrameOffset=frameIndex-firstPreviewIndex;
+        const double pitchDrift=std::tan(angle/180.0*M_PI)*pitchFrameOffset;
+        centerX+=pitchDrift;
+        centerY+=pitchDrift;
     }
 
     QPainter painter(&image);
     painter.setPen(QPen(QColor("red")));
-    if (ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AngleNone ||
-        ui->cmbAngle->currentMode()==ProcessingTask::AngleMode::AngleRoll) {
+    if (angleMode==ProcessingTask::AngleMode::AngleNone ||
+        angleMode==ProcessingTask::AngleMode::AngleRoll ||
+        angleMode==ProcessingTask::AngleMode::AngleRotateThroughStack ||
+        angleMode==ProcessingTask::AngleMode::AngleWaveThroughStack) {
         painter.save();
-        painter.translate(lastX_reducedCoords,lastY_reducedCoords);
+        painter.translate(centerX,centerY);
         painter.rotate(angle);
         const int length=2*qMax(image.width(),image.height());
         painter.drawLine(-length,0,length,0);
         painter.drawLine(0,-length,0,length);
         painter.restore();
     } else {
-        painter.drawLine(0,lastY_reducedCoords*xyFactor,image.width(),lastY_reducedCoords*xyFactor);
-        painter.drawLine(lastX_reducedCoords*xyFactor,0,lastX_reducedCoords*xyFactor,image.height());
+        painter.drawLine(0,qRound(centerY),image.width(),qRound(centerY));
+        painter.drawLine(qRound(centerX),0,qRound(centerX),image.height());
     }
     if (ui->chkNormalize->isChecked()) {
         painter.setPen(QPen(QColor("blue")));
@@ -830,12 +887,31 @@ void MainWindow::redisplayCurrentScan()
     double xyFactor=1;
     double invxyFactor=video_xyFactor;
     double tFactor=video_everyNthFrame;
+    int previewFirstFrame=ui->spinFirstFrame->value();
+    int previewLastFrame=ui->spinLastFrame->value();
+    int previewZStep=ui->spinZStep->value();
     if (isFilteringPreview) {
         video_input=&m_video_some_frames;
         xyFactor=video_xyFactor;
         invxyFactor=1;
         tFactor=1;
     } else {
+        const int stride=qMax(1,video_everyNthFrame);
+        const int previewDepth=qMax(1,video_input->depth());
+        int firstIndex=(previewFirstFrame-1+stride-1)/stride;
+        int lastIndex=(previewLastFrame-1)/stride;
+        if (firstIndex>lastIndex) {
+            const double rangeCenter=(double(previewFirstFrame)+previewLastFrame)/2.0;
+            firstIndex=qBound(0,qRound((rangeCenter-1.0)/stride),previewDepth-1);
+            lastIndex=firstIndex;
+        } else {
+            firstIndex=qBound(0,firstIndex,previewDepth-1);
+            lastIndex=qBound(firstIndex,lastIndex,previewDepth-1);
+        }
+        previewFirstFrame=firstIndex+1;
+        previewLastFrame=lastIndex+1;
+        previewZStep=qMax(1,qRound(double(previewZStep)/stride));
+
         switch (angleMode) {
         case ProcessingTask::AngleMode::AnglePitch:
             // pitch angle is corrected, so the (in x/y and t differently reduced) preview-dataset yields the same results as when processing the full dataset.
@@ -844,6 +920,8 @@ void MainWindow::redisplayCurrentScan()
             break;
         case ProcessingTask::AngleMode::AngleNone:
         case ProcessingTask::AngleMode::AngleRoll:
+        case ProcessingTask::AngleMode::AngleRotateThroughStack:
+        case ProcessingTask::AngleMode::AngleWaveThroughStack:
             // for simple roll-angles we do not have to correct, because the angle relates x and y, which are modified with the same factor!
             break;
         }
@@ -863,9 +941,15 @@ void MainWindow::redisplayCurrentScan()
         ProcessingTask taskXZ(std::make_shared<VideoReader_CImg>(*video_input), std::make_shared<ImageWriter_CImg>(cxz, ImageWriter::FinalImage), std::make_shared<ConfigIO_Dummy>());
         { // store current settings and modify the ProcessingItem to only cover the currently selected item
             saveToTask(taskXZ, 1.0/invxyFactor, 1.0/tFactor);
+            taskXZ.firstFrame=previewFirstFrame;
+            taskXZ.lastFrame=previewLastFrame;
             taskXZ.pis.clear();
-            ProcessingTask::ProcessingItem pi=fillProcessingItem(lastX_reducedCoords*xyFactor, lastY_reducedCoords*xyFactor, ui->spinZStep->value()*tFactor, ProcessingTask::Mode::XZ);
+            ProcessingTask::ProcessingItem pi=fillProcessingItem(lastX_reducedCoords*xyFactor, lastY_reducedCoords*xyFactor, previewZStep, ProcessingTask::Mode::XZ);
             pi.angle=angleCorrected;
+            if (isFilteringPreview) {
+                pi.waveAmplitudeX*=video_xyFactor;
+                pi.waveAmplitudeY*=video_xyFactor;
+            }
             taskXZ.pis.push_back(pi);
             if (!isFilteringPreview) taskXZ.filterNotch=false;
             if (isFilteringPreview) taskXZ.filterNotch=ui->chkWavelength->isChecked();
@@ -875,9 +959,15 @@ void MainWindow::redisplayCurrentScan()
         ProcessingTask taskYZ(std::make_shared<VideoReader_CImg>(*video_input), std::make_shared<ImageWriter_CImg>(cyz, ImageWriter::FinalImage), std::make_shared<ConfigIO_Dummy>());
         { // store current settings and modify the ProcessingItem to only cover the currently selected item
             saveToTask(taskYZ, 1.0/invxyFactor, 1.0/tFactor);
+            taskYZ.firstFrame=previewFirstFrame;
+            taskYZ.lastFrame=previewLastFrame;
             taskYZ.pis.clear();
-            ProcessingTask::ProcessingItem pi=fillProcessingItem(lastX_reducedCoords*xyFactor, lastY_reducedCoords*xyFactor, ui->spinZStep->value()*tFactor, ProcessingTask::Mode::ZY);
+            ProcessingTask::ProcessingItem pi=fillProcessingItem(lastX_reducedCoords*xyFactor, lastY_reducedCoords*xyFactor, previewZStep, ProcessingTask::Mode::ZY);
             pi.angle=angleCorrected;
+            if (isFilteringPreview) {
+                pi.waveAmplitudeX*=video_xyFactor;
+                pi.waveAmplitudeY*=video_xyFactor;
+            }
             taskYZ.pis.push_back(pi);
             if (!isFilteringPreview) taskYZ.filterNotch=false;
             if (isFilteringPreview) taskXZ.filterNotch=ui->chkWavelength->isChecked();

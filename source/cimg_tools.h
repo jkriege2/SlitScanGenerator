@@ -6,6 +6,7 @@
 #include <sstream>
 #include <typeinfo>
 #include <QImage>
+#include <QPointF>
 #include <QString>
 
 inline size_t qHash(const QPointF &key, size_t seed = 0) {
@@ -42,6 +43,9 @@ cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_lib
 cimg_library::CImg<uint8_t> extractZY_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t>& img, int x,double angle, const interpolatingAtXYFunctor& atFunc, int slit_offset, int slit_width, int& zout, int* lenout=nullptr);
 cimg_library::CImg<uint8_t> extractXZ_atz_roll(int z, int depth, const cimg_library::CImg<uint8_t>& img, int x, int y, double angle, const interpolatingAtXYFunctor& atFunc, int slit_offset, int slit_width);
 cimg_library::CImg<uint8_t> extractZY_atz_roll(int z, int depth, const cimg_library::CImg<uint8_t>& img, int x, int y,double angle, const interpolatingAtXYFunctor& atFunc, int slit_offset, int slit_width);
+cimg_library::CImg<uint8_t> extract_atz_rotate(int frameIndex, int frameCount, const cimg_library::CImg<uint8_t>& img, int centerX, int centerY, double startAngle, double revolutions, const interpolatingAtXYFunctor& atFunc);
+QPointF sinusoidalScanCenter(int frameIndex, int frameCount, int centerX, int centerY, double amplitudeX, double amplitudeY, double cycles, double phaseY);
+cimg_library::CImg<uint8_t> extract_atz_wave(int frameIndex, int frameCount, const cimg_library::CImg<uint8_t>& img, int centerX, int centerY, double startAngle, double amplitudeX, double amplitudeY, double cycles, double phaseY, const interpolatingAtXYFunctor& atFunc);
 
 template <class T>
 std::string CImgSize2String(const cimg_library::CImg<T>& img) {

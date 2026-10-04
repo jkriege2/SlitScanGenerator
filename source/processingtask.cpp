@@ -227,6 +227,11 @@ ProcessingTask::ProcessingItem::ProcessingItem(int x, int y):
     location_x(x),
     location_y(y),
     angle(0),
+    rotationTurns(0.5),
+    waveAmplitudeX(0),
+    waveAmplitudeY(0),
+    waveCycles(1),
+    wavePhaseY(90),
     angleMode(AngleMode::AngleNone),
     slit_width(1),
     addBefore(AddBeforeAfterMode::None),
@@ -238,10 +243,24 @@ ProcessingTask::ProcessingItem::ProcessingItem(int x, int y):
 
 int ProcessingTask::ProcessingItem::angleModeForCombo() const {
     if (filteredAngleMode()==AngleMode::AnglePitch) return 1;
+    if (filteredAngleMode()==AngleMode::AngleRotateThroughStack) return 2;
+    if (filteredAngleMode()==AngleMode::AngleWaveThroughStack) return 3;
     return 0;
 }
 
+int ProcessingTask::selectedFrameCount() const
+{
+    if (firstFrame>=1 && lastFrame>=firstFrame) return lastFrame-firstFrame+1;
+    return qMax(1,outputFrames);
+}
+
 ProcessingTask::AngleMode ProcessingTask::ProcessingItem::filteredAngleMode() const {
+    if (angleMode==AngleMode::AngleRotateThroughStack) {
+        return (std::fabs(angle)<0.0001 && std::fabs(rotationTurns)<0.0001) ? AngleMode::AngleNone : angleMode;
+    }
+    if (angleMode==AngleMode::AngleWaveThroughStack) {
+        return angleMode;
+    }
     if (angle==0) return AngleMode::AngleNone;
     else return angleMode;
 }
@@ -258,6 +277,11 @@ void ProcessingTask::ProcessingItem::save(std::shared_ptr<ConfigIO> ini, const s
     ini->setValue(basename+"location_y", location_y);
     ini->setValue(basename+"angle_mode", static_cast<int>(angleMode));
     ini->setValue(basename+"angle", angle);
+    ini->setValue(basename+"rotation_turns", rotationTurns);
+    ini->setValue(basename+"wave_amplitude_x", waveAmplitudeX);
+    ini->setValue(basename+"wave_amplitude_y", waveAmplitudeY);
+    ini->setValue(basename+"wave_cycles", waveCycles);
+    ini->setValue(basename+"wave_phase_y", wavePhaseY);
     ini->setValue(basename+"slit_width", slit_width);
     ini->setValue(basename+"z_step", z_step);
     ini->setValue(basename+"add_before", static_cast<int>(addBefore));
@@ -273,6 +297,11 @@ void ProcessingTask::ProcessingItem::load(std::shared_ptr<ConfigIO> ini, const s
     location_y=ini->value(basename+"location_y", location_y);
     angleMode=static_cast<AngleMode>(ini->value(basename+"angle_mode", static_cast<int>(angleMode)));
     angle=ini->value(basename+"angle", angle);
+    rotationTurns=ini->value(basename+"rotation_turns", rotationTurns);
+    waveAmplitudeX=ini->value(basename+"wave_amplitude_x", waveAmplitudeX);
+    waveAmplitudeY=ini->value(basename+"wave_amplitude_y", waveAmplitudeY);
+    waveCycles=ini->value(basename+"wave_cycles", waveCycles);
+    wavePhaseY=ini->value(basename+"wave_phase_y", wavePhaseY);
     slit_width=ini->value(basename+"slit_width", slit_width);
     z_step=ini->value(basename+"z_step", z_step);
     addBefore=static_cast<AddBeforeAfterMode>(ini->value(basename+"add_before", static_cast<int>(addBefore)));
@@ -371,6 +400,7 @@ bool ProcessingTask::processInit()
                 outputFrames=m_reader->getFrameCount();
             }
         }
+        const int rotationDepth=selectedFrameCount();
         int still_b=stillBorder/100.0*frame.width();
         int still_g=stillGap/100.0*frame.height();
         if (m_reporter) m_reporter->reportFrameProgress(1, pis.size()+2+m_reader->getFrameCount());
@@ -382,7 +412,7 @@ bool ProcessingTask::processInit()
             int addedOutputImageLengthBefore=0;
             int addedOutputImageLengthAfter=0;
             if (pi.mode==Mode::ZY) {
-                if (pi.angleMode==AngleMode::AngleNone || fabs(pi.angle)<0.0001) {
+                if (pi.filteredAngleMode()==AngleMode::AngleNone) {
                     line=extractZY_atz(0, frame, pi.location_x, pi.get_slit_offset(), pi.get_slit_width());
                     if (pi.addBefore==AddBeforeAfterMode::ToLower) addedOutputImageLengthBefore+=pi.location_x;
                     else if (pi.addBefore==AddBeforeAfterMode::ToHigher) addedOutputImageLengthBefore+=frame.width()-pi.location_x-1;
@@ -392,6 +422,10 @@ bool ProcessingTask::processInit()
                     line=extractZY_atz_roll(0, outputFrames, frame, pi.location_x, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), pi.get_slit_offset(), pi.get_slit_width());
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
                     line=extractZY_atz_pitch(0, outputFrames, frame, pi.location_x, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), pi.get_slit_offset(), pi.get_slit_width(), zout, &len);
+                } else if (pi.angleMode==AngleMode::AngleRotateThroughStack) {
+                    line=extract_atz_rotate(0, rotationDepth, frame, pi.location_x, pi.location_y, pi.angle, pi.rotationTurns, InterpolationMethod2XYFunctor(interpolationMethod));
+                } else if (pi.angleMode==AngleMode::AngleWaveThroughStack) {
+                    line=extract_atz_wave(0,rotationDepth,frame,pi.location_x,pi.location_y,pi.angle,pi.waveAmplitudeX,pi.waveAmplitudeY,pi.waveCycles,pi.wavePhaseY,InterpolationMethod2XYFunctor(interpolationMethod));
                 }
                 results.push_back(ResultData());
                 const int outputpixels=len*line.height();
@@ -428,7 +462,7 @@ bool ProcessingTask::processInit()
 
                 //qDebug()<<"output size: "<<cimgsize2string(results[j].img);
             } else if (pi.mode==Mode::XZ) {
-                if (pi.angleMode==AngleMode::AngleNone || fabs(pi.angle)<0.0001) {
+                if (pi.filteredAngleMode()==AngleMode::AngleNone) {
                     line=extractXZ_atz(0, frame, pi.location_y, pi.get_slit_offset(), pi.get_slit_width());
                     if (pi.addBefore==AddBeforeAfterMode::ToLower) addedOutputImageLengthBefore+=pi.location_y;
                     else if (pi.addBefore==AddBeforeAfterMode::ToHigher) addedOutputImageLengthBefore+=frame.height()-pi.location_y-1;
@@ -438,6 +472,10 @@ bool ProcessingTask::processInit()
                     line=extractXZ_atz_roll(0, outputFrames, frame, pi.location_x, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), pi.get_slit_offset(), pi.get_slit_width());
                 } else if (pi.angleMode==AngleMode::AnglePitch) {
                     line=extractXZ_atz_pitch(0, outputFrames, frame, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), pi.get_slit_offset(), pi.get_slit_width(), zout, &len);
+                } else if (pi.angleMode==AngleMode::AngleRotateThroughStack) {
+                    line=extract_atz_rotate(0, rotationDepth, frame, pi.location_x, pi.location_y, pi.angle, pi.rotationTurns, InterpolationMethod2XYFunctor(interpolationMethod));
+                } else if (pi.angleMode==AngleMode::AngleWaveThroughStack) {
+                    line=extract_atz_wave(0,rotationDepth,frame,pi.location_x,pi.location_y,pi.angle,pi.waveAmplitudeX,pi.waveAmplitudeY,pi.waveCycles,pi.wavePhaseY,InterpolationMethod2XYFunctor(interpolationMethod));
                 }
                 results.push_back(ResultData());
                 results[j].img.assign(line.width(), len*line.height()+addedOutputImageLengthBefore+addedOutputImageLengthAfter, 1, 3);
@@ -510,6 +548,7 @@ bool ProcessingTask::processStep()
         int still_b=stillBorder/100.0*frame.width();
         int still_g=stillGap/100.0*frame.height();
         int stilllw=std::max<int>(1,stillLineWidth/100.0*frame.width());
+        const int rotationDepth=selectedFrameCount();
 
         for (int j=0; j<results.size(); j++) {
             const ProcessingTask::ProcessingItem& pi=pis[j];
@@ -523,7 +562,7 @@ bool ProcessingTask::processStep()
                 cimg_library::CImg<uint8_t> line;
                 if (pi.mode==Mode::ZY) {
                     const int z0=res.zs_val;
-                    if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
+                    if (pi.filteredAngleMode()==AngleMode::AngleNone) {
                         TIME_BLOCK_SW(timer, "extractZY_atz()");
                         res.zs_val++;
                         if (res.zs_val>z0) {
@@ -540,13 +579,19 @@ bool ProcessingTask::processStep()
                         TIME_BLOCK_SW(timer, "extractZY_atz_pitch()");
                         line=extractZY_atz_pitch(z, outputFrames, frame, pi.location_x, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), pi.get_slit_offset(), pi.get_slit_width(), res.zs_val);
                         //qDebug()<<"extractZY_atz_pitch: z="<<z<<", res.zs_val="<<res.zs_val<<", line.height="<<line.height();
+                    } else if (pi.angleMode==AngleMode::AngleRotateThroughStack) {
+                        line=extract_atz_rotate(z, rotationDepth, frame, pi.location_x, pi.location_y, pi.angle, pi.rotationTurns, InterpolationMethod2XYFunctor(interpolationMethod));
+                        res.zs_val++;
+                    } else if (pi.angleMode==AngleMode::AngleWaveThroughStack) {
+                        line=extract_atz_wave(z,rotationDepth,frame,pi.location_x,pi.location_y,pi.angle,pi.waveAmplitudeX,pi.waveAmplitudeY,pi.waveCycles,pi.wavePhaseY,InterpolationMethod2XYFunctor(interpolationMethod));
+                        res.zs_val++;
                     }
                     /*if (z0+line.height()-1>=res.width()) {
                         // resize of necessary
                         //qDebug()<<"resize "<<cimgsize2string(res)<<"  -> "<<z0+line.height()<<"x"<<res.height()<<"x"<<res.depth()<<"x"<<res.spectrum();
                         res.resize(z0+line.height(), res.height(), res.depth(), res.spectrum());
                     }*/
-                    if (pi.angleMode!=AngleMode::AngleNone && pi.angle!=0 && res.zs_val>z0) {
+                    if (pi.filteredAngleMode()!=AngleMode::AngleNone && res.zs_val>z0) {
                         TIME_BLOCK_SW(timer, "StoreLine")
                         for (int c=0; c<3; c++) {
                             for (int y=0; y<line.width(); y++) {
@@ -566,7 +611,7 @@ bool ProcessingTask::processStep()
                     }
                 } else if (pi.mode==Mode::XZ) {
                     const int z0=res.zs_val;
-                    if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
+                    if (pi.filteredAngleMode()==AngleMode::AngleNone) {
                         TIME_BLOCK_SW(timer, "extractXZ_atz()");
                         res.zs_val++;
                         if (res.zs_val>z0) {
@@ -583,6 +628,12 @@ bool ProcessingTask::processStep()
                         TIME_BLOCK_SW(timer, "extractXZ_atz_pitch()");
                         line=extractXZ_atz_pitch(z, outputFrames, frame, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), pi.get_slit_offset(), pi.get_slit_width(), res.zs_val);
                         //qDebug()<<"extractXZ_atz_pitch: z="<<z<<", res.zs_val="<<res.zs_val<<", line.height="<<line.height();
+                    } else if (pi.angleMode==AngleMode::AngleRotateThroughStack) {
+                        line=extract_atz_rotate(z, rotationDepth, frame, pi.location_x, pi.location_y, pi.angle, pi.rotationTurns, InterpolationMethod2XYFunctor(interpolationMethod));
+                        res.zs_val++;
+                    } else if (pi.angleMode==AngleMode::AngleWaveThroughStack) {
+                        line=extract_atz_wave(z,rotationDepth,frame,pi.location_x,pi.location_y,pi.angle,pi.waveAmplitudeX,pi.waveAmplitudeY,pi.waveCycles,pi.wavePhaseY,InterpolationMethod2XYFunctor(interpolationMethod));
+                        res.zs_val++;
                     }
                     /*if (z0+line.height()-1>=res.height()) {
                         // resize of necessary
@@ -590,7 +641,7 @@ bool ProcessingTask::processStep()
                         res.resize(res.width(), z0+line.height(), res.depth(), res.spectrum());
 
                     }*/
-                    if (pi.angleMode!=AngleMode::AngleNone && pi.angle!=0 && res.zs_val>z0) {
+                    if (pi.filteredAngleMode()!=AngleMode::AngleNone && res.zs_val>z0) {
                         TIME_BLOCK_SW(timer, "StoreLine()");
                         for (int c=0; c<3; c++) {
                             for (int y=0; y<line.height(); y++) {

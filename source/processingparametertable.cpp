@@ -28,6 +28,8 @@ void ProcessingParameterTable::save(ProcessingTask& task, double xyScaling, doub
     for (auto& p: task.pis) {
         p.location_x=p.location_x*xyScaling;
         p.location_y=p.location_y*xyScaling;
+        p.waveAmplitudeX*=xyScaling;
+        p.waveAmplitudeY*=xyScaling;
         p.set_z_step(p.get_z_step()*tScaling);
         switch (p.angleMode) {
         case ProcessingTask::AngleMode::AnglePitch:
@@ -37,6 +39,8 @@ void ProcessingParameterTable::save(ProcessingTask& task, double xyScaling, doub
             break;
         case ProcessingTask::AngleMode::AngleNone:
         case ProcessingTask::AngleMode::AngleRoll:
+        case ProcessingTask::AngleMode::AngleRotateThroughStack:
+        case ProcessingTask::AngleMode::AngleWaveThroughStack:
             // for simple roll-angles we do not have to correct, because the angle relates x and y, which are modified with the same factor!
             break;
         }
@@ -102,6 +106,11 @@ QVariant ProcessingParameterTable::data(const QModelIndex &index, int role) cons
             if (angleMode==ProcessingTask::AngleMode::AngleNone) return "---";
             else if (angleMode==ProcessingTask::AngleMode::AngleRoll) return tr("roll")+" ("+QString::number(angle, 'f', 1)+QLatin1Char('\xB0')+")";
             else if (angleMode==ProcessingTask::AngleMode::AnglePitch) return tr("pitch")+" ("+QString::number(angle, 'f', 1)+QLatin1Char('\xB0')+")";
+            else if (angleMode==ProcessingTask::AngleMode::AngleRotateThroughStack) return tr("rotate through stack")+" ("+QString::number(m_data.value(index.row(), ProcessingTask::ProcessingItem()).rotationTurns, 'f', 2)+" rev)";
+            else if (angleMode==ProcessingTask::AngleMode::AngleWaveThroughStack) {
+                const auto& item=m_data.value(index.row(),ProcessingTask::ProcessingItem());
+                return tr("wave")+QString(" (%1, %2 px; %3 cycles)").arg(item.waveAmplitudeX,0,'f',0).arg(item.waveAmplitudeY,0,'f',0).arg(item.waveCycles,0,'f',2);
+            }
         } else if (index.column()==colSlitWidth) {
             return slit_width;
         } else if (index.column()==colZStep) {

@@ -278,3 +278,41 @@ cimg_library::CImg<uint8_t> extractZY_atz_roll(int z, int depth, const cimg_libr
     if (approx0(angle)) return extractZY_atz(z, img_src, x, slit_offset, slit_width);
     else return extractXZ_atz_roll(z, depth, img_src, x, y, angle-90.0, atFunc, slit_offset, slit_width);
 }
+
+static cimg_library::CImg<uint8_t> extractFixedLengthLine(const cimg_library::CImg<uint8_t>& img, double centerX, double centerY, double angleDegrees, const interpolatingAtXYFunctor& atFunc)
+{
+    const int lineLength=qMax(1,static_cast<int>(std::ceil(std::hypot(double(img.width()),double(img.height())))));
+    const double angle=angleDegrees/180.0*M_PI;
+    const double directionX=std::cos(angle);
+    const double directionY=std::sin(angle);
+    cimg_library::CImg<uint8_t> line(lineLength,1,1,3,0);
+
+    for (int i=0; i<lineLength; ++i) {
+        const double distance=double(i)-(lineLength-1)/2.0;
+        const float x=static_cast<float>(centerX+distance*directionX);
+        const float y=static_cast<float>(centerY+distance*directionY);
+        if (x<0.0f || x>img.width()-1 || y<0.0f || y>img.height()-1) continue;
+        for (int c=0; c<3; ++c) line(i,0,0,c)=static_cast<uint8_t>(atFunc(img,x,y,0,c));
+    }
+    return line;
+}
+
+cimg_library::CImg<uint8_t> extract_atz_rotate(int frameIndex, int frameCount, const cimg_library::CImg<uint8_t>& img, int centerX, int centerY, double startAngle, double revolutions, const interpolatingAtXYFunctor& atFunc)
+{
+    const double progress=(frameCount>1) ? qBound(0.0,double(frameIndex)/double(frameCount-1),1.0) : 0.0;
+    return extractFixedLengthLine(img,centerX,centerY,startAngle+360.0*revolutions*progress,atFunc);
+}
+
+QPointF sinusoidalScanCenter(int frameIndex, int frameCount, int centerX, int centerY, double amplitudeX, double amplitudeY, double cycles, double phaseY)
+{
+    const double progress=(frameCount>1) ? qBound(0.0,double(frameIndex)/double(frameCount-1),1.0) : 0.0;
+    const double phase=2.0*M_PI*cycles*progress;
+    const double phaseOffsetY=phaseY/180.0*M_PI;
+    return QPointF(centerX+amplitudeX*std::sin(phase),centerY+amplitudeY*std::sin(phase+phaseOffsetY));
+}
+
+cimg_library::CImg<uint8_t> extract_atz_wave(int frameIndex, int frameCount, const cimg_library::CImg<uint8_t>& img, int centerX, int centerY, double startAngle, double amplitudeX, double amplitudeY, double cycles, double phaseY, const interpolatingAtXYFunctor& atFunc)
+{
+    const QPointF center=sinusoidalScanCenter(frameIndex,frameCount,centerX,centerY,amplitudeX,amplitudeY,cycles,phaseY);
+    return extractFixedLengthLine(img,center.x(),center.y(),startAngle,atFunc);
+}

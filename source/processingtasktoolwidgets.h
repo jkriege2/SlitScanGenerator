@@ -57,6 +57,8 @@ public:
         // Populate the combo box with AngleMode items
         addItem(QIcon(":/icons/pitch.png"), tr("pitch"), QVariant::fromValue(static_cast<int>(ProcessingTask::AngleMode::AnglePitch)));
         addItem(QIcon(":/icons/roll.png"), tr("roll"), QVariant::fromValue(static_cast<int>(ProcessingTask::AngleMode::AngleRoll)));
+        addItem(QIcon(":/icons/rotate.png"), tr("rotate"), QVariant::fromValue(static_cast<int>(ProcessingTask::AngleMode::AngleRotateThroughStack)));
+        addItem(QIcon(":/icons/wave.png"), tr("wave"), QVariant::fromValue(static_cast<int>(ProcessingTask::AngleMode::AngleWaveThroughStack)));
         setCurrentMode(ProcessingTask::AngleMode::DefaultNotNothing);
     }
 

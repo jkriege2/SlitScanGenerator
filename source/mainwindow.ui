@@ -529,7 +529,7 @@
            <item row="1" column="0">
             <widget class="QLabel" name="label_27">
              <property name="text">
-              <string>scan plane orientation:</string>
+              <string>scanline mode:</string>
              </property>
             </widget>
            </item>
@@ -539,7 +539,7 @@
               <widget class="AngleModeComboBox" name="cmbAngle">
                <property name="minimumSize">
                 <size>
-                 <width>75</width>
+                 <width>130</width>
                  <height>0</height>
                 </size>
                </property>
@@ -589,7 +589,140 @@
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QLabel" name="labelRotationTurns">
+                 <property name="visible">
+                  <bool>false</bool>
+                 </property>
+               <property name="text">
+                <string>revolutions per stack:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="spinRotationTurns">
+               <property name="visible">
+                <bool>false</bool>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>95</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="suffix">
+                <string> rev</string>
+               </property>
+               <property name="decimals">
+                <number>2</number>
+               </property>
+               <property name="minimum">
+                <double>-10.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>10.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.500000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.500000000000000</double>
+               </property>
+               <property name="toolTip">
+                <string>Total rotation from the first to the last selected frame. Negative values reverse direction.</string>
+               </property>
+              </widget>
+             </item>
             </layout>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelWavePath">
+             <property name="visible">
+              <bool>false</bool>
+             </property>
+             <property name="visible">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>wave path:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QWidget" name="waveParametersWidget" native="true">
+             <property name="visible">
+              <bool>false</bool>
+             </property>
+             <property name="visible">
+              <bool>false</bool>
+             </property>
+             <layout class="QGridLayout" name="gridWaveParameters">
+              <property name="leftMargin"><number>0</number></property>
+              <property name="topMargin"><number>0</number></property>
+              <property name="rightMargin"><number>0</number></property>
+              <property name="bottomMargin"><number>0</number></property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="labelWaveAmplitudeX">
+                <property name="text"><string>X amp:</string></property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QDoubleSpinBox" name="spinWaveAmplitudeX">
+                <property name="minimumSize"><size><width>85</width><height>0</height></size></property>
+                <property name="suffix"><string> px</string></property>
+                <property name="decimals"><number>1</number></property>
+                <property name="maximum"><double>5000.000000000000000</double></property>
+                <property name="singleStep"><double>5.000000000000000</double></property>
+                <property name="value"><double>50.000000000000000</double></property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QLabel" name="labelWaveCycles">
+                <property name="text"><string>cycles:</string></property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QDoubleSpinBox" name="spinWaveCycles">
+                <property name="minimumSize"><size><width>85</width><height>0</height></size></property>
+                <property name="decimals"><number>2</number></property>
+                <property name="maximum"><double>100.000000000000000</double></property>
+                <property name="singleStep"><double>0.250000000000000</double></property>
+                <property name="value"><double>1.000000000000000</double></property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="labelWaveAmplitudeY">
+                <property name="text"><string>Y amp:</string></property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QDoubleSpinBox" name="spinWaveAmplitudeY">
+                <property name="minimumSize"><size><width>85</width><height>0</height></size></property>
+                <property name="suffix"><string> px</string></property>
+                <property name="decimals"><number>1</number></property>
+                <property name="maximum"><double>5000.000000000000000</double></property>
+                <property name="singleStep"><double>5.000000000000000</double></property>
+                <property name="value"><double>50.000000000000000</double></property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QLabel" name="labelWavePhaseY">
+                <property name="text"><string>Y phase:</string></property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QDoubleSpinBox" name="spinWavePhaseY">
+                <property name="minimumSize"><size><width>85</width><height>0</height></size></property>
+                <property name="suffix"><string> °</string></property>
+                <property name="decimals"><number>1</number></property>
+                <property name="minimum"><double>-360.000000000000000</double></property>
+                <property name="maximum"><double>360.000000000000000</double></property>
+                <property name="singleStep"><double>15.000000000000000</double></property>
+                <property name="value"><double>90.000000000000000</double></property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
            </item>
            <item row="4" column="0">
             <widget class="QLabel" name="labAddbeforeAfter">

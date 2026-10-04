@@ -28,6 +28,8 @@ struct ProcessingTask
             AngleNone=0,
             AngleRoll=1,
             AnglePitch=2,
+            AngleRotateThroughStack=3,
+            AngleWaveThroughStack=4,
 
 
             DefaultNotNothing=AngleRoll
@@ -68,6 +70,11 @@ struct ProcessingTask
             int location_x;
             int location_y;
             double angle;
+            double rotationTurns;
+            double waveAmplitudeX;
+            double waveAmplitudeY;
+            double waveCycles;
+            double wavePhaseY;
             AngleMode angleMode;
             AddBeforeAfterMode addBefore;
             AddBeforeAfterMode addAfter;
@@ -76,7 +83,7 @@ struct ProcessingTask
                 slit_width=std::max<unsigned int>(1,width);
             }
             inline int get_slit_width() const {
-                if (std::fabs(angle)<0.0001) {
+                if (filteredAngleMode()==AngleMode::AngleNone) {
                     return std::max<unsigned int>(1,slit_width);
                 } else {
                     return 1;
@@ -195,6 +202,7 @@ struct ProcessingTask
         int stills;
 
         void saveBase(std::shared_ptr<ConfigIO> ini) const;
+        int selectedFrameCount() const;
 
         QDir getOutputDir() const;
 

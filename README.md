@@ -94,7 +94,7 @@ SlitScanGenerator processes videos (X-Y-T) in the following steps:
 
 SlitScanGenerator supports different slit-scan modes. These are explained in the next sections. 
 
-You can configure the parameters and which cuts to generate in the main window in the tab "XZ/YZ-Cuts" (at the bottom-right). There you can set the angle for roll/pith and the roll/pitch-mode itself. Also the tab shows a table with all the tabs already created for the current video (as a table). 
+You can configure the parameters and which cuts to generate in the main window in the tab "XZ/YZ-Cuts" (at the bottom-right). There you can choose the scanline mode and set its parameters. The tab also shows a table with all cuts configured for the current video.
 
 Whenever this tab is activated, you can click on different positions in the preview frame at the top-left. And a new center for the cut-cross is selected. The current position and cross is shown in red in the preview image. In the two preview images, you see currently configured cuts and can choose to add them to the processing list for the current video by clicking on "add XZ" or "add ZY".
 
@@ -121,6 +121,14 @@ The output is a series of rotated horizontal/vertical lines from the video frame
 ![XZ-Cuts, pitched](https://raw.githubusercontent.com/jkriege2/SlitScanGenerator/master/doc/pic/cuts_XZ_pitch.png)
 
 The output is a series of horizontal or vertical lines from the video frames. Other than in the simple case (above), the line is moved through the frame along the time/z-axis of the video.
+
+#### Rotate Through Stack
+
+The scanline stays centered at the selected position while its orientation rotates as the video advances. Set the starting angle with the angle control and choose the total number of revolutions over the selected frame range. Negative revolution counts rotate in the opposite direction. The output has a fixed line length; samples outside the frame are black.
+
+#### Wave Through Stack
+
+The scanline keeps a fixed orientation while its center moves sinusoidally through the XY image over the selected frame range. Set independent X and Y amplitudes, the number of cycles, and the phase offset of the Y motion. A 90-degree Y phase offset produces an elliptical path when both amplitudes are nonzero; setting either amplitude to zero restricts the motion to one axis. Amplitudes are entered in preview-image pixels and are scaled for full-resolution processing.
 
 
 ### SlitScan Composition
