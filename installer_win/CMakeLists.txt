@@ -1,5 +1,5 @@
-# Project: JKHouseholdAccounts (https://github.com/jkriege2/JKHouseholdAccounts)
-# Copyright (c) 2018, Jan Krieger <jan@jkrieger.de>
+# Project: SlitScanGenerator (https://github.com/jkriege2/SlitScanGenerator)
+# Copyright (c) 2016-2026, Jan Krieger <jan@jkrieger.de>
 #
 #
 # This program is free software: you can redistribute it and/or modify
@@ -29,17 +29,17 @@ install(FILES ${FFMPEG_ZIPS}
   DESTINATION 3rdparty/ffmpeg
 )
 
-# CImg
-file(GLOB CIMG_ZIPS
-    ${CMAKE_SOURCE_DIR}/3rdparty/CImg/*.zip
-)
-install(FILES ${CIMG_ZIPS}
+# CImg (fetched via FetchContent, install its readme/license files from the fetched source dir)
+install(FILES
+    ${cimg_SOURCE_DIR}/README.txt
+    ${cimg_SOURCE_DIR}/Licence_CeCILL-C_V1-en.txt
+    ${cimg_SOURCE_DIR}/Licence_CeCILL_V2-en.txt
   DESTINATION 3rdparty/CImg
 )
 
 
-# 3rdParty Readmy
-install(FILES ${CMAKE_SOURCE_DIR}/3rdparty/CImg/readme.txt
+# 3rdParty Readme
+install(FILES ${CMAKE_SOURCE_DIR}/3rdparty/readme.txt
   DESTINATION 3rdparty
 )
 

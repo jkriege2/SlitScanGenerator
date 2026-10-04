@@ -52,3 +52,4 @@ CMakeLists.txt.user
 /build/
 *.bak
 Sicherungskopie_*.*
+/dist

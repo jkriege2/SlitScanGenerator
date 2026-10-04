@@ -1,8 +1,8 @@
 
 
-.\7zip\7za.exe -o.\ffmpeg\win64 -y x .\ffmpeg\ffmpeg-7.1-full_build-shared.7z
-xcopy .\ffmpeg\win64\ffmpeg-7.1-full_build-shared\* .\ffmpeg\win64 /S /E /R /Y
-rmdir /S /Q .\ffmpeg\win64\ffmpeg-7.1-full_build-shared
+.\7zip\7za.exe -o.\ffmpeg\win64 -y x .\ffmpeg\ffmpeg-n9.0-latest-win64-gpl-shared-9.0.zip
+xcopy .\ffmpeg\win64\ffmpeg-n9.0-latest-win64-gpl-shared-9.0\* .\ffmpeg\win64 /S /E /R /Y
+rmdir /S /Q .\ffmpeg\win64\ffmpeg-n9.0-latest-win64-gpl-shared-9.0
 
 
 del .\CImg\CImg.zip /f /q

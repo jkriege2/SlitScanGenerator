@@ -24,8 +24,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/defines.h.cmake
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # collect all source files
 #qt_wrap_ui(${UI_FILES})
@@ -139,14 +137,15 @@ endif()
 find_package(FFMPEG REQUIRED)
 
 # main executable
-add_executable(${CMAKE_PROJECT_NAME} WIN32
-  ${UI_HEADERS}
+qt_add_executable(${CMAKE_PROJECT_NAME} WIN32
+  ${CODE_FILES}
+  ${HEADER_FILES}
   ${UI_FILES}
-  ${RESOURCE_FILES}
+  ${QRC_FILES}
   ${WINDOWS_RES_FILE}
 )
-target_link_libraries(${CMAKE_PROJECT_NAME}
-  Qt${QT_VERSION_MAJOR}::Widgets
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
+  Qt6::Widgets
   CImg::CImg
   ${FFMPEG_LIBRARIES}
 )
