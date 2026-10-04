@@ -19,6 +19,11 @@ Installers for Windows and Source-Code Archives can be found here:
 
   https://github.com/jkriege2/SlitScanGenerator/releases/
 
+## Building from Source
+
+See [BUILDING.md](BUILDING.md) for command-line and Qt Creator setup, including
+the vcpkg dependency workflow.
+
 
 
 ## Basic Usage:

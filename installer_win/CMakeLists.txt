@@ -20,28 +20,16 @@ configure_file(installer.cmake.nsi ${CMAKE_BINARY_DIR}/installer.nsi @ONLY)
 
 
 
-# FFMPEG
-file(GLOB FFMPEG_ZIPS
-    ${CMAKE_SOURCE_DIR}/3rdparty/ffmpeg/*.zip
-    ${CMAKE_SOURCE_DIR}/3rdparty/ffmpeg/*.7z
+# Third-party licenses from vcpkg packages.
+install(FILES
+    "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/cimg/copyright"
+  DESTINATION 3rdparty/CImg
 )
-install(FILES ${FFMPEG_ZIPS}
+install(FILES
+    "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/ffmpeg/copyright"
   DESTINATION 3rdparty/ffmpeg
 )
 
-# CImg (fetched via FetchContent, install its readme/license files from the fetched source dir)
-install(FILES
-    ${cimg_SOURCE_DIR}/README.txt
-    ${cimg_SOURCE_DIR}/Licence_CeCILL-C_V1-en.txt
-    ${cimg_SOURCE_DIR}/Licence_CeCILL_V2-en.txt
-  DESTINATION 3rdparty/CImg
-)
-
-
-# 3rdParty Readme
-install(FILES ${CMAKE_SOURCE_DIR}/3rdparty/readme.txt
-  DESTINATION 3rdparty
-)
 
 # Examples
 install(DIRECTORY

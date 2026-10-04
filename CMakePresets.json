@@ -1,0 +1,40 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "vcpkg-msvc",
+      "displayName": "Windows x64 (MSVC, vcpkg)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/vcpkg-msvc",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "$env{QT_ROOT}",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
+    },
+    {
+      "name": "vcpkg-mingw",
+      "displayName": "Windows x64 (MinGW, vcpkg)",
+      "generator": "MinGW Makefiles",
+      "binaryDir": "${sourceDir}/build/vcpkg-mingw",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "$env{QT_ROOT}",
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-mingw-dynamic"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "vcpkg-msvc-release",
+      "configurePreset": "vcpkg-msvc",
+      "configuration": "Release"
+    },
+    {
+      "name": "vcpkg-mingw-release",
+      "configurePreset": "vcpkg-mingw"
+    }
+  ]
+}

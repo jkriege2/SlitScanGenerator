@@ -126,15 +126,12 @@ if (WIN32)
 endif()
 
 
-# Configure FFMPEG
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    # 64 bits
-    set(FFMPEG_PREFIX ${CMAKE_SOURCE_DIR}/3rdparty/ffmpeg/win64)
-elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    # 32 bits
-    set(FFMPEG_PREFIX ${CMAKE_SOURCE_DIR}/3rdparty/ffmpeg/win32)
-endif()
+# Configure FFmpeg from the vcpkg package.
 find_package(FFMPEG REQUIRED)
+add_library(slitscangenerator_ffmpeg INTERFACE)
+target_include_directories(slitscangenerator_ffmpeg SYSTEM INTERFACE ${FFMPEG_INCLUDE_DIRS})
+target_link_directories(slitscangenerator_ffmpeg INTERFACE ${FFMPEG_LIBRARY_DIRS})
+target_link_libraries(slitscangenerator_ffmpeg INTERFACE ${FFMPEG_LIBRARIES})
 
 # main executable
 qt_add_executable(${CMAKE_PROJECT_NAME} WIN32
@@ -147,12 +144,11 @@ qt_add_executable(${CMAKE_PROJECT_NAME} WIN32
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
   Qt6::Widgets
   CImg::CImg
-  ${FFMPEG_LIBRARIES}
+  slitscangenerator_ffmpeg
 )
 add_dependencies(${CMAKE_PROJECT_NAME} SLITSCANGENERATOR_UPDATE_RANSLATIONS)
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${FFMPEG_INCLUDE_DIRS})
 target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/slitscan_precomp.h)
 
 
@@ -163,7 +159,20 @@ if (UNIX)
     install(TARGETS ${CMAKE_PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
 elseif (WIN32)
   install(TARGETS ${CMAKE_PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX})
-  install(FILES ${FFMPEG_BIN} DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install(DIRECTORY "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/"
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    CONFIGURATIONS Release RelWithDebInfo MinSizeRel
+    OPTIONAL
+    FILES_MATCHING
+      PATTERN "*.dll"
+  )
+  install(DIRECTORY "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/bin/"
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    CONFIGURATIONS Debug
+    OPTIONAL
+    FILES_MATCHING
+      PATTERN "*.dll"
+  )
 endif()
 
 

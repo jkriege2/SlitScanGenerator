@@ -1,0 +1,17 @@
+{
+  "name": "slitscangenerator",
+  "version-string": "2026.10.00",
+  "builtin-baseline": "19780d9cdf84d0944cf9a318666703b89ab6629c",
+  "dependencies": [
+    "cimg",
+    {
+      "name": "ffmpeg",
+      "default-features": false,
+      "features": [
+        "avcodec",
+        "avformat",
+        "swscale"
+      ]
+    }
+  ]
+}

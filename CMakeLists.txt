@@ -36,20 +36,6 @@ string(TIMESTAMP PROJECT_BUILDYEAR "%Y")
 string(TIMESTAMP PROJECT_BUILDDATETIME "%Y-%m-%d")
 set(PROJECT_COPYRIGHT "Copyright (c) 2016-${PROJECT_BUILDYEAR} Jan Krieger jan@jkrieger.de")
 
-include(FetchContent)
-
-# get CImg as a dependency
-FetchContent_Declare(cimg
-    GIT_REPOSITORY https://github.com/dtschump/CImg.git
-    GIT_TAG v.4.0.5
-)
-FetchContent_MakeAvailable(cimg)
-
-add_library(cimg_headers INTERFACE)
-add_library(CImg::CImg ALIAS cimg_headers)
-target_include_directories(cimg_headers INTERFACE "${cimg_SOURCE_DIR}")
-
-
 # determine project bitness (32 or 64 bit)
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     # 64 bits
@@ -86,6 +72,7 @@ endif()
 # Configure Qt
 find_package(QT NAMES Qt6 COMPONENTS Core REQUIRED)
 find_package(Qt6 COMPONENTS Core Gui Widgets LinguistTools REQUIRED)
+find_package(CImg CONFIG REQUIRED)
 
 # Install to a configuration-specific staging directory unless the caller
 # explicitly supplied an install prefix.
