@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QDir>
 #include <QDebug>
+#include <vector>
 
 QString ProcessingTask::InterpolationMethod2String(InterpolationMethod m)
 {
@@ -524,8 +525,13 @@ bool ProcessingTask::processStep()
                     const int z0=res.zs_val;
                     if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
                         TIME_BLOCK_SW(timer, "extractZY_atz()");
-                        line=extractZY_atz(z, frame, pi.location_x, pi.get_slit_offset(), pi.get_slit_width());
                         res.zs_val++;
+                        if (res.zs_val>z0) {
+                            const int slitWidth=pi.get_slit_width();
+                            extractZY_atz_into(frame,pi.location_x,pi.get_slit_offset(),slitWidth,res.img,res.output_zs);
+                            res.maxX=qMax(res.maxX,qMin(res.img.width()-1,res.output_zs+slitWidth-1));
+                            res.output_zs+=slitWidth;
+                        }
                     } else if (pi.angleMode==AngleMode::AngleRoll) {
                         TIME_BLOCK_SW(timer, "extractZY_atz_roll()");
                         line=extractZY_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), pi.get_slit_offset(), pi.get_slit_width());
@@ -540,18 +546,21 @@ bool ProcessingTask::processStep()
                         //qDebug()<<"resize "<<cimgsize2string(res)<<"  -> "<<z0+line.height()<<"x"<<res.height()<<"x"<<res.depth()<<"x"<<res.spectrum();
                         res.resize(z0+line.height(), res.height(), res.depth(), res.spectrum());
                     }*/
-                    if (res.zs_val>z0) {
+                    if (pi.angleMode!=AngleMode::AngleNone && pi.angle!=0 && res.zs_val>z0) {
                         TIME_BLOCK_SW(timer, "StoreLine")
                         for (int c=0; c<3; c++) {
-                            for (int x=0; x<line.height(); x++) {
-                                if (res.output_zs<res.img.width()) {
-                                    res.maxX=qMax(res.output_zs+x, res.maxX);
-                                    for (int y=0; y<line.width(); y++)
-                                    {
-                                        res.img(res.output_zs+x, y, 0,c)=line(y, x, 0, c);
+                            for (int y=0; y<line.width(); y++) {
+                                for (int x=0; x<line.height(); x++) {
+                                    const int outputX=res.output_zs+x;
+                                    if (outputX<res.img.width()) {
+                                        res.img(outputX, y, 0,c)=line(y, x, 0, c);
                                     }
                                 }
                             }
+                        }
+                        for (int x=0; x<line.height(); x++) {
+                            const int outputX=res.output_zs+x;
+                            if (outputX<res.img.width()) res.maxX=qMax(outputX,res.maxX);
                         }
                         res.output_zs+=line.height();
                     }
@@ -559,8 +568,13 @@ bool ProcessingTask::processStep()
                     const int z0=res.zs_val;
                     if (pi.angleMode==AngleMode::AngleNone || pi.angle==0) {
                         TIME_BLOCK_SW(timer, "extractXZ_atz()");
-                        line=extractXZ_atz(z, frame, pi.location_y, pi.get_slit_offset(), pi.get_slit_width());
                         res.zs_val++;
+                        if (res.zs_val>z0) {
+                            const int slitWidth=pi.get_slit_width();
+                            extractXZ_atz_into(frame,pi.location_y,pi.get_slit_offset(),slitWidth,res.img,res.output_zs);
+                            res.maxY=qMax(res.maxY,qMin(res.img.height()-1,res.output_zs+slitWidth-1));
+                            res.output_zs+=slitWidth;
+                        }
                     } else if (pi.angleMode==AngleMode::AngleRoll) {
                         TIME_BLOCK_SW(timer, "extractXZ_atz_roll()");
                         line=extractXZ_atz_roll(z, outputFrames, frame, pi.location_x, pi.location_y, pi.angle,InterpolationMethod2XYFunctor(interpolationMethod), pi.get_slit_offset(), pi.get_slit_width());
@@ -576,7 +590,7 @@ bool ProcessingTask::processStep()
                         res.resize(res.width(), z0+line.height(), res.depth(), res.spectrum());
 
                     }*/
-                    if (res.zs_val>z0) {
+                    if (pi.angleMode!=AngleMode::AngleNone && pi.angle!=0 && res.zs_val>z0) {
                         TIME_BLOCK_SW(timer, "StoreLine()");
                         for (int c=0; c<3; c++) {
                             for (int y=0; y<line.height(); y++) {
@@ -734,29 +748,22 @@ bool ProcessingTask::processStep()
 
             qDebug()<<"img "<<m_savingFrame<<" ("<<CImgSize2String(res.img)<<"): maxX="<<res.maxX<<", maxY="<<res.maxY;
             auto unfilteredImage=res.img.get_crop(0,0,qMin(res.img.width()-1,res.maxX),qMin(res.img.height()-1,res.maxY));
-            auto filteredImage=unfilteredImage;
-
-            bool hasMod=false;
-            // normalize image if necessary
-            if (normalize) {
-                if (pi.mode==Mode::ZY && normalizeY>=0 && normalizeY<filteredImage.height()) {
+            const bool normalizeZYRequested=normalize && pi.mode==Mode::ZY && normalizeY>=0 && normalizeY<unfilteredImage.height();
+            const bool normalizeXZRequested=normalize && pi.mode==Mode::XZ && normalizeX>=0 && normalizeX<unfilteredImage.width();
+            const bool hasMod=normalizeZYRequested || normalizeXZRequested || filterNotch || modifyWhite;
+            cimg_library::CImg<uint8_t> filteredImage;
+            if (hasMod) {
+                filteredImage=unfilteredImage;
+                if (normalizeZYRequested) {
                     qDebug()<<"normalizeZY: normalizeY="<<normalizeY<<" ("<<CImgSize2String(filteredImage)<<")";
                     normalizeZY(filteredImage, normalizeY);
-                    hasMod=true;
                 }
-                if (pi.mode==Mode::XZ && normalizeX>=0 && normalizeX<filteredImage.width()) {
+                if (normalizeXZRequested) {
                     qDebug()<<"normalizeXZ: normalizeX="<<normalizeX<<" ("<<CImgSize2String(filteredImage)<<")";
                     normalizeXZ(filteredImage, normalizeX);
-                    hasMod=true;
                 }
-            }
-            if (filterNotch) {
-                applyFilterNotch(filteredImage, fiterNotchWavelength, fiterNotchWidth);
-                hasMod=true;
-            }
-            if (modifyWhite) {
-                applyWhitepointCorrection(filteredImage, whitepointR, whitepointG, whitepointB);
-                hasMod=true;
+                if (filterNotch) applyFilterNotch(filteredImage, fiterNotchWavelength, fiterNotchWidth);
+                if (modifyWhite) applyWhitepointCorrection(filteredImage, whitepointR, whitepointG, whitepointB);
             }
 
             if (hasMod) {
@@ -806,15 +813,19 @@ void ProcessingTask::normalizeZY(cimg_library::CImg<uint8_t> &img, int normalize
 {
     TIME_BLOCK_SW(timer, "normalizeZY()");
     if (normalizeY>=0 && normalizeY<img.height()) {
-        cimg_library::CImg<uint8_t> img_in=img;
-        //qDebug()<<"img="<<img.width()<<"x"<<img.height()<<"x"<<img.depth()<<"x"<<img.spectrum();
+        std::vector<uint8_t> reference(static_cast<size_t>(img.width())*img.depth());
         cimg_forC(img,c) {
-            const auto ch=img_in.get_channel(c);
-            const auto row=ch.get_row(normalizeY);
-            const double avg0=row.mean();
-            //qDebug()<<"c="<<c<<"  ch="<<ch.width()<<"x"<<ch.height()<<"x"<<ch.depth()<<"x"<<ch.spectrum()<<"  row="<<row.width()<<"x"<<row.height()<<"x"<<row.depth()<<"x"<<row.spectrum()<<"  => avg0="<<avg0;
+            double sum=0;
+            for (int z=0; z<img.depth(); z++) {
+                for (int x=0; x<img.width(); x++) {
+                    const uint8_t value=img(x,normalizeY,z,c);
+                    reference[static_cast<size_t>(z)*img.width()+x]=value;
+                    sum+=value;
+                }
+            }
+            const double avg0=sum/static_cast<double>(reference.size());
             cimg_forXYZ(img,x,y,z) {
-                const double v=double(img(x,y,z,c))*avg0/double(img_in(x,normalizeY,z,c));
+                const double v=double(img(x,y,z,c))*avg0/double(reference[static_cast<size_t>(z)*img.width()+x]);
                 img(x,y,z,c)=(v<0)?0:((v>255)?255:v);
             }
         }
@@ -825,13 +836,19 @@ void ProcessingTask::normalizeXZ(cimg_library::CImg<uint8_t> &img, int normalize
 {
     TIME_BLOCK_SW(timer, "normalizeXZ()");
     if (normalizeX>=0 && normalizeX<img.width()) {
-        cimg_library::CImg<uint8_t> img_in=img;
+        std::vector<uint8_t> reference(static_cast<size_t>(img.height())*img.depth());
         cimg_forC(img,c) {
-            const auto ch=img_in.get_channel(c);
-            const auto col=ch.get_column(normalizeX);
-            const double avg0=col.mean();
+            double sum=0;
+            for (int z=0; z<img.depth(); z++) {
+                for (int y=0; y<img.height(); y++) {
+                    const uint8_t value=img(normalizeX,y,z,c);
+                    reference[static_cast<size_t>(z)*img.height()+y]=value;
+                    sum+=value;
+                }
+            }
+            const double avg0=sum/static_cast<double>(reference.size());
             cimg_forXYZ(img,x,y,z) {
-                const double v=double(img(x,y,z,c))*avg0/double(img_in(normalizeX,y,z,c));
+                const double v=double(img(x,y,z,c))*avg0/double(reference[static_cast<size_t>(z)*img.height()+y]);
                 img(x,y,z,c)=(v<0)?0:((v>255)?255:v);
             }
         }
@@ -851,23 +868,31 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
     int offx=(img.width()-imgrgb.width())/2;
     int offy=(img.height()-imgrgb.height())/2;
 
-    //unsigned char one[] = { 1 }, zero[] = { 0 };
-    cimg_library::CImg<float> mask(img.width(),img.height(),1,1,1);
-    double kmin=1.0/double(center+delta);
-    double kmax=1.0/double(center-delta);
-
-    cimg_forXY(mask,x,y) {
-        const float kx=double(x-mask.width()/2)/double(mask.width());
-        const float ky=double(y-mask.height()/2)/double(mask.height());
-        const float kabs2=kx*kx+ky*ky;
-        //const float kabs=sqrt(kabs2);
-        mask(x,y)=1;
-        if (kabs2>=kmin*kmin && kabs2<=kmax*kmax) mask(x,y)=0;
-        //else if (kabs<kmin) mask(x,y)=exp(-(kabs-kmin)*(kabs-kmin)/(2.0*2.0*2.0));
-        //else if (kabs>kmax) mask(x,y)=exp(-(kmax-kabs)*(kmax-kabs)/(2.0*2.0*2.0));
-
+    struct NotchMaskCache {
+        int width=0;
+        int height=0;
+        double center=0;
+        double delta=0;
+        cimg_library::CImg<float> mask;
+    };
+    static thread_local NotchMaskCache cache;
+    if (cache.width!=nnx || cache.height!=nny || cache.center!=center || cache.delta!=delta) {
+        cache.mask.assign(nnx,nny,1,1,1);
+        const double kmin=1.0/double(center+delta);
+        const double kmax=1.0/double(center-delta);
+        cimg_forXY(cache.mask,x,y) {
+            const float kx=double(x-cache.mask.width()/2)/double(cache.mask.width());
+            const float ky=double(y-cache.mask.height()/2)/double(cache.mask.height());
+            const float kabs2=kx*kx+ky*ky;
+            if (kabs2>=kmin*kmin && kabs2<=kmax*kmax) cache.mask(x,y)=0;
+        }
+        cache.mask.blur(2,2,2,false);
+        cache.width=nnx;
+        cache.height=nny;
+        cache.center=center;
+        cache.delta=delta;
     }
-    mask.blur(2,2,2,false);
+    const auto& mask=cache.mask;
     if (testoutput) {
         sprintf(fn, "testmask.bmp");
         mask.get_normalize(0,255).save_bmp(fn);
@@ -904,9 +929,16 @@ void ProcessingTask::applyFilterNotch(cimg_library::CImg<uint8_t> &imgrgb, doubl
             F[1].save_bmp(fn);
         }
 
-        cimg_library::CImgList<float> nF(F);
-        cimglist_for(F,l) nF[l].mul(mask).shift(-img.width()/2,-img.height()/2,0,0,2);
-        cimg_library::CImg<uint8_t> r = nF.FFT(true)[0].normalize(cMin,cMax);
+        cimg_library::CImgList<float> filteredSpectrum;
+        cimg_library::CImgList<float>* spectrum=&F;
+        if (testoutput) {
+            filteredSpectrum=F;
+            spectrum=&filteredSpectrum;
+        }
+        for (unsigned int l=0; l<spectrum->size(); l++) {
+            (*spectrum)[l].mul(mask).shift(-img.width()/2,-img.height()/2,0,0,2);
+        }
+        cimg_library::CImg<uint8_t> r = (*spectrum).FFT(true)[0].normalize(cMin,cMax);
         if (testoutput) {
             sprintf(fn, "c%d_testNF0.bmp", int(c));
             F[0].save_bmp(fn);

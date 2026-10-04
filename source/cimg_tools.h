@@ -34,6 +34,8 @@ QImage CImgToQImage(const cimg_library::CImg<uint8_t>& img, int z=0);
 
 typedef std::function<float(const cimg_library::CImg<uint8_t>& img, const float fx, const float fy, const int z, const int c)> interpolatingAtXYFunctor;
 
+void extractXZ_atz_into(const cimg_library::CImg<uint8_t>& img_src, int y, int slit_offset, int slit_width, cimg_library::CImg<uint8_t>& img_dst, int dst_y);
+void extractZY_atz_into(const cimg_library::CImg<uint8_t>& img_src, int x, int slit_offset, int slit_width, cimg_library::CImg<uint8_t>& img_dst, int dst_x);
 cimg_library::CImg<uint8_t> extractXZ_atz(int z, const cimg_library::CImg<uint8_t>& img, int y, int slit_offset, int slit_width);
 cimg_library::CImg<uint8_t> extractZY_atz(int z, const cimg_library::CImg<uint8_t>& img, int x, int slit_offset, int slit_width);
 cimg_library::CImg<uint8_t> extractXZ_atz_pitch(int z, int depth, const cimg_library::CImg<uint8_t>& img, int y, double angle, const interpolatingAtXYFunctor& atFunc, int slit_offset, int slit_width, int& zout, int* lenout=nullptr);

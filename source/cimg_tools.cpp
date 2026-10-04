@@ -36,31 +36,47 @@ QImage CImgToQImage(const cimg_library::CImg<uint8_t> &img, int z)
     return imgQt;
 }
 
-cimg_library::CImg<uint8_t> extractXZ_atz(int z, const cimg_library::CImg<uint8_t> &img_src, int y0, int slit_offset, int slit_width)
+void extractXZ_atz_into(const cimg_library::CImg<uint8_t>& img_src, int y0, int slit_offset, int slit_width, cimg_library::CImg<uint8_t>& img_dst, int dst_y)
 {
-    cimg_library::CImg<uint8_t> img(img_src.width(), slit_width,1,3);
-    for (int c=0; c<3; c++) {
-        for (int y=0; y<slit_width; y++) {
-            const int y_src=y0+slit_offset+y;
-            cimg_forX( img_src, x ) {
-                img(x,y,0,c)=img_src(x,y_src,0,c);
+    for (int y=0; y<slit_width; y++) {
+        const int y_src=y0+slit_offset+y;
+        const int y_dst=dst_y+y;
+        if (y_src>=0 && y_src<img_src.height() && y_dst>=0 && y_dst<img_dst.height()) {
+            for (int c=0; c<3; c++) {
+                for (int x=0; x<qMin(img_src.width(),img_dst.width()); x++) {
+                    img_dst(x,y_dst,0,c)=img_src(x,y_src,0,c);
+                }
             }
         }
     }
+}
+
+cimg_library::CImg<uint8_t> extractXZ_atz(int z, const cimg_library::CImg<uint8_t> &img_src, int y0, int slit_offset, int slit_width)
+{
+    cimg_library::CImg<uint8_t> img(img_src.width(), slit_width,1,3);
+    extractXZ_atz_into(img_src,y0,slit_offset,slit_width,img,0);
     return img;
+}
+
+void extractZY_atz_into(const cimg_library::CImg<uint8_t>& img_src, int x0, int slit_offset, int slit_width, cimg_library::CImg<uint8_t>& img_dst, int dst_x)
+{
+    for (int x=0; x<slit_width; x++) {
+        const int x_src=x0+slit_offset+x;
+        const int x_dst=dst_x+x;
+        if (x_src>=0 && x_src<img_src.width() && x_dst>=0 && x_dst<img_dst.width()) {
+            for (int c=0; c<3; c++) {
+                for (int y=0; y<qMin(img_src.height(),img_dst.height()); y++) {
+                    img_dst(x_dst,y,0,c)=img_src(x_src,y,0,c);
+                }
+            }
+        }
+    }
 }
 
 cimg_library::CImg<uint8_t> extractZY_atz(int z, const cimg_library::CImg<uint8_t> &img_src, int x0, int slit_offset, int slit_width)
 {
     cimg_library::CImg<uint8_t> img(img_src.height(), slit_width, 1,3);
-    for (int c=0; c<3; c++) {
-        for (int x=0; x<slit_width; x++) {
-            const int x_src=x0+slit_offset+x;
-            cimg_forY( img_src, y) {
-                img(y,x,0,c)=img_src(x_src,y,0,c);
-            }
-        }
-    }
+    extractZY_atz_into(img_src,x0,slit_offset,slit_width,img,0);
     return img;
 }
 
