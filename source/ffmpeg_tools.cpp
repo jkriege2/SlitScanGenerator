@@ -448,7 +448,6 @@ bool readFFMPEGFrame(cimg_library::CImg<uint8_t>& frame, FFMPEGVideo *video)
 {
     if (!video) return false;
     bool done = false;
-    if (!video->pPacket) video->pPacket = av_packet_alloc();
     while (!done && (av_read_frame(video->pFormatCtx, video->pPacket) >= 0)) {
         // Is this a packet from the video stream?
         if (video->pPacket->stream_index == video->videoStream) {
@@ -478,9 +477,6 @@ bool readFFMPEGFrame(cimg_library::CImg<uint8_t>& frame, FFMPEGVideo *video)
         if (done) break;
     }
 
-    // Free the packet that was allocated by av_read_frame
-    av_packet_free(&(video->pPacket));
-
     video->i++;
 
     return done;
@@ -498,6 +494,7 @@ void closeFFMPEGVideo(FFMPEGVideo *video)
 
         // Close the codecs
         avcodec_free_context(&(video->pCodecCtx));
+        av_packet_free(&(video->pPacket));
 
         // Close the video file
         avformat_close_input(&(video->pFormatCtx));
